@@ -15,9 +15,6 @@ Route::domain(env('APP_URL'))->group(function () {
 
     Route::view('/control-board', ControlBoard::class);
 
-    Route::view('dashboard', 'dashboard')
-        ->middleware(['auth:admin', 'verified'])
-        ->name('dashboard');
 
     Route::middleware(['auth'])->group(function () {
         Route::redirect('settings', 'settings/profile');
