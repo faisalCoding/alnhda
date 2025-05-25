@@ -7,8 +7,7 @@ use Livewire\Volt\Volt;
 use App\Livewire\ControlBoard;
 
 
-Route::domain('alnhda.local')->group(function () {
-
+Route::domain(env('APP_URL'))->group(function () {
 
     Route::get('/', function () {
         return view('welcome');
@@ -45,7 +44,7 @@ Route::domain('alnhda.local')->group(function () {
     require __DIR__ . '/auth.php';
 });
 
-Route::domain('panel.alnhda.local')->group(function(){
+Route::domain('panel.' . env('APP_URL'))->group(function(){
     require __DIR__ . '/admin-auth.php';
 });
 
