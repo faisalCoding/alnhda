@@ -12,7 +12,6 @@ Route::prefix('admin')->middleware('guest:admin')->group(function () {
 
 
     Route::view('dashboard', 'dashboard')
-        ->middleware(['auth:admin'])
         ->name('dashboard');
 });
 
