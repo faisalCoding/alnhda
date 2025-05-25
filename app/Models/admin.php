@@ -8,7 +8,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
 
-class admin extends Authenticatable
+class Admin extends Authenticatable
 {
     //
      /** @use HasFactory<\Database\Factories\UserFactory> */
