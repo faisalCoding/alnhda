@@ -7,41 +7,46 @@ use Livewire\Volt\Volt;
 use App\Livewire\ControlBoard;
 
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('welcome');
+Route::domain('alnhda.local')->group(function () {
 
-Route::get('/control-board', ControlBoard::class);
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+    Route::get('/', function () {
+        return view('welcome');
+    })->name('welcome');
 
-Route::middleware(['auth'])->group(function () {
-    Route::redirect('settings', 'settings/profile');
+    Route::view('/control-board', ControlBoard::class);
 
-    Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
-    Volt::route('settings/password', 'settings.password')->name('settings.password');
-    Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
+    Route::view('dashboard', 'dashboard')
+        ->middleware(['auth:admin', 'verified'])
+        ->name('dashboard');
+
+    Route::middleware(['auth'])->group(function () {
+        Route::redirect('settings', 'settings/profile');
+
+        Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
+        Volt::route('settings/password', 'settings.password')->name('settings.password');
+        Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
+    });
+
+    Route::view('projects', 'projects')->name('projects');
+    Route::view('slider', 'slider');
+
+    Route::view('blogs', 'blogs')->name('blogs');
+
+    Route::get('project/{project}', function (Project $project) {
+        return view('project', ['project' => $project]);
+    })->name('project');
+
+    Route::get('blog/{blog}', function (Blog $blog) {
+        return view('blog', ['blog' => $blog]);
+    })->name('blog');
+
+
+    require __DIR__ . '/auth.php';
 });
 
-Route::view('projects', 'projects')->name('projects');
-Route::view('slider', 'slider');
-
-Route::view('blogs', 'blogs')->name('blogs');
-
-Route::get('project/{project}', function (Project $project){
-    return view('project',['project' => $project]);
-})->name('project');
-
-Route::get('blog/{blog}', function (Blog $blog){
-    return view('blog',['blog' => $blog]);
-})->name('blog');
-
-
-
-
-
-require __DIR__.'/auth.php';
+Route::domain('panel.alnhda.local')->group(function(){
+    require __DIR__ . '/admin-auth.php';
+});
 
 
