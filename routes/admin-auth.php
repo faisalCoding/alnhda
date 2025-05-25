@@ -11,9 +11,12 @@ Route::prefix('admin')->middleware('guest:admin')->group(function () {
         ->name('admin.register');
 
 
-    Route::view('dashboard', 'dashboard')
-        ->name('dashboard');
+
 });
+
+Route::view('dashboard', 'dashboard')
+->middleware(['auth:admin'])
+->name('dashboard');
 
 Route::post('admin/logout', App\Livewire\Actions\Logout::class)
     ->name('admin.logout');
