@@ -3,7 +3,6 @@
         <a href='{{route('welcome')}}' wire:current="font-bold text-[#498E49]" wire:navigate.hover >الرئيسية</a>
         <a href='{{route('projects')}}' wire:current="font-bold text-[#498E49]" wire:navigate.hover >مشاريعنا</a>
         <a href='{{route('blogs')}}' wire:current="font-bold text-[#498E49]" wire:navigate.hover >المقالات</a>
-        for hi all
     </div>
     <img src="/img/alnhdafooterlogo.png" class=" w-[200px] place-self-start" >
 </div>
