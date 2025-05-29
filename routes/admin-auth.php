@@ -5,7 +5,7 @@ use Livewire\Volt\Volt;
 
 Route::prefix('admin')->middleware('guest:admin')->group(function () {
     Volt::route('login', 'admin_auth.login')
-        ->name('login');
+        ->name('admin.login');
 
     Volt::route('register', 'admin_auth.register')
         ->name('admin.register');
