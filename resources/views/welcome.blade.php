@@ -9,7 +9,7 @@
         
         @include('partials.header')
         @livewire('section-project')
-        sopuer so do ??
+        sopuer so do
         @include('partials.section_blogs')
         {{-- footer in layouts guest --}}
     </div>
