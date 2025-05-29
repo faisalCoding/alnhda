@@ -9,7 +9,7 @@
         
         @include('partials.header')
         @livewire('section-project')
-        hi faisal hi all
+        hi faisal hi hlal
         @include('partials.section_blogs')
         {{-- footer in layouts guest --}}
     </div>
