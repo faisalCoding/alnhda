@@ -86,8 +86,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
     <form wire:submit="login" class="flex flex-col gap-6">
         <!-- Email Address -->
         <flux:input
-            wire:model="emai tode "
-            :label="__('yourlf')"
+            wire:model="email "
+            :label="__('hi all')"
             type="email"
             required
             autofocus
