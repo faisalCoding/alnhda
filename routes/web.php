@@ -41,7 +41,7 @@ Route::domain(env('APP_URL'))->group(function () {
     require __DIR__ . '/auth.php';
 });
 
-Route::domain('panel.' . env('APP_URL'))->group(function(){
+Route::domain('panel.devep.site')->group(function(){
     require __DIR__ . '/admin-auth.php';
 });
 
