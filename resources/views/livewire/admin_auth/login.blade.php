@@ -87,7 +87,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
         <!-- Email Address -->
         <flux:input
             wire:model="email "
-            :label="__('hi faisal')"
+            :label="__('hi de')"
             type="email"
             required
             autofocus
