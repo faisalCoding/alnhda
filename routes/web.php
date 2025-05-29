@@ -42,6 +42,13 @@ Route::domain(env('APP_URL'))->group(function () {
 });
 
 Route::domain('panel.' . env('APP_URL'))->group(function(){
+    Route::view('dashboard', 'dashboard')
+->middleware(['auth:admin'])
+->name('dashboard');
+
+Route::post('admin/logout', App\Livewire\Actions\Logout::class)
+    ->name('admin.logout');
+
     require __DIR__ . '/admin-auth.php';
 });
 
