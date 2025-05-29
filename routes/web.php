@@ -41,19 +41,9 @@ Route::domain(env('APP_URL'))->group(function () {
     require __DIR__ . '/auth.php';
 });
 
-Route::domasin('panel.' . env('APP_URL'))->group(function () {
-    Route::prefix('admin')->middleware('guest:admin')->group(function () {
-        Volt::route('login', 'admin_auth.login')
-            ->name('login');
-
-        Volt::route('register', 'admin_auth.register')
-            ->name('admin.register');
-    });
-
-    Route::view('dashboard', 'dashboard')
-        ->middleware(['auth:admin'])
-        ->name('dashboard');
-
-    Route::post('admin/logout', App\Livewire\Actions\Logout::class)
-        ->name('admin.logout');
+Route::domain('panel.' . env('APP_URL'))->group(function(){
+    
+    require __DIR__ . '/admin-auth.php';
 });
+
+
