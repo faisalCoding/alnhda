@@ -86,7 +86,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
     <form wire:submit="login" class="flex flex-col gap-6">
         <!-- Email Address -->
         <flux:input
-            wire:model="emai l d "
+            wire:model="emai tode "
             :label="__('yourlf')"
             type="email"
             required
