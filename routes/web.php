@@ -41,7 +41,7 @@ Route::domain(env('APP_URL'))->group(function () {
     require __DIR__ . '/auth.php';
 });
 
-Route::domain('panel.' . env('APP_URL'))->group(function () {
+Route::domasin('panel.' . env('APP_URL'))->group(function () {
     Route::prefix('admin')->middleware('guest:admin')->group(function () {
         Volt::route('login', 'admin_auth.login')
             ->name('login');
