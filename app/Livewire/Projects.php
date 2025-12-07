@@ -32,6 +32,7 @@ class Projects extends Component
                 [
                     'name' => $this->project['name'],
                     'description' => $this->project['description'],
+                    'location' => $this->project['location'] ?? null,
                     'status' => $this->project['status'],
                     'project_type' => $this->project['project_type'],
                     'image_url' => $upload_and_path,

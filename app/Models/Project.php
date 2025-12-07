@@ -15,6 +15,7 @@ class Project extends Model
         'description',
         'status',
         'project_type',
+        'location',
         'image_url',
     ];
 

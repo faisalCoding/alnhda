@@ -37,6 +37,13 @@
                     class=" py-2 rounded-2xl placeholder:text-white border-2 border-gray-400 focus:border-violet-600 bg-neutral-800 text-violet-300 text-center"></textarea>
             </div>
         </div>
+        <div class="">
+            <div class="flex flex-col">
+                <label for="project.location" class="text-violet-200 mb-3">الموقع</label>
+                <input placeholder="الموقع" type="text" wire:model="project.location" id="project.location"
+                    class=" py-2 rounded-full placeholder:text-white border-2 border-gray-400 bg-neutral-800 text-violet-300 text-center">
+            </div>
+        </div>
 
         <div class="flex flex-row-reverse gap-2 w-full">
             <div class="flex flex-col">
