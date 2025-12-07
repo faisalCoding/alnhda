@@ -39,7 +39,6 @@ class Projects extends Component
                 ]
             );
         } catch (\Throwable $th) {
-            dd($th);
             $this->addError('creating_error', 'هناك مشكلة حدثت أثناء إنشاء المشروع');
         }
     }
@@ -50,7 +49,6 @@ class Projects extends Component
         try {
             $path =  $this->image->store('uploads', 'public');
         } catch (\Throwable $th) {
-            dd($th);
             $this->addError('catch_upload', 'هناك مشكلة حدثت أثناء رفع الصورة');
         }
 
