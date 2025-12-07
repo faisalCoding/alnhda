@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 
 class Admin extends Authenticatable
 {
-    //
+    // hi all
      /** @use HasFactory<\Database\Factories\UserFactory> */
      use HasFactory, Notifiable;
 
