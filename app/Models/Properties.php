@@ -31,7 +31,7 @@ class Properties extends Model
         return $this->belongsTo(Project::class);
     }
     
-    public function propertiesImage() {
-        return $this->hasOne(ImageProperties::class);
+    public function propertiesImages() {
+        return $this->hasMany(ImageProperties::class);
     }
 }

@@ -14,54 +14,54 @@ class Properties extends Component
 
 
     #[Validate('required|min:3')]
-    public $name = '';
+    public $name = 'test';
 
-    #[Validate('required|min:3')]
+    #[Validate('required')]
     public $project_id;
 
-    #[Validate('required|min:3')]
-    public $price;
+    #[Validate('required')]
+    public $price = 1000;
 
-    #[Validate('required|min:3')]
-    public $offer;
+    #[Validate('required')]
+    public $offer = 100;
 
-    #[Validate('required|min:3')]
-    public $status;
+    #[Validate('required')]
+    public $status   = 'جديد';
 
-    #[Validate('required|min:3')]
-    public $rooms;
+    #[Validate('required    ')]
+    public $rooms = 1;
 
-    #[Validate('required|min:3')]
-    public $bathrooms;
+    #[Validate('required')]
+    public $bathrooms = 1;
 
-    #[Validate('required|min:3')]
-    public $living_rooms;
+    #[Validate('required')]
+    public $living_rooms = 1;
 
-    #[Validate('required|min:3')]
-    public $mainds_room;
+    #[Validate('required')]
+    public $mainds_room = 1;
 
-    #[Validate('required|min:3')]
-    public $area;
+    #[Validate('required')]
+    public $area = 100;
 
-    #[Validate('required|min:3')]
-    public $doors;
+    #[Validate('required')]
+    public $doors = 1;
 
-    #[Validate('required|min:3')]
-    public $type;
+    #[Validate('required')]
+    public $type = ' غرفة واحدة ';
 
-    #[Validate('required|min:3')]
-    public $parkings;
+    #[Validate('required')]
+    public $parkings = 1;
 
-    #[Validate('required|min:3')]
-    public $driver_room;
+    #[Validate('required')]
+    public $driver_room = 1;
 
-    #[Validate('required|min:3')]
-    public $facade;
+    #[Validate('required')]
+    public $facade = 'test';
 
-    #[Validate('required|min:3')]
-    public $furniture;
+    #[Validate('required')]
+    public $furniture = 'test';
 
-    #[Validate(['photos.*' => 'image'])]
+    #[Validate(['photos.*' => 'mimes:jpeg,jpg,png|max:' . 1024 * 100])]
     public $photos = [];
 
 
@@ -73,10 +73,9 @@ class Properties extends Component
 
     public function createProperties()
     {
+        $this->validate();
 
-        $this->save();
-
-        \App\Models\Properties::create([
+        $property = \App\Models\Properties::create([
             'name'         => $this->name,
             'project_id'   => $this->project_id,
             'price'        => $this->price,
@@ -94,12 +93,31 @@ class Properties extends Component
             'facade'       => $this->facade,
             'furniture'    => $this->furniture,
         ]);
+        $this->saveImages($property->id);
+        
+        $this->reset(['name', 'price', 'offer', 'status', 'rooms', 'bathrooms', 'living_rooms', 'mainds_room', 'area', 'doors', 'type', 'parkings', 'driver_room', 'facade', 'furniture', 'photos']);
+        session()->flash('message', 'Units successfully created.');
     }
 
-    public function save()
+    public function saveImages($propertyId)
     {
+        
         foreach ($this->photos as $photo) {
-            $photo->store('uploads', 'public');
+            $path = $photo->store('uploads', 'public');
+            $image = \App\Models\ImageProperties::create([
+                'url' => $path,
+                'properties_id' => $propertyId,
+            ]);
+           
         }
+    }
+
+    public function removePhoto($index)
+    {
+        array_splice($this->photos, $index, 1);
+    }
+    public function deleteProperty($id)
+    {
+        \App\Models\Properties::find($id)->delete();
     }
 }

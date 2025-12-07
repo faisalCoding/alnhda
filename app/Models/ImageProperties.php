@@ -15,7 +15,7 @@ class ImageProperties extends Model
 
 
     public function properties(){
-        return $this->belongto(Properties::class);
+        return $this->belongsTo(Properties::class);
     }
 
 }

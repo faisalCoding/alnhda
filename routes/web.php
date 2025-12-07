@@ -37,6 +37,10 @@ Route::domain(env('APP_URL'))->group(function () {
         return view('blog', ['blog' => $blog]);
     })->name('blog');
 
+    Route::get('properties/{properties}', function (\App\Models\Properties $properties) {
+        return view('properties', ['properties' => $properties]);
+    })->name('properties');
+
 
     require __DIR__ . '/auth.php';
 });

@@ -12,7 +12,7 @@ class Projects extends Component
 
     use WithFileUploads;
 
-    #[Rule('nullable|sometimes|image|max:' . 1024 * 3)]
+    #[Validate('required|image|max:2048|dimensions:max_width=3000,max_height=3000|mimes:jpg,jpeg,png,webp,bmp,gif')]
     public $image;
 
     public $project = [];
@@ -39,7 +39,8 @@ class Projects extends Component
                 ]
             );
         } catch (\Throwable $th) {
-            $this->addError('creating_error', 'هناك مشكلة حدثت أثناء إنشاء الحساب');
+            dd($th);
+            $this->addError('creating_error', 'هناك مشكلة حدثت أثناء إنشاء المشروع');
         }
     }
 
@@ -49,9 +50,14 @@ class Projects extends Component
         try {
             $path =  $this->image->store('uploads', 'public');
         } catch (\Throwable $th) {
+            dd($th);
             $this->addError('catch_upload', 'هناك مشكلة حدثت أثناء رفع الصورة');
         }
 
         return $path;
+    }
+    public function deleteProject($id)
+    {
+        Project::find($id)->delete();
     }
 }
