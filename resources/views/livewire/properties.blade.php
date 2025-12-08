@@ -4,17 +4,35 @@
     <div class="w-full lg:w-1/4 flex flex-col gap-4">
         <div class="bg-neutral-800 rounded-2xl shadow-sm border border-neutral-700 overflow-hidden">
             <div class="bg-[#498e49]/20 p-4 border-b border-[#498e49]/20">
-                <h3 class="font-bold text-[#498e49] text-center">المشاريع المنشأة</h3>
+                <h3 class="font-bold text-[#498e49] text-center">الوحدات المنشأة</h3>
             </div>
             <div class="p-2 flex flex-col gap-2 max-h-[600px] overflow-y-auto">
-                @foreach (\App\Models\Properties::latest()->get() as $property)
-                    <div class="flex justify-between items-center bg-neutral-700/50 p-3 rounded-xl text-gray-200 hover:bg-[#498e49] hover:text-white transition-all duration-200 group">
-                        <span class="font-medium cursor-pointer flex-grow">{{ $property->name }}</span>
-                        <button wire:click="deleteProperty({{ $property->id }})" wire:confirm="Are you sure you want to delete this property?" class="text-gray-400 hover:text-red-200 group-hover:text-white transition-colors p-1">
-                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                             </svg>
-                        </button>
+                @foreach (\App\Models\Project::with('properties')->latest()->get() as $project)
+                    <div x-data="{ open: false }" class="bg-neutral-700/50 p-3 rounded-xl text-gray-200">
+                        <div @click="open = !open" class="flex justify-between items-center cursor-pointer">
+                            <h4 class="font-bold text-[#498e49]">{{ $project->name }}</h4>
+                            <svg :class="{ 'rotate-90': open }" class="w-4 h-4 text-[#498e49] transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </div>
+                        <div x-show="open" x-collapse class="mt-2">
+                            @if ($project->properties->isNotEmpty())
+                                <div class="flex flex-col gap-1">
+                                    @foreach ($project->properties as $property)
+                                        <div class="flex justify-between items-center bg-neutral-600/50 p-2 rounded-lg text-gray-200 hover:bg-[#498e49] hover:text-white transition-all duration-200 group">
+                                            <span class="font-medium cursor-pointer flex-grow">{{ $property->name }}</span>
+                                            <button wire:click="deleteProperty({{ $property->id }})" wire:confirm="Are you sure you want to delete this property?" class="text-gray-400 hover:text-red-200 group-hover:text-white transition-colors p-1">
+                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                 </svg>
+                                            </button>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-gray-400 text-sm italic">لا توجد وحدات لهذا المشروع.</p>
+                            @endif
+                        </div>
                     </div>
                 @endforeach
             </div>
@@ -100,7 +118,7 @@
 
                         <div class="flex flex-col gap-2">
                             <label class="text-sm font-medium text-gray-400">عرض خاص (اختياري)</label>
-                            <input type="text" wire:model="offer" placeholder="مثال: خصم 10%" class="w-full p-3 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200 placeholder-neutral-500 focus:border-[#498e49] focus:ring focus:ring-[#498e49]/20 outline-none transition-all">
+                            <input type="text" autocomplete wire:model="offer" placeholder="مثال: خصم 599000 ريال" class="w-full p-3 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200 placeholder-neutral-500 focus:border-[#498e49] focus:ring focus:ring-[#498e49]/20 outline-none transition-all">
                         </div>
 
                         <div class="flex flex-col gap-2">

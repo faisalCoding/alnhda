@@ -14,25 +14,25 @@ class Properties extends Component
 
 
     #[Validate('required|min:3')]
-    public $name = 'test';
+    public $name = 'شقة';
 
     #[Validate('required')]
     public $project_id;
 
     #[Validate('required')]
-    public $price = 1000;
+    public $price = 550000;
 
     #[Validate('required')]
-    public $offer = 100;
+    public $offer = 500000;
 
     #[Validate('required')]
     public $status   = 'جديد';
 
-    #[Validate('required    ')]
-    public $rooms = 1;
+    #[Validate('required')]
+    public $rooms = 5;
 
     #[Validate('required')]
-    public $bathrooms = 1;
+    public $bathrooms = 3;
 
     #[Validate('required')]
     public $living_rooms = 1;
@@ -41,13 +41,13 @@ class Properties extends Component
     public $mainds_room = 1;
 
     #[Validate('required')]
-    public $area = 100;
+    public $area = 180;
 
     #[Validate('required')]
-    public $doors = 1;
+    public $doors = 2;
 
     #[Validate('required')]
-    public $type = ' غرفة واحدة ';
+    public $type = 'شقة';
 
     #[Validate('required')]
     public $parkings = 1;
@@ -56,11 +56,10 @@ class Properties extends Component
     public $driver_room = 1;
 
     #[Validate('required')]
-    public $facade = 'test';
+    public $facade = 'شرقية جنوبية';
 
     #[Validate('required')]
-    public $furniture = 'test';
-
+    public $furniture = true;
     public $photos = [];
 
 
@@ -100,14 +99,6 @@ class Properties extends Component
 
     public function saveImages($propertyId)
     {
-        
-
-        foreach ($this->photos as $photo) {
-            if (!$photo->isValid()) {
-                // سيعطيك هذا السطر سبب الفشل الحقيقي لكل صورة
-                dd($photo->getErrorMessage()); 
-            }
-        }
 
         foreach ($this->photos as $photo) {
             $path = $photo->store('uploads', 'public');

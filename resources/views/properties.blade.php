@@ -122,7 +122,7 @@
                         @if($properties->offer)
                              <li class="flex flex-col gap-1 mt-4 p-3 bg-red-50 rounded-xl border border-red-100">
                                 <span class="text-red-500 font-bold text-sm">عرض خاص</span>
-                                <span class="font-bold text-red-700">{{ $properties->offer }}</span>
+                                <span class="font-bold text-red-700">{{ $properties->offer }} ريال</span>
                             </li>
                         @endif
                     </ul>
