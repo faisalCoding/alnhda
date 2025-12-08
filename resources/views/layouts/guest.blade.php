@@ -30,7 +30,7 @@
     class="transition_to_up dark:bg-[#0a0a0a] text-[#1b1b18] flex justify-stretch  min-h-screen flex-col w-screen duration-20 ">
 
     @section('header')
-        <header class="flex justify-center items-center w-full shadow rounded-xl h-25 ">
+        <header class="sticky top-0 z-50 flex justify-center items-center w-full h-25 ">
             @livewire('header-nav-bar')
         </header>
     @show
