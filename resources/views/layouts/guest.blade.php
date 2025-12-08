@@ -40,6 +40,7 @@
         @show
     </div>
 
+    @include('partials.whatsapp')
     @include('partials.footer')
     @vite('resources/js/app.js')
 

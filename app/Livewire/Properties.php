@@ -61,7 +61,6 @@ class Properties extends Component
     #[Validate('required')]
     public $furniture = 'test';
 
-    #[Validate(['photos.*' => 'mimes:jpeg,jpg,png|max:' . 1024 * 100])]
     public $photos = [];
 
 
@@ -102,6 +101,14 @@ class Properties extends Component
     public function saveImages($propertyId)
     {
         
+
+        foreach ($this->photos as $photo) {
+            if (!$photo->isValid()) {
+                // سيعطيك هذا السطر سبب الفشل الحقيقي لكل صورة
+                dd($photo->getErrorMessage()); 
+            }
+        }
+
         foreach ($this->photos as $photo) {
             $path = $photo->store('uploads', 'public');
             $image = \App\Models\ImageProperties::create([
