@@ -33,6 +33,8 @@ return new class extends Migration
             $table->integer('driver_room')->nullable();
             $table->text('facade')->nullable();
             $table->boolean('furniture')->default(false);
+            $table->text('unit_youtube')->nullable();
+            $table->text('stages_building_youtube')->nullable();
 
 
 

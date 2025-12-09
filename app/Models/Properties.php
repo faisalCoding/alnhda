@@ -25,6 +25,8 @@ class Properties extends Model
         'facade',
         'furniture',
         'properties_image',
+        'unit_youtube',
+        'stages_building_youtube',
     ];
 
     public function project(){

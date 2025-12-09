@@ -59,6 +59,12 @@ class Properties extends Component
     public $facade = 'شرقية جنوبية';
 
     #[Validate('required')]
+    public $unit_youtube = 'https://www.youtube.com/embed/PgmZoGOWf8M';
+
+    #[Validate('required')]
+    public $stages_building_youtube = 'https://www.youtube.com/embed/PgmZoGOWf8M';
+
+    #[Validate('required')]
     public $furniture = true;
     public $photos = [];
 
@@ -90,6 +96,9 @@ class Properties extends Component
             'driver_room'  => $this->driver_room,
             'facade'       => $this->facade,
             'furniture'    => $this->furniture,
+            'unit_youtube'      => $this->youtube,
+            'stages_building_youtube' => $this->stages_building_youtube,
+
         ]);
         $this->saveImages($property->id);
         
