@@ -48,6 +48,42 @@
                         </span>
                     </div>
                 </div>
+            <div class="flex gap-4 items-center justify-center">
+                 <div class="w-6/12 ">
+                <div class="flex items-center mb-6">
+                         <div class="w-1.5 h-8 bg-[#498e49] rounded-full ml-3"></div>
+                        <h2 class="text-2xl font-bold text-gray-800">فيديو الوحدة</h2>
+                    </div>
+                </div>
+                 <div class="w-6/12 ">
+                 <div class="flex items-center mb-6">
+                         <div class="w-1.5 h-8 bg-[#498e49] rounded-full ml-3"></div>
+                        <h2 class="text-2xl font-bold text-gray-800">فيديو مراحل انشاء الوحدة</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-4 items-center justify-center">
+                                {{-- YouTube Video --}}
+                <div class="w-6/12 relative rounded-3xl overflow-hidden shadow-xl bg-gray-100 aspect-video group">
+                    <iframe class="absolute top-0 left-0 w-full h-full" 
+                            src="https://www.youtube.com/embed/Hu59ahQCpxm2" 
+                            title="YouTube video player" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                            allowfullscreen>
+                    </iframe>
+                </div>
+                {{-- YouTube Video --}}
+                <div class="w-6/12 relative rounded-3xl overflow-hidden shadow-xl bg-gray-100 aspect-video group">
+                    <iframe class="absolute top-0 left-0 w-full h-full" 
+                            src="https://www.youtube.com/embed/Hu59ahQCpxm2" 
+                            title="YouTube video player" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                            allowfullscreen>
+                    </iframe>
+                </div>
+            </div>
 
                 {{-- Description & Details --}}
                  <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
@@ -92,6 +128,48 @@
                          <div class="p-4 bg-gray-50 rounded-xl">
                             <span class="block text-gray-400 text-sm mb-1">الواجهة</span>
                             <span class="font-bold text-gray-800">{{ $properties->facade }}</span>
+                        </div>
+                    </div>
+                </div>
+                                {{-- Description & Details --}}
+                 <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
+                    <div class="flex items-center mb-6">
+                         <div class="w-1.5 h-8 bg-[#498e49] rounded-full ml-3"></div>
+                        <h2 class="text-2xl font-bold text-gray-800">المواد المستخدمة</h2>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4 text-center md:text-right">
+                         <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
+                             <img class=" max-h-45"src="{{ url('/img/alfanar.png') }}" alt="">
+                             <span class="block text-gray-600 text-md mb-1">المفاتيح والأفياش والطين والقواطع ضمان 25 سنة</span>
+                        </div>
+                        <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
+                            <img class=" max-h-45"src="{{ url('/img/aljazira.png') }}" alt="">
+                            <span class="block text-gray-600 text-md mb-1">الدهانات الخارجية</span>
+                        </div>
+                         <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
+                            <img class=" max-h-45"src="{{ url('/img/fosroc.jpg') }}" alt="">
+                            <span class="block text-gray-600 text-md mb-1">أرضيات المواقف</span>
+                        </div>
+                         <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
+                            <img class=" max-h-45"src="{{ url('/img/jontun.png') }}" alt="">
+                            <span class="block text-gray-600 text-md mb-1"> دهانات الداخلية</span>
+                        </div>
+                         <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
+                             <img class=" max-h-45"src="{{ url('/img/polybit.jpg') }}" alt="">
+                             <span class="block text-gray-600 text-md mb-1"> العازل الخارجي للخزانات</span>
+                        </div>
+                         <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
+                            <img class=" max-h-45"src="{{ url('/img/saveto.png') }}" alt="">
+                            <span class="block text-gray-600 text-md mb-1"> غراء البلاط الحوائط</span>
+                        </div>
+                         <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
+                             <img class=" max-h-45"src="{{ url('/img/sika.png') }}" alt="">
+                             <span class="block text-gray-600 text-md mb-1">العزل الداخلي لخزانات</span>
+                        </div>
+                        <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
+                            <img class=" max-h-45"src="{{ url('/img/weber.jpg') }}" alt="">
+                            <span class="block text-gray-600 text-md mb-1"> عازل أرضيات الحمامات</span>
                         </div>
                     </div>
                 </div>
