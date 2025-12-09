@@ -66,8 +66,7 @@
                                 {{-- YouTube Video --}}
                 <div class="w-6/12 relative rounded-3xl overflow-hidden shadow-xl bg-gray-100 aspect-video group">
                     <iframe class="absolute top-0 left-0 w-full h-full" 
-                            src="https://www.youtube.com/embed/Hu59ahQCpxm2" 
-                            title="YouTube video player" 
+                            src="https://www.youtube.com/embed/PgmZoGOWf8M"
                             frameborder="0" 
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                             allowfullscreen>
@@ -76,7 +75,7 @@
                 {{-- YouTube Video --}}
                 <div class="w-6/12 relative rounded-3xl overflow-hidden shadow-xl bg-gray-100 aspect-video group">
                     <iframe class="absolute top-0 left-0 w-full h-full" 
-                            src="https://www.youtube.com/embed/Hu59ahQCpxm2" 
+                            src="https://www.youtube.com/embed/PgmZoGOWf8M" 
                             title="YouTube video player" 
                             frameborder="0" 
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
