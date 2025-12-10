@@ -6,6 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
+    <title>@yield('title') | {{ config('app.name', 'كيان النهضة العقارية') }}</title>
+
+    {{-- 2. الوصف --}}
+    {{-- الوصف الافتراضي الذي قدمته --}}
+    <meta name="description" content="@yield('description', 'شركة متخصصة وذات خبرة في التطوير العقاري، نقدم أفضل الحلول السكنية والاستثمارية.')">
+
+    {{-- 3. Open Graph (للواتساب وفيسبوك) --}}
+    <meta property="og:site_name" content="كيان النهضة العقارية" />
+    <meta property="og:title" content="@yield('title', 'كيان النهضة العقارية')" />
+    <meta property="og:description" content="@yield('description', 'شركة متخصصة وذات خبرة في التطوير العقاري.')" />
+    <meta property="og:image" content="@yield('image', asset('images/logo.png'))" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="{{ url()->current() }}" />
+
+    {{-- بقية الروابط وملفات الـ CSS --}}
+
     <title>@yield('title', env('APP_NAME'))</title>
 
     <!-- Fonts -->
