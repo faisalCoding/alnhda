@@ -64,12 +64,12 @@
                 </h3>
                 <ul class="space-y-4 mb-8">
                     <li class="flex items-center gap-3 text-zinc-600 justify-center md:justify-start">
-                        <svg class="w-5 h-5 text-[#498E49]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        <span>جدة، المملكة العربية السعودية</span>
-                    </li>
-                    <li class="flex items-center gap-3 text-zinc-600 justify-center md:justify-start">
                         <svg class="w-5 h-5 text-[#498E49]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                         <a href="mailto:info@alnhda.com" class="hover:text-[#498E49] transition-colors">info@alnhda.com</a>
+                    </li>
+                    <li class="flex items-center gap-3 text-zinc-600 justify-center md:justify-start">
+                        <svg class="w-5 h-5 text-[#498E49]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <span>جدة، المملكة العربية السعودية</span>
                     </li>
                 </ul>
 
@@ -103,13 +103,13 @@
 
         {{-- Bottom Bar --}}
         <div class="mt-12 pt-8 border-t border-zinc-200 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-right">
-            <p class="text-zinc-500 text-sm">
-                جميع الحقوق محفوظة للنهضة العقارية © {{ date('Y') }}
-            </p>
             <div class="flex gap-6 text-sm text-zinc-500">
                 <a href="#" class="hover:text-[#498E49] transition-colors">سياسة الخصوصية</a>
                 <a href="#" class="hover:text-[#498E49] transition-colors">شروط الاستخدام</a>
             </div>
+            <p class="text-zinc-500 text-sm">
+                جميع الحقوق محفوظة للنهضة العقارية © {{ date('Y') }}
+            </p>
         </div>
     </div>
 </footer>

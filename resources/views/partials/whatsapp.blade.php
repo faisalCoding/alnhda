@@ -1,4 +1,4 @@
-<a href="https://wa.me/966500000000" target="_blank" rel="noopener noreferrer" 
+<a href="https://wa.me/966564364261?text=لدي%20استفسار%20عن%20العروض%20المتوفرة%20لديكم" target="_blank" rel="noopener noreferrer" 
    class="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 bg-[#25D366] text-white rounded-full shadow-lg hover:bg-[#20ba5a] hover:scale-110 transition-all duration-300 animate-bounce-slow"
    aria-label="Chat on WhatsApp">
     <svg viewBox="0 0 24 24" class="w-8 h-8 fill-current" xmlns="http://www.w3.org/2000/svg">
