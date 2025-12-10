@@ -81,7 +81,7 @@
                         </div>
                         <div
                             class="sm:w-full max-sm:w-full relative rounded-3xl overflow-hidden shadow-xl bg-gray-100 aspect-video">
-                            <iframe class=" w-full h-full" src="{{ $properties->unit_youtube }}" frameborder="0"
+                            <iframe class=" w-full h-full" src="{{ $properties->stages_building_youtube }}" frameborder="0"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                 allowfullscreen>
                             </iframe>
