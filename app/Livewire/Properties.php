@@ -96,7 +96,7 @@ class Properties extends Component
             'driver_room'  => $this->driver_room,
             'facade'       => $this->facade,
             'furniture'    => $this->furniture,
-            'unit_youtube'      => $this->youtube,
+            'unit_youtube'      => $this->unit_youtube,
             'stages_building_youtube' => $this->stages_building_youtube,
 
         ]);
