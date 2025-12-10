@@ -221,7 +221,7 @@
                     <h3 class="font-bold text-xl mb-2">مهتم بهذا العقار؟</h3>
                     <p class="text-white/80 text-sm mb-6">تواصل معنا الآن للحصول على مزيد من المعلومات أو لحجز موعد
                         للمعاينة.</p>
-                    <a href="https://wa.me/966564364261?text=ارغب بالاستفسار%20عن%20{{ $properties->name }}" target="_blank" rel="noopener noreferrer" 
+                    <a href="https://wa.me/966564364261?text=ارغب+بالاستفسار+عن+{{ $properties->name }}" target="_blank" rel="noopener noreferrer" 
                         class="w-full block bg-white text-[#498e49] font-bold py-3 rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
                         تواصل معنا
                     </a>
