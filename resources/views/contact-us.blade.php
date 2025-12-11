@@ -1,7 +1,8 @@
 @extends('layouts.guest')
 
 @section('title', 'تواصل معنا')
-@section('description', 'تواصل مع كيان النهضة العقارية للاستفسار عن مشاريعنا وخدماتنا في جدة، المملكة العربية
+@section('description',
+    'تواصل مع كيان النهضة العقارية للاستفسار عن مشاريعنا وخدماتنا في جدة، المملكة العربية
     السعودية.')
 
 @section('main')
@@ -9,7 +10,7 @@
         {{-- Hero Section --}}
         <div class="relative bg-zinc-900 h-[300px] flex items-center justify-center overflow-hidden">
             <div
-                class="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=2670&auto=format&fit=crop')] bg-cover bg-center">
+                class="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1554469384-e58fac16e23a?q=80&w=2670&auto=format&fit=crop')] bg-cover bg-center">
             </div>
             <div class="relative z-10 text-center px-4">
                 <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">تواصل معنا</h1>
