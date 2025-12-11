@@ -15,7 +15,7 @@
                 <div class="p-6 w-full text-right "> {{-- Added padding and text-right for RTL --}}
                     <h2 class="text-3xl text-[#49A035] mb-3">{{ $project->name }}</h2> {{-- Increased font size, weight, and color --}}
                     <p class="text-gray-500 text-lg leading-relaxed mb-6 ">{{ $project->description }}</p> {{-- Adjusted text color, line height, and margin --}}
-                    <div class="border-t border-gray-200 pt-6 space-y-4 *:flex-row-reverse"> {{-- Added border and spacing --}}
+                    <div class="border-t border-gray-200 pt-6 space-y-4 *:flex-row-reverse bg-gradient-to-t from-black/95 via-black/0 to-transparent p-10"> {{-- Added border and spacing --}}
                         <div class="flex justify-between items-center "> {{-- Used justify-between for alignment --}}
                             <p class="text-lg font-semibold text-gray-700">عدد الوحدات</p>
                             <p class="text-xl text-[#498E49] font-bold">{{ $project->properties()->count() }}</p> {{-- Increased font size and weight --}}

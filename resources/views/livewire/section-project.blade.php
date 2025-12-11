@@ -7,9 +7,9 @@
     <div class="container mx-auto px-4">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             @foreach (App\Models\Project::take(4)->get() as $project)
-                <div class="group bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+                <div class="group bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full ">
                     {{-- Image Section --}}
-                    <div class="relative h-60 overflow-hidden">
+                    <div class="relative h-60 overflow-hidden bg-gradient-to-t ">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 opacity-60"></div>
                         <img class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" 
                              src="/storage/{{ $project->image_url }}" 
@@ -21,9 +21,9 @@
                             </span>
                         </div>
                         
-                        <div class="absolute bottom-4 right-4 z-20 text-white text-right">
+                        <div class="absolute bottom-4 right-4 z-20 text-white text-right ">
                             <h2 class="text-xl font-bold mb-1 shadow-black/10 drop-shadow-md">{{ $project->name }}</h2>
-                            <p class="text-gray-200 text-xs flex items-center gap-1">
+                            <p class="text-white text-sm flex items-center gap-1">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                 جدة - {{ $project->location }}
                             </p>
