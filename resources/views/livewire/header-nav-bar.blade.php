@@ -1,8 +1,8 @@
-<nav x-data="{ open: false }" class="top-0 z-50 container mx-auto px-4 py-3 bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 dark:bg-neutral-900/90 dark:border-neutral-800">
-    <div class="flex justify-between items-center dir-ltr">
+<nav x-data="{ open: false }" class="top-0 z-50 container  mx-auto px-4 py-3 bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 dark:bg-neutral-900/90 dark:border-neutral-800">
+    <div class="flex justify-between items-center max-md:[direction:rtl]">
         
         {{-- Desktop Menu --}}
-        <div class="hidden md:flex items-center space-x-8">
+        <div class="hidden md:flex items-center space-x-8 ">
             <a href="{{ route('welcome') }}" 
                class="text-gray-600 hover:text-[#498E49] font-medium transition-colors duration-300 relative group py-2"
                wire:current="text-[#498E49] font-bold"
@@ -27,14 +27,18 @@
                 <span class="absolute bottom-0 right-0 w-0 h-0.5 bg-[#498E49] transition-all duration-300 group-hover:w-full"></span>
             </a>
 
-            <a href="#about" 
-               class="text-gray-600 hover:text-[#498E49] font-medium transition-colors duration-300 relative group py-2">
+            <a href="{{ route('about-us') }}" 
+               class="text-gray-600 hover:text-[#498E49] font-medium transition-colors duration-300 relative group py-2"
+               wire:current="text-[#498E49] font-bold"
+               wire:navigate.hover>
                 من نحن
                 <span class="absolute bottom-0 right-0 w-0 h-0.5 bg-[#498E49] transition-all duration-300 group-hover:w-full"></span>
             </a>
 
-            <a href="#contact" 
-               class="text-gray-600 hover:text-[#498E49] font-medium transition-colors duration-300 relative group py-2">
+            <a href="{{ route('contact-us') }}" 
+               class="text-gray-600 hover:text-[#498E49] font-medium transition-colors duration-300 relative group py-2"
+               wire:current="text-[#498E49] font-bold"
+               wire:navigate.hover>
                 تواصل معنا
                 <span class="absolute bottom-0 right-0 w-0 h-0.5 bg-[#498E49] transition-all duration-300 group-hover:w-full"></span>
             </a>
@@ -76,10 +80,10 @@
             <a href="{{ route('blogs') }}" wire:navigate class="text-gray-600 hover:text-[#498E49] font-medium block px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
                 المقالات
             </a>
-            <a href="#about" class="text-gray-600 hover:text-[#498E49] font-medium block px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
+            <a href="{{ route('about-us') }}" wire:navigate class="text-gray-600 hover:text-[#498E49] font-medium block px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
                 من نحن
             </a>
-            <a href="#contact" class="text-gray-600 hover:text-[#498E49] font-medium block px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
+            <a href="{{ route('contact-us') }}" wire:navigate class="text-gray-600 hover:text-[#498E49] font-medium block px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
                 تواصل معنا
             </a>
             <div @click="open = false" class="text-gray-600 text-center hover:text-[#498E49] block px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">

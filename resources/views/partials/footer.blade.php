@@ -36,7 +36,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="text-zinc-600 hover:text-[#498E49] transition-colors duration-300 flex items-center gap-2 group">
+                        <a href="{{ route('about-us') }}" class="text-zinc-600 hover:text-[#498E49] transition-colors duration-300 flex items-center gap-2 group">
                             <span class="block w-1.5 h-1.5 rounded-full bg-zinc-300 group-hover:bg-[#498E49] transition-colors"></span>
                             عن النهضة
                         </a>
@@ -48,7 +48,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="text-zinc-600 hover:text-[#498E49] transition-colors duration-300 flex items-center gap-2 group">
+                        <a href="{{ route('contact-us') }}" class="text-zinc-600 hover:text-[#498E49] transition-colors duration-300 flex items-center gap-2 group">
                             <span class="block w-1.5 h-1.5 rounded-full bg-zinc-300 group-hover:bg-[#498E49] transition-colors"></span>
                             اتصل بنا
                         </a>
@@ -64,8 +64,12 @@
                 </h3>
                 <ul class="space-y-4 mb-8">
                     <li class="flex items-center gap-3 text-zinc-600 justify-center md:justify-start">
+                        <svg class="w-5 h-5 text-[#498E49]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        <a href="tel:966564364261" class="dir-ltr hover:text-[#498E49] transition-colors">056 436 4261</a>
+                    </li>
+                    <li class="flex items-center gap-3 text-zinc-600 justify-center md:justify-start">
                         <svg class="w-5 h-5 text-[#498E49]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                        <a href="mailto:info@alnhda.com" class="hover:text-[#498E49] transition-colors">info@alnhda.com</a>
+                        <a href="mailto:info@kayanalnhda.com" class="hover:text-[#498E49] transition-colors">info@kayanalnhda.com</a>
                     </li>
                     <li class="flex items-center gap-3 text-zinc-600 justify-center md:justify-start">
                         <svg class="w-5 h-5 text-[#498E49]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -92,10 +96,16 @@
             {{-- Map Section --}}
             <div class="lg:col-span-3">
                 <div class="w-full h-48 md:h-full min-h-[200px] rounded-2xl overflow-hidden shadow-sm border border-zinc-200">
-                     <iframe
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14902.930495146522!2d39.20815155!3d21.57014495!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x15c3d00164c9d519%3A0x7d25e0c5d6f46141!2sAl%20Waha%2C%20Jeddah%2023344%2C%20Saudi%20Arabia!5e0!3m2!1sen!2sus!4v1678886400000!5m2!1sen!2sus"
-                        class="w-full h-full border-0" allowfullscreen="" loading="lazy"
-                        referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    <iframe
+  src="https://maps.google.com/maps?q=جامع%20الانصار%20حي%20الواحة%20جدة@21.5660262,39.2480873&z=15&output=embed&z=17"
+  width="600"
+  height="450"
+  style="border:0;"
+  allowfullscreen=""
+  loading="lazy"
+  z=6
+  referrerpolicy="no-referrer-when-downgrade"
+></iframe>
                 </div>
             </div>
 
