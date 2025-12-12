@@ -7,18 +7,23 @@
             {{-- Tag Header Controls --}}
             <div class="flex items-center gap-2 mb-2">
                 <span class="text-xs text-neutral-500">Tag Type:</span>
-                <select wire:model="tags.{{ $tag['id'] }}.tag_name" 
+                <select 
+                        :value="'{{ $tag['tag_name'] }}'"
                         x-on:change="$wire.updateTag('{{ $tag['id'] }}', 'tag_name', $event.target.value)"
                         class="bg-neutral-900 text-white rounded px-2 py-1 text-sm border border-neutral-600">
-                    <option value="div">div</option>
-                    <option value="section">section</option>
-                    <option value="h1">h1</option>
-                    <option value="h2">h2</option>
-                    <option value="p">p</option>
-                    <option value="span">span</option>
-                    <option value="img">img</option>
-                    <option value="a">a</option>
-                    <option value="button">button</option>
+                    <option value="div" {{ $tag['tag_name'] == 'div' ? 'selected' : '' }}>div</option>
+                    <option value="section" {{ $tag['tag_name'] == 'section' ? 'selected' : '' }}>section</option>
+                    <option value="h1" {{ $tag['tag_name'] == 'h1' ? 'selected' : '' }}>h1</option>
+                    <option value="h2" {{ $tag['tag_name'] == 'h2' ? 'selected' : '' }}>h2</option>
+                    <option value="h3" {{ $tag['tag_name'] == 'h3' ? 'selected' : '' }}>h3</option>
+                    <option value="h4" {{ $tag['tag_name'] == 'h4' ? 'selected' : '' }}>h4</option>
+                    <option value="h5" {{ $tag['tag_name'] == 'h5' ? 'selected' : '' }}>h5</option>
+                    <option value="h6" {{ $tag['tag_name'] == 'h6' ? 'selected' : '' }}>h6</option>
+                    <option value="p" {{ $tag['tag_name'] == 'p' ? 'selected' : '' }}>p</option>
+                    <option value="span" {{ $tag['tag_name'] == 'span' ? 'selected' : '' }}>span</option>
+                    <option value="img" {{ $tag['tag_name'] == 'img' ? 'selected' : '' }}>img</option>
+                    <option value="a" {{ $tag['tag_name'] == 'a' ? 'selected' : '' }}>a</option>
+                    <option value="button" {{ $tag['tag_name'] == 'button' ? 'selected' : '' }}>button</option>
                 </select>
 
                 <input type="text" placeholder="Classes (e.g. p-4 bg-red-500)" 

@@ -22,6 +22,7 @@ Route::domain(env('APP_URL'))->group(function () {
         Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
         Volt::route('settings/password', 'settings.password')->name('settings.password');
         Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
+        
     });
 
     Route::view('projects', 'projects')->name('projects');
@@ -44,6 +45,8 @@ Route::domain(env('APP_URL'))->group(function () {
 
     Route::view('about-us', 'about-us')->name('about-us');
     Route::view('contact-us', 'contact-us')->name('contact-us');
+    Route::view('privacy-policy', 'privacy-policy')->name('privacy-policy');
+    Route::view('terms-of-use', 'terms-of-use')->name('terms-of-use');
 
 
 

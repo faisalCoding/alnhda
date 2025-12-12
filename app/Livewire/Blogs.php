@@ -10,4 +10,5 @@ class Blogs extends Component
     {
         return view('livewire.blogs');
     }
+
 }

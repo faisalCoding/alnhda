@@ -7,6 +7,8 @@
 
 
     <title>@yield('title') | {{ config('app.name', 'كيان النهضة العقارية') }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('img/KNicon.png') }}">
+    <link rel="shortcut icon" href="{{ asset('img/KNicon.png') }}">
 
     {{-- 2. الوصف --}}
     {{-- الوصف الافتراضي الذي قدمته --}}

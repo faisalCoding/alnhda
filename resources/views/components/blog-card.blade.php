@@ -1,5 +1,5 @@
-<div x-data="" >
-    <div x-on:click="navigateTo('{{route('blog', $blog->id)}}');"
+<div x-data="">
+    <div x-on:click="navigateTo('{{ route('blog', $blog->id) }}');"
         class="flex flex-col items-center text-right  bg-white overflow-hidden  rounded-[64px] shadow-lg cursor-pointer md:min-w-xl ease-in-out duration-85 hover:scale-95 hover:border hover:border-green-500">
         <img class="w-13 object-cover self-end mr-10 mt-10" src="/img/post_icon.jpg" alt="">
         <h1 class="text-xl font-bold mx-2.5 mt-1 w-10/12">{{ $blog->title }}</h1>

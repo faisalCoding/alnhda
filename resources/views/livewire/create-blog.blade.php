@@ -1,6 +1,7 @@
 <div class="w-full flex flex-col lg:flex-row gap-8 p-6" dir="rtl">
     
-    {{-- Sidebar/Instructions --}}
+    {{-- Sidebar/Instructions - Only visible in Step 2 --}}
+    @if($currentStep === 2)
     <div class="w-full lg:w-1/4 flex flex-col gap-4">
         <div class="bg-neutral-800 rounded-2xl shadow-sm border border-neutral-700 overflow-hidden p-6">
             <h3 class="font-bold text-[#498e49] text-center mb-4">تعليمات بناء المقال</h3>
@@ -10,15 +11,22 @@
             <p class="text-gray-400 text-sm">4. املأ الاسم والوسوم (Classes) لتنسيق العنصر.</p>
         </div>
     </div>
+    @endif
 
     {{-- Main Builder Area --}}
-    <div class="w-full lg:w-3/4">
+    <div class="w-full {{ $currentStep === 2 ? 'lg:w-3/4' : 'lg:w-full max-w-4xl mx-auto' }}">
         <div class="bg-neutral-800 rounded-2xl shadow-sm border border-neutral-700 p-8">
             
             <div class="mb-8 flex items-center justify-between">
                 <div>
                      <h2 class="text-2xl font-bold text-gray-100">منشئ المقالات</h2>
-                     <p class="text-gray-400 text-sm mt-1">قم ببناء هيكل المقال باستخدام العلامات المتداخلة</p>
+                     <p class="text-gray-400 text-sm mt-1">
+                        @if($currentStep === 1)
+                            الخطوة 1: البيانات الأساسية للمقال
+                        @else
+                            الخطوة 2: بناء محتوى المقال
+                        @endif
+                     </p>
                 </div>
             </div>
 
@@ -35,41 +43,54 @@
                 </div>
             @endif
 
-            {{-- Basic Blog Info --}}
+            {{-- Step 1: Basic Blog Info --}}
+            @if($currentStep === 1)
             <div class="mb-8 border-b border-neutral-700 pb-8">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="flex flex-col gap-2">
                         <label class="text-sm font-medium text-gray-400">عنوان المقال</label>
                         <input type="text" wire:model="title" class="w-full p-3 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200 focus:border-[#498e49] focus:ring focus:ring-[#498e49]/20 outline-none transition-all">
+                        @error('title') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
                     <div class="flex flex-col gap-2">
                         <label class="text-sm font-medium text-gray-400">صورة الغلاف</label>
                         <div class="relative">
                             <input type="file" wire:model="image" class="w-full p-3 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200">
                         </div>
+                        @error('image') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
                 </div>
+                
+                <div class="mt-8 flex justify-end">
+                     <button wire:click="createBlog" class="bg-[#498e49] hover:bg-[#3d7a3d] text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-[#498e49]/20 transition-all">
+                         حفظ وبدء إضافة المحتوى
+                     </button>
+                </div>
             </div>
+            @endif
 
-            {{-- Tag Tree Builder --}}
+            {{-- Step 2: Tag Tree Builder --}}
+            @if($currentStep === 2)
             <div class="mb-8">
                 <h3 class="font-bold text-gray-300 mb-4 border-b border-neutral-700 w-fit pb-1">هيكل المقال</h3>
                 
+                {{-- Only pass tags, lastTag removed from logic as redundant --}}
                 <x-blog-tag-tree :tags="$tags" />
                 
-                <button wire:click="addTag" class="mt-4 w-full py-3 border-2 border-dashed border-neutral-600 text-neutral-400 rounded-xl hover:border-[#498e49] hover:text-[#498e49] hover:bg-[#498e49]/5 transition-all flex items-center justify-center gap-2">
+                <button wire:click="addTag(null)" class="mt-4 w-full py-3 border-2 border-dashed border-neutral-600 text-neutral-400 rounded-xl hover:border-[#498e49] hover:text-[#498e49] hover:bg-[#498e49]/5 transition-all flex items-center justify-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
                     </svg>
                     إضافة عنصر جذري جديد
                 </button>
+                
+                <div class="pt-8 border-t border-neutral-700 flex justify-end">
+                     <button wire:click="finish" class="bg-[#498e49] hover:bg-[#3d7a3d] text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-[#498e49]/20 transition-all">
+                         إنهاء وحفظ
+                     </button>
+                </div>
             </div>
-
-            <div class="pt-4 border-t border-neutral-700 flex justify-end">
-                 <button wire:click="save" class="bg-[#498e49] hover:bg-[#3d7a3d] text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-[#498e49]/20 transition-all">
-                     حفظ المقال
-                 </button>
-            </div>
+            @endif
 
         </div>
     </div>

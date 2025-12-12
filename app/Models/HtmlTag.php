@@ -13,7 +13,8 @@ class HtmlTag extends Model
         'classes',
         'order_by',
         'tag_attributes',
-        'parent_id',
+        'blog_id',
+        'html_tag_id',
         'parent_type'
     ];
 

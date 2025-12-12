@@ -13,137 +13,110 @@ class CreateBlog extends Component
 {
     use WithFileUploads;
 
+    public $currentStep = 1;
     public $title;
     public $image;
-    public $tags = [];
+    public $tags = []; // Tree structure
+    public $blogId;
 
     public function mount()
     {
-        // Initialize with one root container if needed, or empty
-        $this->addTag(); 
+        // No initial action needed
     }
 
-    public function addTag($parentId = null)
-    {
-        $newTag = [
-            'id' => Str::uuid()->toString(),
-            'tag_name' => 'div',
-            'classes' => '',
-            'order_by' => 0,
-            'tag_attributes' => '',
-            'has_text' => false,
-            'content' => '',
-            'children' => []
-        ];
-
-        if ($parentId === null) {
-            $this->tags[] = $newTag;
-        } else {
-            $this->tags = $this->addChildTag($this->tags, $parentId, $newTag);
-        }
-    }
-
-    private function addChildTag($tags, $parentId, $newTag)
-    {
-        foreach ($tags as &$tag) {
-            if ($tag['id'] === $parentId) {
-                $tag['children'][] = $newTag;
-                return $tags;
-            }
-            if (!empty($tag['children'])) {
-                $tag['children'] = $this->addChildTag($tag['children'], $parentId, $newTag);
-            }
-        }
-        return $tags;
-    }
-
-    public function removeTag($tagId)
-    {
-        $this->tags = $this->removeChildTag($this->tags, $tagId);
-    }
-
-    private function removeChildTag($tags, $tagId)
-    {
-        foreach ($tags as $key => &$tag) {
-            if ($tag['id'] === $tagId) {
-                unset($tags[$key]);
-                return array_values($tags);
-            }
-            if (!empty($tag['children'])) {
-                $tag['children'] = $this->removeChildTag($tag['children'], $tagId);
-            }
-        }
-        return array_values($tags);
-    }
-
-    public function updateTag($tagId, $field, $value)
-    {
-        $this->tags = $this->updateChildTag($this->tags, $tagId, $field, $value);
-    }
-
-    private function updateChildTag($tags, $tagId, $field, $value)
-    {
-        foreach ($tags as &$tag) {
-            if ($tag['id'] === $tagId) {
-                $tag[$field] = $value;
-                return $tags;
-            }
-            if (!empty($tag['children'])) {
-                $tag['children'] = $this->updateChildTag($tag['children'], $tagId, $field, $value);
-            }
-        }
-        return $tags;
-    }
-
-    public function save()
+    public function createBlog()
     {
         $this->validate([
             'title' => 'required',
             'image' => 'nullable|image',
         ]);
 
-        $imagePath = $this->image ? $this->image->store('blogs', 'public') : null;
+        $imagePath = $this->image ? $this->image->store('blogs', 'public') : '\/img\/blog.jpg';
 
         $blog = Blog::create([
             'title' => $this->title,
-            'image_blog' => $imagePath ?? '\/img\/blog.jpg',
+            'image_blog' => $imagePath,
         ]);
 
-        foreach ($this->tags as $index => $tagData) {
-            $this->saveTag($tagData, $blog->id, null, $index);
-        }
-
-        return redirect()->route('dashboard')->with('message', 'Created Blog Successfully');
+        $this->blogId = $blog->id;
+        $this->currentStep = 2;
+        
+        // Initialize with one root container if desired, or let user add one
+        $this->addTag(null);
     }
 
-    private function saveTag($tagData, $blogId, $parentId = null, $orderBy = 0)
+    public function addTag($parentId = null)
     {
-        $tag = HtmlTag::create([
-            'tag_name' => $tagData['tag_name'],
-            'classes' => $tagData['classes'],
-            'order_by' => $orderBy,
-            'tag_attributes' => $tagData['tag_attributes'],
-            'blog_id' => $parentId ? null : $blogId, 
-            'html_tag_id' => $parentId
+        HtmlTag::create([
+            'html_tag_id' => $parentId ?: null,
+            'tag_name' => 'div',
+            'classes' => '',
+            'order_by' => 0,
+            'tag_attributes' => '',
+            'blog_id' => $this->blogId,
         ]);
         
-        if (!$parentId) {
-            $tag->blog_id = $blogId;
-            $tag->save();
-        }
+        $this->refreshTags();
+    }
 
-        if ($tagData['has_text'] && !empty($tagData['content'])) {
-            HtmlTagText::create([
-                'html_tag_id' => $tag->id,
-                'content' => $tagData['content']
-            ]);
-        }
+    public function updateTag($tagId, $field, $value)
+    {
+        $tag = HtmlTag::find($tagId);
+        if (!$tag) return;
 
-        if (!empty($tagData['children'])) {
-            foreach ($tagData['children'] as $index => $childData) {
-                $this->saveTag($childData, $blogId, $tag->id, $index);
-            }
+        if ($field === 'content') {
+            $tag->content()->updateOrCreate([], ['content' => $value]);
+        } elseif ($field === 'has_text') {
+             // Logic for has_text toggle? 
+             // Maybe just ensures HtmlTagText entry exists or deletes it.
+             if(!$value) {
+                 $tag->content()->delete();
+             } else {
+                 $tag->content()->create(['content' => '']);
+             }
+        } else {
+            $tag->update([$field => $value]);
         }
+        
+        $this->refreshTags();
+    }
+
+    public function removeTag($tagId)
+    {
+        $tag = HtmlTag::find($tagId);
+        if ($tag) {
+            $tag->delete();
+        }
+        $this->refreshTags();
+    }
+
+    public function refreshTags()
+    {
+        $this->tags = $this->buildTree(null);
+    }
+
+    private function buildTree($parentId)
+    {
+        $tags = HtmlTag::where('blog_id', $this->blogId)
+                        ->where('html_tag_id', $parentId)
+                        ->orderBy('order_by')
+                        ->get();
+                        
+        return $tags->map(function($tag) {
+            $data = $tag->toArray();
+            
+            $contentModel = $tag->content;
+            $data['content'] = $contentModel ? $contentModel->content : '';
+            $data['has_text'] = !!$contentModel;
+            
+            $data['children'] = $this->buildTree($tag->id);
+            return $data;
+        })->toArray();
+    }
+
+    public function finish()
+    {
+        return redirect()->route('dashboard')->with('message', 'Blog created successfully');
     }
 
     public function render()

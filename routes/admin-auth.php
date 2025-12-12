@@ -18,5 +18,13 @@ Route::view('dashboard', 'dashboard')
 ->middleware(['auth:admin'])
 ->name('dashboard');
 
+Route::view('blogs-dashboard', 'blogs-dashboard')
+->middleware(['auth:admin'])
+->name('blogs-dashboard');
+
+Route::view('projects-dashboard', 'projects-dashboard')
+->middleware(['auth:admin'])
+->name('projects-dashboard');
+
 Route::post('admin/logout', App\Livewire\Actions\Logout::class)
     ->name('admin.logout');

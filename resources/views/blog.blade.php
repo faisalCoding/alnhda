@@ -5,10 +5,10 @@
 
 @section('main')
 
-<div class="bg-[#EAF5EA] w-full flex flex-col justify-center grow flex-1">
-    <h1 class="text-3xl font-bold text-[#49A035] my-20 text-center">اكتشف احدث المقالات</h1>
-    <div
-        class=" container pb-10 m-auto w-full flex flex-col flex-wrap justify-center items-stretch gap-4 md:flex-row-reverse  md:items-stretch xl:justify-start ">
+    <div class="bg-[#EAF5EA] w-full flex flex-col justify-center grow flex-1">
+        <h1 class="text-3xl font-bold text-[#49A035] my-20 text-center">اكتشف احدث المقالات</h1>
+        <div
+            class=" container pb-10 m-auto w-full flex flex-col flex-wrap justify-center items-stretch gap-4 md:flex-row-reverse  md:items-stretch xl:justify-start ">
 
             <div
                 class="flex flex-col items-center text-right  bg-white overflow-hidden  rounded-[64px] shadow-lg cursor-pointer md:min-w-xl ease-in-out duration-85 hover:scale-95 hover:border hover:border-green-500">
@@ -22,12 +22,11 @@
 
             </div>
 
-    </div>
+        </div>
 
-</div>
+    </div>
 
 
 
 
 @endsection
-
