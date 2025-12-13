@@ -2,7 +2,7 @@
     dir="rtl">
     {{-- Background Image --}}
     <div class="absolute inset-0 z-0">
-        <img src="/img/frontvilla.jpg" alt="Background" class="w-full h-full object-cover opacity-60">
+        <img src="/img/bg-home-page.jpeg" alt="Background" class="w-full h-full object-cover opacity-60">
         <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-zinc-900/90"></div>
     </div>
 
