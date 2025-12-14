@@ -50,6 +50,18 @@ Route::domain(env('APP_URL'))->group(function () {
 
 
 
+    Route::get('/sitemap.xml', function () {
+        $projects = Project::all();
+        $properties = \App\Models\Properties::all();
+        $blogs = Blog::all();
+
+        return response()->view('sitemap', [
+            'projects' => $projects,
+            'properties' => $properties,
+            'blogs' => $blogs,
+        ])->header('Content-Type', 'text/xml');
+    })->name('sitemap');
+
     require __DIR__ . '/auth.php';
 });
 
