@@ -50,11 +50,8 @@
                     </a>
                     <a href="https://wa.me/966564364261?text=مرحبا انا ابحث عن عقار من نوع دور" target="_blank"
                         class="group flex flex-col items-center justify-center gap-2 bg-white/5 hover:bg-[#49A035] border border-white/10 hover:border-[#49A035] rounded-xl py-4 px-2 transition-all duration-300">
-                        <svg class="w-6 h-6 text-white group-hover:scale-110 transition-transform" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 21h-9a2 2 0 01-2-2v-5.29a2 2 0 00-2-5.29 2.5 2.5 0 01.5-2.22l5-8.5a.64.64 0 01.56-.2V4a1.5 1.5 0 001.5 1.5A1.5 1.5 0 0115 7v10.59a2.5 2.5 0 01-.5 1.91l-5 8.5z" />
-                        </svg>
+                        <img src="/img/floorsicon.svg" class="w-6 h-6 group-hover:scale-110 transition-transform"
+                            alt="دور">
                         <span class="text-white text-sm font-medium">دور</span>
                     </a>
                 </div>

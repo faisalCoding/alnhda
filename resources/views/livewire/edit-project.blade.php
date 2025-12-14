@@ -1,6 +1,4 @@
-<div class="w-full flex flex-col lg:flex-row gap-8 p-6" dir="rtl">
-
-    {{-- Sidebar: Existing Projects --}}
+<div class="w-full flex flex-col items-center gap-8 p-6" dir="rtl">
 
     {{-- Main Form Area --}}
     <div class="w-full lg:w-3/4">
@@ -9,14 +7,14 @@
             {{-- Header --}}
             <div class="mb-8 flex items-center justify-between">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-100">إضافة مشروع جديد</h2>
-                    <p class="text-gray-400 text-sm mt-1">قم بتعبئة البيانات التالية لإضافة مشروع جديد</p>
+                    <h2 class="text-2xl font-bold text-gray-100">تعديل المشروع</h2>
+                    <p class="text-gray-400 text-sm mt-1">تعديل بيانات المشروع والمواصفات والصور</p>
                 </div>
                 <div class="w-12 h-12 bg-[#498e49]/20 rounded-full flex items-center justify-center text-[#498e49]">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
                 </div>
             </div>
@@ -54,22 +52,21 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                         <div class="flex flex-col gap-2">
                             <label class="text-sm font-medium text-gray-400">اسم المشروع</label>
-                            <input type="text" wire:model="project.name" placeholder="مثال: مشروع النخبة"
+                            <input type="text" wire:model="name" placeholder="مثال: مشروع النخبة"
                                 class="w-full p-3 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200 placeholder-neutral-500 focus:border-[#498e49] focus:ring focus:ring-[#498e49]/20 outline-none transition-all">
                         </div>
 
                         <div class="flex flex-col gap-2">
                             <label class="text-sm font-medium text-gray-400">الموقع</label>
-                            <input type="text" wire:model="project.location" placeholder="مثال: حي الرياض"
+                            <input type="text" wire:model="location" placeholder="مثال: حي الرياض"
                                 class="w-full p-3 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200 placeholder-neutral-500 focus:border-[#498e49] focus:ring focus:ring-[#498e49]/20 outline-none transition-all">
                         </div>
 
                         <div class="flex flex-col gap-2">
                             <label class="text-sm font-medium text-gray-400">نوع المشروع</label>
-                            <select wire:model="project.project_type"
+                            <select wire:model="project_type"
                                 class="w-full p-3 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200 focus:border-[#498e49] focus:ring focus:ring-[#498e49]/20 outline-none transition-all">
                                 <option value="">اختر النوع</option>
-                                <option>إختر النوع</option>
                                 <option value="عمارة">عمارة</option>
                                 <option value="فيلا">فيلا</option>
                                 <option value="شقة">شقة</option>
@@ -78,7 +75,7 @@
 
                         <div class="flex flex-col gap-2">
                             <label class="text-sm font-medium text-gray-400">الحالة</label>
-                            <select wire:model="project.status"
+                            <select wire:model="status"
                                 class="w-full p-3 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200 focus:border-[#498e49] focus:ring focus:ring-[#498e49]/20 outline-none transition-all">
                                 <option value="">اختر الحالة</option>
                                 <option value="جديد">جديد</option>
@@ -96,7 +93,7 @@
                     </h3>
                     <div class="flex flex-col gap-2">
                         <label class="text-sm font-medium text-gray-400">الوصف</label>
-                        <textarea wire:model="project.description" rows="4" placeholder="اكتب وصفاً مختصراً للمشروع..."
+                        <textarea wire:model="description" rows="4" placeholder="اكتب وصفاً مختصراً للمشروع..."
                             class="w-full p-3 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200 placeholder-neutral-500 focus:border-[#498e49] focus:ring focus:ring-[#498e49]/20 outline-none transition-all resize-none"></textarea>
                     </div>
                 </div>
@@ -112,10 +109,13 @@
                         <input type="file" wire:model="image" accept="image/*"
                             class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                         <div class="flex flex-col items-center gap-2 text-gray-400">
-                            <div class="w-16 h-16 bg-neutral-800 rounded-full flex items-center justify-center mb-2">
+                            <div
+                                class="w-16 h-16 bg-neutral-800 rounded-full flex items-center justify-center mb-2 overflow-hidden">
                                 @if ($image)
-                                    <img src="{{ $image->temporaryUrl() }}"
-                                        class="w-full h-full rounded-full object-cover p-1">
+                                    <img src="{{ $image->temporaryUrl() }}" class="w-full h-full object-cover">
+                                @elseif($existingImage)
+                                    <img src="{{ asset('storage/' . $existingImage) }}"
+                                        class="w-full h-full object-cover">
                                 @else
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-[#498e49]/50"
                                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -124,17 +124,22 @@
                                     </svg>
                                 @endif
                             </div>
-                            <span class="font-medium">اضغط هنا لرفع صورة المشروع</span>
+                            <span class="font-medium">اضغط هنا لتحديث الصورة</span>
                             <span class="text-xs text-gray-500">PNG, JPG up to 10MB</span>
                         </div>
                     </div>
                 </div>
 
                 {{-- Submit --}}
-                <div class="pt-4 border-t border-neutral-700 flex justify-end">
-                    <button wire:click="createProject" wire:loading.attr="disabled"
+                <div class="pt-4 border-t border-neutral-700 flex justify-end gap-3">
+                    <a href="{{ route('projects-dashboard') }}"
+                        class="bg-neutral-700 hover:bg-neutral-600 text-white px-8 py-3 rounded-xl font-bold transition-all">
+                        إلغاء
+                    </a>
+
+                    <button wire:click="updateProject" wire:loading.attr="disabled"
                         class="bg-[#498e49] hover:bg-[#3d7a3d] text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-[#498e49]/20 transition-all flex items-center gap-2">
-                        <span wire:loading.remove>حفظ المشروع</span>
+                        <span wire:loading.remove>حفظ التعديلات</span>
                         <span wire:loading>جاري الحفظ...</span>
                     </button>
                 </div>
@@ -142,40 +147,4 @@
             </div>
         </div>
     </div>
-
-    <div class="w-full lg:w-1/4 flex flex-col gap-4">
-        <div class="bg-neutral-800 rounded-2xl shadow-sm border border-neutral-700 overflow-hidden">
-            <div class="bg-[#498e49]/20 p-4 border-b border-[#498e49]/20">
-                <h3 class="font-bold text-[#498e49] text-center">المشاريع المنشأة</h3>
-            </div>
-            <div class="p-2 flex flex-col gap-2 max-h-[600px] overflow-y-auto">
-                @foreach (\App\Models\Project::get() as $project)
-                    <div
-                        class="flex justify-between items-center bg-neutral-700/50 p-3 rounded-xl text-gray-200 hover:bg-[#498e49] hover:text-white transition-all duration-200 group">
-                        <span class="font-medium cursor-pointer flex-grow">{{ $project->name }}</span>
-                        <div class="flex items-center gap-2">
-                            <a href="{{ route('projects.edit', $project->id) }}"
-                                class="text-gray-400 hover:text-blue-200 group-hover:text-white transition-colors p-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
-                            </a>
-                            <button wire:click="deleteProject({{ $project->id }})"
-                                wire:confirm="Are you sure you want to delete this project?"
-                                class="text-gray-400 hover:text-red-200 group-hover:text-white transition-colors p-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-
 </div>

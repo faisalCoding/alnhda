@@ -3,7 +3,7 @@
 @section('title', 'KN | ' . $properties->name)
 
 @section('main')
-    <div class="container mx-auto px-4 py-8 rtl" dir="rtl">
+    <div x-data="{ showModal: false, imgUrl: '' }" class="container mx-auto px-4 py-8 rtl" dir="rtl">
 
         {{-- Breadcrumb --}}
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-6">
@@ -27,17 +27,18 @@
                         <div class="swiper mySwiper h-full w-full">
                             <div class="swiper-wrapper">
                                 @foreach ($properties->propertiesImages as $image)
-                                   <div class="swiper-slide">
+                                   <div class="swiper-slide cursor-zoom-in" 
+                                        @click="imgUrl = '{{ asset('storage/' . $image->url) }}'; showModal = true">
                                         <img src="{{ asset('storage/' . $image->url) }}" alt="{{ $properties->name }}"
                                             class="w-full h-full object-cover">
                                     </div>
                                 @endforeach
                             </div>
                             <div
-                                class="swiper-button-next !text-white !w-10 !h-10 !bg-black/20 hover:!bg-black/50 !rounded-full !hidden group-hover:!flex after:!text-lg">
+                                class="swiper-button-next !text-white !w-10 !h-10 !bg-black/20 hover:!bg-black/50 !rounded-full !hidden group-hover:!flex *:!w-3">
                             </div>
                             <div
-                                class="swiper-button-prev !text-white !w-10 !h-10 !bg-black/20 hover:!bg-black/50 !rounded-full !hidden group-hover:!flex after:!text-lg">
+                                class="swiper-button-prev !text-white !w-10 !h-10 !bg-black/20 hover:!bg-black/50 !rounded-full !hidden group-hover:!flex *:!w-3">
                             </div>
                             <div class="swiper-pagination !bottom-4"></div>
                         </div>
@@ -231,6 +232,31 @@
 
         </div>
 
+        {{-- Image Modal --}}
+        <div x-show="showModal" 
+             style="display: none;"
+             class="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @keydown.escape.window="showModal = false">
+            
+            {{-- Close Button --}}
+            <button @click="showModal = false" class="absolute top-6 right-6 text-white/70 hover:text-white transition-colors z-[110] p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+
+            {{-- Image Container --}}
+            <div @click.outside="showModal = false" class="relative max-w-7xl max-h-[90vh] w-full flex items-center justify-center h-full">
+                <img :src="imgUrl" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" alt="Full size image">
+            </div>
+        </div>
+
     </div>
 
     <!-- Swiper JS -->
@@ -246,6 +272,7 @@
             navigation: {
                 nextEl: ".swiper-button-next",
                 prevEl: ".swiper-button-prev",
+                
             },
             loop: true,
             autoplay: {

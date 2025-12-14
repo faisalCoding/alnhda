@@ -26,5 +26,13 @@ Route::view('projects-dashboard', 'projects-dashboard')
 ->middleware(['auth:admin'])
 ->name('projects-dashboard');
 
+Route::get('projects/{project}/edit', App\Livewire\EditProject::class)
+->middleware(['auth:admin'])
+->name('projects.edit');
+
+Route::get('properties/{property}/edit', App\Livewire\EditProperty::class)
+->middleware(['auth:admin'])
+->name('properties.edit');
+
 Route::post('admin/logout', App\Livewire\Actions\Logout::class)
     ->name('admin.logout');

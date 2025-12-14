@@ -9,18 +9,7 @@
                     اشترك في نشرتنا البريدية للحصول على آخر التحديثات والعروض العقارية المميزة مباشرة إلى بريدك
                     الإلكتروني.
                 </p>
-                <div class="w-full max-w-sm">
-                    <form action="#" class="flex flex-col gap-3">
-                        <div class="relative">
-                            <input type="email" placeholder="بريدك الإلكتروني"
-                                class="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl focus:outline-hidden focus:border-[#498E49] focus:ring-1 focus:ring-[#498E49] transition-colors text-sm">
-                        </div>
-                        <button type="submit"
-                            class="w-full bg-[#498E49] hover:bg-[#386e38] text-white px-6 py-3 rounded-xl transition-all duration-300 transform font-medium text-sm shadow-sm hover:shadow-md">
-                            اشترك الآن
-                        </button>
-                    </form>
-                </div>
+                @livewire('newsletter-subscription')
             </div>
 
             {{-- Quick Links --}}
@@ -126,8 +115,7 @@
 
             {{-- Map Section --}}
             <div class="lg:col-span-3">
-                <div
-                    class="w-full h-48  min-h-[200px] rounded-2xl overflow-hidden shadow-sm border border-zinc-200">
+                <div class="w-full h-48  min-h-[200px] rounded-2xl overflow-hidden shadow-sm border border-zinc-200">
                     <iframe
                         src="https://maps.google.com/maps?q=جامع%20الانصار%20حي%20الواحة%20جدة@21.5660262,39.2480873&z=15&output=embed&z=17"
                         width="600" height="600" style="border:0;" allowfullscreen="" loading="lazy" z=6
@@ -141,7 +129,8 @@
         <div
             class="mt-12 pt-8 border-t border-zinc-200 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-right">
             <div class="flex gap-6 text-sm text-zinc-500">
-                <a href="{{ route('privacy-policy') }}" class="hover:text-[#498E49] transition-colors">سياسة الخصوصية</a>
+                <a href="{{ route('privacy-policy') }}" class="hover:text-[#498E49] transition-colors">سياسة
+                    الخصوصية</a>
                 <a href="{{ route('terms-of-use') }}" class="hover:text-[#498E49] transition-colors">شروط الاستخدام</a>
             </div>
             <p class="text-zinc-500 text-sm">
