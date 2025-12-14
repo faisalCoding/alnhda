@@ -31,6 +31,10 @@
                 <flux:navlist.item icon="briefcase" :href="route('projects-dashboard')"
                     :current="request()->routeIs('projects-dashboard')" wire:navigate>{{ __('Projects') }}
                 </flux:navlist.item>
+
+                <flux:navlist.item icon="users" :href="route('visitors-dashboard')"
+                    :current="request()->routeIs('visitors-dashboard')" wire:navigate>{{ __('Visitors') }}
+                </flux:navlist.item>
             </flux:navlist.group>
         </flux:navlist>
 
@@ -74,7 +78,8 @@
                 <flux:menu.separator />
 
                 <flux:menu.radio.group>
-                    <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>{{ __('Settings') }}
+                    <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>
+                        {{ __('Settings') }}
                     </flux:menu.item>
                 </flux:menu.radio.group>
 

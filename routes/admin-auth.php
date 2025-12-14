@@ -26,6 +26,10 @@ Route::view('projects-dashboard', 'projects-dashboard')
 ->middleware(['auth:admin'])
 ->name('projects-dashboard');
 
+Route::get('visitors-dashboard', App\Livewire\Admin\Visitors\Index::class)
+->middleware(['auth:admin'])
+->name('visitors-dashboard');
+
 Route::get('projects/{project}/edit', App\Livewire\EditProject::class)
 ->middleware(['auth:admin'])
 ->name('projects.edit');
