@@ -18,7 +18,7 @@
     <meta property="og:site_name" content="كيان النهضة العقارية" />
     <meta property="og:title" content="@yield('title', 'كيان النهضة العقارية')" />
     <meta property="og:description" content="@yield('description', 'شركة متخصصة وذات خبرة في التطوير العقاري.')" />
-    <meta property="og:image" content="@yield('image', asset('images/logo.png'))" />
+    <meta property="og:image" content="@yield('image', asset('img/KNicon.png'))" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="{{ url()->current() }}" />
 
@@ -42,14 +42,14 @@
     @vite('resources/css/app.css')
 
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-Q03JH1MFXB"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q03JH1MFXB"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
 
-  gtag('config', 'G-Q03JH1MFXB');
+        gtag('config', 'G-Q03JH1MFXB');
 </script>
 </head>
 
