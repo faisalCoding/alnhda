@@ -9,23 +9,23 @@
     <title>@yield('title') | {{ config('app.name', 'كيان النهضة العقارية') }}</title>
     <link rel="icon" type="image/png" href="{{ asset('img/KNicon.png') }}">
     <link rel="shortcut icon" href="{{ asset('img/KNicon.png') }}">
+    <link rel="canonical" href="https://kayanalnhda.com/">
+    <link rel="apple-touch-icon" href="{{ asset('img/KNicon.png') }}">
+
 
     {{-- 2. الوصف --}}
     {{-- الوصف الافتراضي الذي قدمته --}}
-    <meta name="description" content="@yield('description', 'شركة متخصصة وذات خبرة في التطوير العقاري، نقدم أفضل الحلول السكنية والاستثمارية.')">
+    <meta name="description" content="@yield('description', 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية. اكتشف مشاريعنا الآن!')">
 
     {{-- 3. Open Graph (للواتساب وفيسبوك) --}}
     <meta property="og:site_name" content="كيان النهضة العقارية" />
     <meta property="og:title" content="@yield('title', 'كيان النهضة العقارية')" />
-    <meta property="og:description" content="@yield('description', 'شركة متخصصة وذات خبرة في التطوير العقاري.')" />
+    <meta property="og:description" content="@yield('description', 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية. اكتشف مشاريعنا الآن!')" />
     <meta property="og:image" content="@yield('image', asset('img/KNicon.png'))" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="{{ url()->current() }}" />
 
     {{-- بقية الروابط وملفات الـ CSS --}}
-
-    <title>@yield('title', env('APP_NAME'))</title>
-
     <!-- Fonts -->
     <link href="https://fonts.cdnfonts.com/css/neo-sans-arabic" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/almarai" rel="stylesheet">
