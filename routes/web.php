@@ -26,7 +26,7 @@ Route::domain(env('APP_URL'))->group(function () {
     });
 
     Route::view('projects', 'projects')->name('projects');
-    Route::view('slider', 'slider');
+
 
     Route::view('blogs', 'blogs')->name('blogs');
 
