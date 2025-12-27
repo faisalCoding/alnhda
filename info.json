@@ -1,0 +1,123 @@
+{
+    "company": {
+        "name": {
+            "ar": "كيان النهضة العقارية",
+            "en": "Kayan Alnhda Real Estate"
+        },
+        "description": {
+            "short": "وجهتك الأولى نحو المنزل المثالي. نقدم لك خيارات سكنية متنوعة تناسب احتياجاتك وتطلعاتك، بتصاميم عصرية وجودة بناء عالية.",
+            "long": "نفتخر في شركة النهضة كوننا من الشركات الرائدة في عالم التطوير العقاري، حيث نمتلك رؤية واضحة ترتكز على الابتكار والجودة في جميع مراحل العمل. نسعى لتقديم مشروعات عقارية متكاملة تعكس أعلى معايير التصميم والهندسة، وتلبي تطلعات العملاء والمستثمرين."
+        },
+        "features": [
+            "ابتكار دائم",
+            "حلول متكاملة",
+            "خبرة راسخة"
+        ],
+        "contact": {
+            "phone": [
+                "0564364261"
+            ],
+            "email": [
+                "info@kayanalnhda.com"
+            ],
+            "address": "جدة، المملكة العربية السعودية",
+            "location": {
+                "name": "جامع الانصار حي الواحة جدة",
+                "coordinates": "21.5660262,39.2480873",
+                "map_url": "https://maps.google.com/maps?q=جامع%20الانصار%20حي%20الواحة%20جدة@21.5660262,39.2480873"
+            }
+        },
+        "social_media": [
+            {
+                "platform": "Twitter",
+                "url": "https://twitter.com/",
+                "icon": "twitter-icon"
+            },
+            {
+                "platform": "YouTube",
+                "url": "https://www.youtube.com/@KayanAlnhda",
+                "icon": "youtube-icon"
+            },
+            {
+                "platform": "Instagram",
+                "url": "https://www.instagram.com/nahda_realestate/",
+                "icon": "instagram-icon"
+            }
+        ]
+    },
+    "website": {
+        "theme": {
+            "colors": {
+                "primary": "#498E49",
+                "accent": "#49A035",
+                "text_dark": "text-zinc-900",
+                "text_light": "text-zinc-600",
+                "bg_footer": "bg-zinc-50"
+            },
+            "fonts": {
+                "main": "Instrument Sans"
+            }
+        },
+        "assets": {
+            "logo": {
+                "header": "/img/alnhdafooterlogo.png",
+                "footer": "/img/alnhdafooterlogo.png"
+            },
+            "backgrounds": {
+                "hero": "/img/bg-home-page.jpeg"
+            }
+        },
+        "routes": {
+            "home": "welcome",
+            "about": "about-us",
+            "projects": "projects",
+            "contact": "contact-us",
+            "privacy": "privacy-policy",
+            "terms": "terms-of-use"
+        },
+        "ui_components": {
+            "buttons": {
+                "main": {
+                    "class": "fill-btn",
+                    "description": "Primary action button, solid green background with white text.",
+                    "usage": "Call to actions, Submit forms",
+                    "styles": "bg-[#498E49] text-white rounded-full py-3.5 px-10 hover:bg-[#386e38]"
+                },
+                "secondary": {
+                    "class": "outline-btn",
+                    "description": "Secondary action button, transparent background with green border and text.",
+                    "usage": "Alternative actions, Cancel, Back",
+                    "styles": "bg-transparent text-[#498E49] border-[#498E49] border rounded-full py-3.5 px-10 hover:bg-[#386e38] hover:text-white"
+                },
+                "text_link": {
+                    "class": "hover:text-[#498E49]",
+                    "description": "Simple text link with color transition on hover.",
+                    "usage": "Navigation links, Footer links",
+                    "styles": "text-zinc-600 transition-colors duration-300"
+                },
+                "navigation": {
+                    "header_link": {
+                        "class": "text-white/80 hover:text-white",
+                        "description": "Links in the main header/hero area.",
+                        "usage": "Primary navigation in hero"
+                    }
+                }
+            },
+            "cards": {
+                "project_card": {
+                    "action_button": {
+                        "text": "عرض المشروع",
+                        "class": "fill-btn text-sm py-2 px-6",
+                        "icon": "arrow-left"
+                    }
+                },
+                "article_card": {
+                    "action_type": "card_click",
+                    "description": "Entire card is clickable, navigates to article details.",
+                    "styles": "group flex flex-col h-full bg-white rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-300",
+                    "hover_effects": "transform hover:-translate-y-1 hover:border-[#498e49]/30"
+                }
+            }
+        }
+    }
+}

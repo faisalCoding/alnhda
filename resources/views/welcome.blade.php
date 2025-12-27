@@ -8,6 +8,7 @@
     <div class=" w-full bg-emerald-50 flex flex-col ">
 
         @include('partials.header')
+        @include('partials.about-section')
         @livewire('section-project')
         @include('partials.section_blogs')
         {{-- footer in layouts guest --}}
