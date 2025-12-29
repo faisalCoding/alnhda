@@ -2,8 +2,7 @@
     dir="rtl">
     {{-- Background Image --}}
     <div class="absolute inset-0 z-0">
-        <img src="/img/bg-home-page.jpeg" alt="Background" class="w-full h-full object-cover opacity-60">
-        <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-zinc-900/90"></div>
+        <img src="/img/bgbgbg.png" alt="Background" class="w-full h-full object-cover opacity-60">
     </div>
 
     {{-- Content --}}
@@ -17,11 +16,10 @@
 
         {{-- Headings --}}
         <h1 class="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight max-w-4xl drop-shadow-lg">
-            وجهتك الأولى نحو <span class="text-[#49A035]">المنزل المثالي</span>
+        أساسات راسخة.. لمستقبل آمن
         </h1>
         <p class="text-gray-200 text-lg md:text-xl mb-12 max-w-2xl leading-relaxed font-light">
-            نقدم لك خيارات سكنية متنوعة تناسب احتياجاتك وتطلعاتك، بتصاميم عصرية وجودة بناء عالية.
-        </p>
+مشاريعنا نبنيها لتدوم و تبقى نموذجا للجودة و الاستدامة        </p>
 
         {{-- Search/Filter Widget --}}
         <div

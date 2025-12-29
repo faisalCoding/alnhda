@@ -1,4 +1,4 @@
-<footer class="bg-zinc-50 border-t border-zinc-200 mt-20" dir="rtl">
+<footer class="bg-zinc-50 border-t border-zinc-200 mt-20 bg-cover bg-center bg-no-repeat bg-[url('http://localhost:8000/img/footerbg.jpg')]" dir="rtl">
     <div class="max-w-7xl mx-auto px-6 py-12 lg:py-16">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
 

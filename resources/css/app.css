@@ -2,7 +2,7 @@
 @import '../../vendor/livewire/flux/dist/flux.css';
 
 
-                
+
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
@@ -11,10 +11,11 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 .fill-btn {
-    @apply bg-[#498E49] text-white text-base text-center rounded-full py-3.5 px-10 self-start m-7 cursor-pointer hover:bg-[#386e38];
+    @apply bg-[#498E49] text-white text-base text-center rounded-full self-start cursor-pointer hover:bg-[#386e38];
 }
-.outline-btn{
-    @apply bg-[#ffffff00] text-[#498E49] border-[#498E49] border text-base text-center rounded-full py-3.5 px-10 self-start m-7 cursor-pointer hover:bg-[#386e38] hover:text-white;
+
+.outline-btn {
+    @apply bg-[#ffffff00] text-[#498E49] border-[#498E49] border text-base text-center rounded-full self-start cursor-pointer hover:bg-[#386e38] hover:text-white;
 }
 
 @theme {
@@ -72,7 +73,7 @@
 }
 
 [data-flux-label] {
-    @apply  !mb-0 !leading-tight;
+    @apply !mb-0 !leading-tight;
 }
 
 input:focus[data-flux-control],
@@ -87,8 +88,8 @@ select:focus[data-flux-control] {
 
 
 .transition_to_up {
-    animation:transition_to_up 1.1s;
-    
+    animation: transition_to_up 1.1s;
+
 }
 
 @keyframes transition_to_up {
@@ -96,11 +97,56 @@ select:focus[data-flux-control] {
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0px);
     }
 }
 
+.animate-expand-width {
+    animation: expand-width 7s infinite ease-in-out;
+}
 
+.animate-expand-width span {
+    animation: reveal-text 7s infinite ease-in-out;
+}
 
+@keyframes expand-width {
+
+    0%,
+    20% {
+        max-width: 4.5rem;
+    }
+
+    40%,
+    70% {
+        max-width: 18rem;
+    }
+
+    90%,
+    100% {
+        max-width: 4.5rem;
+    }
+}
+
+@keyframes reveal-text {
+
+    0%,
+    25% {
+        opacity: 0;
+        display: none;
+    }
+
+    40%,
+    70% {
+        opacity: 1;
+        display: inline-block;
+    }
+
+    85%,
+    100% {
+        opacity: 0;
+        display: none;
+    }
+}

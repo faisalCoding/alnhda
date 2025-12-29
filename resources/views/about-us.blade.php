@@ -56,7 +56,7 @@
 
                 <div class="relative">
                     <div class="absolute -inset-4 bg-[#498E49]/10 rounded-3xl -rotate-3 z-0"></div>
-                    <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=2670&auto=format&fit=crop"
+                    <img src="{{asset('img/rebarandplan.jpg')}}"
                         alt="مشاريع كيان النهضة" class="relative z-10 w-full h-[500px] object-cover rounded-2xl shadow-lg">
                 </div>
             </div>
