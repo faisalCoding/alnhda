@@ -43,19 +43,6 @@
     @vite('resources/css/app.css')
 
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q03JH1MFXB"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-
-        function gtag() {
-            dataLayer.push(arguments);
-        }
-        gtag('js', new Date());
-
-        gtag('config', 'G-Q03JH1MFXB');
-        gtag('config', 'AW-770720729');
-    </script>
 
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){

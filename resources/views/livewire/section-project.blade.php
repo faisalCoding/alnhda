@@ -8,67 +8,65 @@
     <div class="container mx-auto px-4">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             @foreach (App\Models\Project::take(4)->get() as $project)
-                <div
-                    class="group bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full ">
-                    {{-- Image Section --}}
-                    <div class="relative h-60 overflow-hidden bg-gradient-to-t ">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 opacity-60">
-                        </div>
-                        <img class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-                            src="/storage/{{ $project->image_url }}" alt="{{ $project->name }}">
+                <div onclick="navigateTo('{{ route('project', $project->id) }}');"
+                    class="group relative rounded-[2rem] overflow-hidden h-[500px] cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-500">
 
-                        <div class="absolute top-4 right-4 z-20">
-                            <span
-                                class="bg-white/90 backdrop-blur-sm text-[#49A035] text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
-                                {{ $project->status }}
-                            </span>
-                        </div>
+                    {{-- Background Image --}}
+                    <img class="absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                        src="/storage/{{ $project->image_url }}" alt="{{ $project->name }}">
 
-                        <div class="absolute bottom-4 right-4 z-20 text-white text-right ">
-                            <h2 class="text-xl font-bold mb-1 shadow-black/10 drop-shadow-md">{{ $project->name }}</h2>
-                            <p class="text-white text-sm flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {{-- Gradient Overlay --}}
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300">
+                    </div>
+
+                    {{-- Top Logo/Status --}}
+                    <div class="absolute top-6 right-6 z-10">
+                        <span
+                            class="bg-white/90 backdrop-blur-md text-[#498E49] text-xs font-bold px-4 py-2 rounded-full shadow-sm">
+                            {{ $project->status }}
+                        </span>
+                    </div>
+
+                    {{-- Content Bottom --}}
+                    <div class="absolute bottom-0 left-0 right-0 p-8 z-20 flex flex-col justify-end h-full">
+
+                        <div
+                            class="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                            {{-- Title --}}
+                            <h2 class="text-3xl font-bold text-white mb-2 leading-tight">{{ $project->name }}</h2>
+
+                            {{-- Location --}}
+                            <div class="flex items-center gap-2 text-gray-300 text-sm mb-4">
+                                <svg class="w-4 h-4 text-[#498E49]" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                                جدة - {{ $project->location }}
+                                <span>جدة - {{ $project->location }}</span>
+                            </div>
+
+                            {{-- Description (Reveals on Hover) --}}
+                            <p
+                                class="text-gray-300 text-sm leading-relaxed line-clamp-2 mb-6 opacity-0 max-h-0 group-hover:opacity-100 group-hover:max-h-20 transition-all duration-500 delay-100 ease-out">
+                                {{ $project->description }}
                             </p>
-                        </div>
-                    </div>
 
-                    {{-- Content Section --}}
-                    <div class="p-5 flex flex-col flex-grow">
-                        {{-- Stats Grid --}}
-                        <div class="grid grid-cols-2 gap-3 mb-5">
-                            <div
-                                class="bg-gray-50 rounded-2xl p-3 text-center hover:bg-[#49A035]/5 transition-colors group/stat">
-                                <span class="block text-gray-400 text-xs mb-1">الوحدات</span>
-                                <span
-                                    class="block text-[#49A035] font-bold text-lg group-hover/stat:scale-110 transition-transform">{{ $project->properties()->count() }}</span>
-                            </div>
-                            <div
-                                class="bg-gray-50 rounded-2xl p-3 text-center hover:bg-[#49A035]/5 transition-colors group/stat">
-                                <span class="block text-gray-400 text-xs mb-1">النوع</span>
-                                <span
-                                    class="block text-gray-800 font-bold text-sm mt-1 whitespace-nowrap overflow-hidden text-ellipsis">{{ $project->project_type }}</span>
+                            {{-- Action Bar --}}
+                            <div class="flex items-center justify-between pt-4 border-t border-white/10">
+                                <span class="text-white font-medium text-sm">عرض التفاصيل</span>
+                                <div
+                                    class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-[#498E49] transition-colors duration-300 backdrop-blur-sm">
+                                    <svg class="w-5 h-5 transform rotate-180" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                    </svg>
+                                </div>
                             </div>
                         </div>
-
-                        <p class="text-gray-500 text-sm leading-relaxed mb-6 line-clamp-2 min-h-[2.5rem] text-right">
-                            {{ $project->description }}
-                        </p>
-
-                        <button onclick="navigateTo('{{ route('project', $project->id) }}');"
-                            class="mt-auto w-full py-3 rounded-xl text-white font-bold bg-[#498E49] hover:bg-[#386e38] active:scale-95 transition-all duration-200 shadow-md shadow-[#498E49]/20 flex items-center justify-center gap-2 group/btn">
-                            <span>عرض المشروع</span>
-                            <svg class="w-4 h-4 transform group-hover/btn:-translate-x-1 transition-transform"
-                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                        </button>
                     </div>
                 </div>
             @endforeach
