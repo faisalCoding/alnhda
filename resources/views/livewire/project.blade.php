@@ -4,7 +4,8 @@
         <div class="text-right text-lg py-2 px-2 border-r-2 border-r-violet-500">المشاريع المنشأة</div>
         <div class="flex flex-col justify-center items-center gap-2 w-full px-2 text-right text-violet-200 text-lg ">
             @foreach (\App\Models\Project::get() as $project)
-                <div class=" bg-violet-500 py-2 px-3 rounded w-full cursor-pointer select-none hover:scale-101 hover:bg-violet-600 duration-75">
+                <div
+                    class=" bg-violet-500 py-2 px-3 rounded w-full cursor-pointer select-none hover:scale-101 hover:bg-violet-600 duration-75">
                     {{ $project->name }}
                 </div>
             @endforeach
@@ -55,6 +56,8 @@
                     class="py-3 px-10 rounded-full placeholder:text-white border-2 border-gray-400 bg-neutral-800 text-violet-300 text-center">
                     <option value="جديد">جديد</option>
                     <option value="تحت الانشاء">تحت الانشاء</option>
+                    <option value="تم البيع">تم البيع</option>
+                    <option value="محجوز بالكامل">محجوز بالكامل</option>
                 </select>
             </div>
         </div>

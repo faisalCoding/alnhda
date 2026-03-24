@@ -8,12 +8,39 @@
     <div class="container mx-auto px-4">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             @foreach (App\Models\Project::take(4)->get() as $project)
-                <div onclick="navigateTo('{{ route('project', $project->id) }}');"
-                    class="group relative rounded-[2rem] overflow-hidden h-[500px] cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-500">
+                <div @if($project->status !== 'تم البيع') onclick="navigateTo('{{ route('project', $project->id) }}');" @endif
+                    @if($project->status === 'تم البيع')
+                        x-data="{ showBadge: false, x: 0, y: 0 }"
+                        @mousemove="x = $event.clientX; y = $event.clientY"
+                        @mouseenter="showBadge = true"
+                        @mouseleave="showBadge = false"
+                    @endif
+                    class="group relative rounded-[2rem] overflow-hidden h-[500px] {{ $project->status !== 'تم البيع' ? 'cursor-pointer' : 'cursor-none' }} shadow-lg hover:shadow-2xl transition-all duration-500">
+
+                    @if($project->status === 'تم البيع')
+                        {{-- Floating Cursor Badge --}}
+                        <div x-show="showBadge"
+                             class="fixed pointer-events-none z-[100] bg-[#498E49] text-white px-4 py-2 rounded-full font-bold shadow-2xl transform -translate-x-1/2 -translate-y-1/2"
+                             :style="`left: ${x}px; top: ${y}px; transition: transform 0.05s linear;`"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 scale-50"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-50"
+                             style="will-change: left, top;">
+                            تم البيع
+                        </div>
+                    @endif
 
                     {{-- Background Image --}}
-                    <img class="absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                    <img class="absolute inset-0 w-full h-full object-cover transform @if($project->status !== 'تم البيع') group-hover:scale-110 @endif transition-transform duration-700 @if($project->status === 'تم البيع') grayscale @endif"
                         src="/storage/{{ $project->image_url }}" alt="{{ $project->name }}">
+
+                    @if($project->status === 'تم البيع')
+                        {{-- Green Overlay for Sold Projects --}}
+                        <div class="absolute inset-0 bg-[#498E49]/60 mix-blend-multiply transition-opacity duration-300 z-0"></div>
+                    @endif
 
                     {{-- Gradient Overlay --}}
                     <div
@@ -55,17 +82,19 @@
                             </p>
 
                             {{-- Action Bar --}}
-                            <div class="flex items-center justify-between pt-4 border-t border-white/10">
-                                <span class="text-white font-medium text-sm">عرض التفاصيل</span>
-                                <div
-                                    class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-[#498E49] transition-colors duration-300 backdrop-blur-sm">
-                                    <svg class="w-5 h-5 transform rotate-180" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                    </svg>
+                            @if($project->status !== 'تم البيع')
+                                <div class="flex items-center justify-between pt-4 border-t border-white/10">
+                                    <span class="text-white font-medium text-sm">عرض التفاصيل</span>
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-[#498E49] transition-colors duration-300 backdrop-blur-sm">
+                                        <svg class="w-5 h-5 transform rotate-180" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                        </svg>
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>

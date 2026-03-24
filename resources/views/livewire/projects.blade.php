@@ -83,6 +83,8 @@
                                 <option value="">اختر الحالة</option>
                                 <option value="جديد">جديد</option>
                                 <option value="تحت الانشاء">تحت الانشاء</option>
+                                <option value="تم البيع">تم البيع</option>
+                                <option value="محجوز بالكامل">محجوز بالكامل</option>
                             </select>
                         </div>
                     </div>
