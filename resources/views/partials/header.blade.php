@@ -2,7 +2,7 @@
     dir="rtl">
     {{-- Background Image --}}
     <div class="absolute inset-0 z-0">
-        <img src="/img/bgbgbg.png" alt="Background" class="w-full h-full object-cover opacity-60">
+        <img src="/img/homebg.jpg" alt="Background" class="w-full h-full object-cover opacity-60">
     </div>
 
     {{-- Content --}}
@@ -16,10 +16,10 @@
 
         {{-- Headings --}}
         <h1 class="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight max-w-4xl drop-shadow-lg">
-        أساسات راسخة.. لمستقبل آمن
+            أساسات راسخة.. لمستقبل آمن
         </h1>
         <p class="text-gray-200 text-lg md:text-xl mb-12 max-w-2xl leading-relaxed font-light">
-مشاريعنا نبنيها لتدوم و تبقى نموذجا للجودة و الاستدامة        </p>
+            مشاريعنا نبنيها لتدوم و تبقى نموذجا للجودة و الاستدامة </p>
 
         {{-- Search/Filter Widget --}}
         <div

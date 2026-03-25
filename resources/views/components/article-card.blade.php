@@ -17,7 +17,7 @@
         {{-- Content — left three quarters --}}
         <div class="flex flex-col justify-between px-5 py-4 grow text-right">
             <h3
-                class="text-base font-bold text-gray-800 leading-snug group-hover:text-[#498e49] transition-colors line-clamp-3">
+                class="text-xl font-bold text-gray-800 leading-snug group-hover:text-[#498e49] transition-colors line-clamp-3">
                 {{ $article->title }}
             </h3>
 
@@ -31,8 +31,9 @@
             </div>
         </div>
         {{-- Image — right quarter --}}
-        <div class="relative w-1/4 shrink-0 overflow-hidden">
-            <img src="{{ $imageUrl }}" class="absolute inset-0 w-full h-full object-cover grayscale"
+        <div class="relative group-hover:w-1/4 w-1/12 duration-500 shrink-0 overflow-hidden">
+            <img src="{{ $imageUrl }}"
+                class="absolute group-hover:blur-[0] blur-sm duration-500 inset-0 w-full h-full object-cover grayscale"
                 alt="{{ $article->title }}" onerror="this.src='{{ asset('img/article.jpg') }}'">
             {{-- Green overlay --}}
             <div class="absolute inset-0 bg-[#498e49]/70 mix-blend-multiply"></div>
