@@ -63,57 +63,5 @@
             </div>
 
         </div>
-
-        {{-- Features Grid --}}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
-            {{-- Feature 1 --}}
-            <div class="bg-gray-50 p-8 rounded-2xl text-center group hover:bg-[#498E49] transition-colors duration-300">
-                <div
-                    class="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center text-[#498E49] mb-4 shadow-sm group-hover:scale-110 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                    </svg>
-                </div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-white">ابتكار دائم</h3>
-                <p class="text-gray-500 text-sm leading-relaxed group-hover:text-white/90">
-                    نقدم حلولاً هندسية مبدعة تضيف قيمة حقيقية وتميز مشاريعنا في السوق.
-                </p>
-            </div>
-
-            {{-- Feature 2 --}}
-            <div class="bg-gray-50 p-8 rounded-2xl text-center group hover:bg-[#498E49] transition-colors duration-300">
-                <div
-                    class="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center text-[#498E49] mb-4 shadow-sm group-hover:scale-110 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                    </svg>
-                </div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-white">حلول متكاملة</h3>
-                <p class="text-gray-500 text-sm leading-relaxed group-hover:text-white/90">
-                    نوفر خدمات شاملة تشمل التصميم والتنفيذ والإشراف لضمان مشروع متكامل.
-                </p>
-            </div>
-
-            {{-- Feature 3 --}}
-            <div class="bg-gray-50 p-8 rounded-2xl text-center group hover:bg-[#498E49] transition-colors duration-300">
-                <div
-                    class="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center text-[#498E49] mb-4 shadow-sm group-hover:scale-110 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-white">خبرة راسخة</h3>
-                <p class="text-gray-500 text-sm leading-relaxed group-hover:text-white/90">
-                    نمتلك تاريخاً طويلاً في تنفيذ المشاريع العقارية والإنشائية بمعايير جودة عالمية.
-                </p>
-            </div>
-
-        </div>
     </div>
 </section>
