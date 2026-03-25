@@ -26,8 +26,8 @@
                 <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
                     wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
 
-                <flux:navlist.item icon="document-text" :href="route('blogs-dashboard')"
-                    :current="request()->routeIs('blogs-dashboard')" wire:navigate>{{ __('Blogs') }}
+                <flux:navlist.item icon="document-text" :href="route('articles-dashboard')"
+                    :current="request()->routeIs('articles-dashboard')" wire:navigate>{{ __('Articles') }}
                 </flux:navlist.item>
 
                 <flux:navlist.item icon="briefcase" :href="route('projects-dashboard')"

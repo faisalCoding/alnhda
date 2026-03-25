@@ -13,7 +13,7 @@
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>{{ route('blogs') }}</loc>
+        <loc>{{ route('articles') }}</loc>
         <lastmod>{{ now()->startOfDay()->toAtomString() }}</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
@@ -63,11 +63,11 @@
         </url>
     @endforeach
 
-    {{-- Blogs/Articles --}}
-    @foreach ($blogs as $blog)
+    {{-- Articles/Articles --}}
+    @foreach ($articles as $article)
         <url>
-            <loc>{{ route('blog', $blog) }}</loc>
-            <lastmod>{{ $blog->updated_at->toAtomString() }}</lastmod>
+            <loc>{{ route('article', $article) }}</loc>
+            <lastmod>{{ $article->updated_at->toAtomString() }}</lastmod>
             <changefreq>weekly</changefreq>
             <priority>0.8</priority>
         </url>

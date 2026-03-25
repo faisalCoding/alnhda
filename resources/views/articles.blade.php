@@ -9,8 +9,8 @@
     <h1 class="text-3xl font-bold text-[#49A035] my-20 text-center">اكتشف احدث المقالات</h1>
     <div
         class=" container pb-10 m-auto w-full flex flex-col flex-wrap justify-center items-stretch gap-4 md:flex-row-reverse  md:items-stretch xl:justify-start ">
-        @foreach (App\Models\Blog::get() as $blog)
-            <x-blog-card :blog="$blog"/>
+        @foreach (App\Models\Article::get() as $article)
+            <x-article-card :article="$article"/>
         @endforeach
     </div>
 

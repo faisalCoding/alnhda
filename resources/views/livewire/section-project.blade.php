@@ -1,4 +1,23 @@
-<div id="projects" class="bg-[#f8f9fa] w-full flex text-center flex-col py-16 rtl" dir="rtl">
+@php $projects = App\Models\Project::all(); @endphp
+
+<div id="projects" class="bg-[#f8f9fa] w-full flex text-center flex-col py-16 rtl" dir="rtl"
+    x-data="{
+        atStart: true,
+        atEnd: false,
+        updateState() {
+            const t = this.$refs.track;
+            this.atStart = t.scrollLeft <= 10;
+            this.atEnd = t.scrollLeft + t.clientWidth >= t.scrollWidth - 10;
+        },
+        scrollPrev() {
+            this.$refs.track.scrollBy({ left: -this.$refs.track.offsetWidth * 0.75, behavior: 'smooth' });
+            setTimeout(() => this.updateState(), 400);
+        },
+        scrollNext() {
+            this.$refs.track.scrollBy({ left: this.$refs.track.offsetWidth * 0.75, behavior: 'smooth' });
+            setTimeout(() => this.updateState(), 400);
+        },
+    }" x-init="updateState()">
     <div class="relative mb-12">
         <h1 class="text-3xl md:text-4xl font-bold text-gray-900">إكتشف مشاريعنا <span
                 class="text-[#49A035]">المتميزة</span></h1>
@@ -6,8 +25,27 @@
     </div>
 
     <div class="container mx-auto px-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            @foreach (App\Models\Project::take(4)->get() as $project)
+        <div class="relative">
+            {{-- Prev Button --}}
+            <button @click="scrollPrev()" :disabled="atStart"
+                class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 z-20 w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center text-[#49A035] border border-gray-100 hover:bg-[#49A035] hover:text-white transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+
+            {{-- Next Button --}}
+            <button @click="scrollNext()" :disabled="atEnd"
+                class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 z-20 w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center text-[#49A035] border border-gray-100 hover:bg-[#49A035] hover:text-white transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+
+            {{-- Track --}}
+            <div x-ref="track" class="flex gap-6 overflow-x-auto mx-14 [&::-webkit-scrollbar]:hidden scroll-smooth" dir="ltr" @scroll="updateState()">
+                    @foreach ($projects as $project)
+                <div class="shrink-0 w-full md:w-1/2 lg:w-1/3 xl:w-1/4" dir="rtl">
                 <div @if($project->status !== 'تم البيع') onclick="navigateTo('{{ route('project', $project->id) }}');" @endif
                     @if($project->status === 'تم البيع')
                         x-data="{ showBadge: false, x: 0, y: 0 }"
@@ -98,7 +136,9 @@
                         </div>
                     </div>
                 </div>
+                </div>
             @endforeach
+            </div>
         </div>
 
         <div class="flex justify-center mt-12">

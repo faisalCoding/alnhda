@@ -10,7 +10,7 @@
         @include('partials.header')
         @include('partials.about-section')
         @livewire('section-project')
-        @include('partials.section_blogs')
+        @include('partials.section_articles')
         {{-- footer in layouts guest --}}
     </div>
 @endsection

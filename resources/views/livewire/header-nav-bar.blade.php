@@ -19,7 +19,7 @@
                 <span class="absolute bottom-0 right-0 w-0 h-0.5 bg-[#498E49] transition-all duration-300 group-hover:w-full"></span>
             </a>
 
-            <a href="{{ route('blogs') }}" 
+            <a href="{{ route('articles') }}" 
                class="text-gray-600 hover:text-[#498E49] font-medium transition-colors duration-300 relative group py-2"
                wire:current="text-[#498E49] font-bold"
                wire:navigate.hover>
@@ -77,7 +77,7 @@
             <a href="{{ route('projects') }}" wire:navigate class="text-gray-600 hover:text-[#498E49] font-medium block px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
                 مشاريعنا
             </a>
-            <a href="{{ route('blogs') }}" wire:navigate class="text-gray-600 hover:text-[#498E49] font-medium block px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
+            <a href="{{ route('articles') }}" wire:navigate class="text-gray-600 hover:text-[#498E49] font-medium block px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
                 المقالات
             </a>
             <a href="{{ route('about-us') }}" wire:navigate class="text-gray-600 hover:text-[#498E49] font-medium block px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">

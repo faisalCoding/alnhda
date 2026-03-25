@@ -26,8 +26,12 @@
 - **مكونات Livewire:** `resources/views/livewire/`
   - مثل `section-project.blade.php` (لعرض المشاريع بالصفحة الرئيسية).
   - مثل `projects.blade.php` (للوحة تحكم الأدمن لإنشاء وإدارة المشاريع).
-- **الصفحات الأخرى:** 
-  - عرض كل المشاريع: `resources/views/projects.blade.php`.
+- **صفحات الموقع الأساسية (الموجودة في القائمة):** 
+  - الرئيسية (`welcome`)
+  - المشاريع (`projects`)
+  - المقالات (`blogs`)
+  - عن الشركة (`about-us`)
+  - تواصل معنا (`contact-us`)
 
 ## 🏗 النماذج والميزات (Models & Features)
 

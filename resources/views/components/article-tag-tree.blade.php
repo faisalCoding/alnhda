@@ -59,7 +59,7 @@
             {{-- Children --}}
             <div class="pl-4 border-r border-neutral-700/50">
                 @if(!empty($tag['children']))
-                    <x-blog-tag-tree :tags="$tag['children']" :level="$level + 1" />
+                    <x-article-tag-tree :tags="$tag['children']" :level="$level + 1" />
                 @endif
                 
                 <button wire:click="addTag('{{ $tag['id'] }}')" class="mt-2 text-xs text-[#498e49] hover:text-[#5ab35a] flex items-center gap-1">

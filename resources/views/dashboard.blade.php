@@ -37,7 +37,7 @@
         <div x-show="activeTab === 'articles'" x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
             style="display: none;">
-            <livewire:create-blog />
+            <livewire:create-article />
         </div>
     </div>
 </x-layouts.app>
