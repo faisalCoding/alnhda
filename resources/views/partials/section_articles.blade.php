@@ -1,8 +1,8 @@
 <div class="bg-[#EAF5EA] w-full flex flex-col justify-center items-stretch">
     <h1 class="text-3xl font-bold text-[#49A035] my-20 text-center">اكتشف احدث المقالات</h1>
     <div
-        class=" container m-auto w-full flex flex-col flex-wrap justify-center items-stretch gap-4 md:flex-row-reverse  md:items-stretch xl:justify-start ">
-        @foreach (App\Models\Article::take(5)->get() as $article)
+        class=" container m-auto w-full flex flex-col flex-wrap justify-center items-stretch gap-4 md:flex-row-reverse  md:items-stretch ">
+        @foreach (App\Models\Article::take(10)->get() as $article)
             <x-article-card :article="$article" />
         @endforeach
     </div>
