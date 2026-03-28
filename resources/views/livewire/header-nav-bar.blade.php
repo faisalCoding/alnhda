@@ -1,5 +1,8 @@
-<nav x-data="{ open: false }"
-    class="top-0 z-50 container  mx-auto px-4 py-3 bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 dark:bg-neutral-900/90 dark:border-neutral-800">
+<nav x-data="{ open: false }" class="top-0 z-50 w-full mx-auto px-4 py-3 container">
+
+
+
+
     <div class="flex justify-between items-center max-md:[direction:rtl]">
 
         {{-- Desktop Menu --}}

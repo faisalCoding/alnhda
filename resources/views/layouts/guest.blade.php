@@ -45,26 +45,64 @@
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
 
     <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){
-        w[l]=w[l]||[];w[l].push({'gtm.start':
-        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-5KBXGPRJ');
+    <script>
+        (function(w, d, s, l, i) {
+            w[l] = w[l] || [];
+            w[l].push({
+                'gtm.start': new Date().getTime(),
+                event: 'gtm.js'
+            });
+            var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s),
+                dl = l != 'dataLayer' ? '&l=' + l : '';
+            j.async = true;
+            j.src =
+                'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+            f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-5KBXGPRJ');
     </script>
-    <!-- End Google Tag Manager --> 
+    <!-- End Google Tag Manager -->
 </head>
 
 <body
     class="transition_to_up dark:bg-[#0a0a0a] text-[#1b1b18] flex justify-stretch  min-h-screen flex-col w-screen duration-20 ">
 
     <!-- Google Tag Manager (noscript)-->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5KBXGPRJ"
-            height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->  
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5KBXGPRJ" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
 
     @section('header')
-        <header class="sticky top-0 z-50 flex justify-center items-center w-full h-25 ">
+        <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0"
+            style="position: fixed; top: 0px; left: 0px; pointer-events: none; z-index: 9998;">
+            <defs>
+                <filter id="liquid-glass-header" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB" x="0" y="0"
+                    width="1700" height="200">
+                    <feImage id="liquid-glass-header" width="1536" height="74" xlink:href="/img/map2.jpg">
+                    </feImage>
+                    <feDisplacementMap in="SourceGraphic" in2="liquid-glass-header" xChannelSelector="R"
+                        yChannelSelector="G" scale="48.700230958000276">
+                    </feDisplacementMap>
+
+                </filter>
+            </defs>
+        </svg>
+        <header
+            class="sticky top-0 z-50 flex justify-center items-center w-full h-25  bg-white/75 [backdrop-filter:url(#liquid-glass-header)_blur(2.5px)_contrast(1.01)_brightness(1.05)_saturate(1.1)]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0"
+                style="position: fixed; top: 0px; left: 0px; pointer-events: none; z-index: 9998;">
+                <defs>
+                    <filter id="liquid-glass-header" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB" x="0"
+                        y="0" width="1536" height="74">
+                        <feImage id="liquid-glass-header" width="1536" height="74" xlink:href="/img/map2.jpg">
+                        </feImage>
+                        <feDisplacementMap in="SourceGraphic" in2="liquid-glass-header" xChannelSelector="R"
+                            yChannelSelector="G" scale="48.700230958000276">
+                        </feDisplacementMap>
+
+                    </filter>
+                </defs>
+            </svg>
             @livewire('header-nav-bar')
         </header>
     @show
