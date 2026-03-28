@@ -4,33 +4,29 @@
 
 
 @section('main')
-    <div id="projects" class="bg-[#EAF5EA] pb-10  w-full flex text-center flex-col flex-1">
+    <div id="projects" class="bg-[#f5fdf5] pb-10  w-full flex text-center flex-col flex-1">
         <h1 class="text-3xl font-bold text-[#49A035] my-20">إكتشف مشاريعنا المتميزة</h1>
         <div class="container mx-auto px-4 w-full">
             <div dir="rtl" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 
                 @foreach (App\Models\Project::get() as $project)
-                    <div @if($project->status !== 'تم البيع') onclick="navigateTo('{{ route('project', $project->id) }}');" @endif
-                        @if($project->status === 'تم البيع')
-                            x-data="{ showBadge: false, x: 0, y: 0 }"
+                    <div @if ($project->status !== 'تم البيع') onclick="navigateTo('{{ route('project', $project->id) }}');" @endif
+                        @if ($project->status === 'تم البيع') x-data="{ showBadge: false, x: 0, y: 0 }"
                             @mousemove="x = $event.clientX; y = $event.clientY"
                             @mouseenter="showBadge = true"
-                            @mouseleave="showBadge = false"
-                        @endif
+                            @mouseleave="showBadge = false" @endif
                         class="group relative rounded-[2rem] overflow-hidden h-[500px] {{ $project->status !== 'تم البيع' ? 'cursor-pointer' : 'cursor-none' }} shadow-lg hover:shadow-2xl transition-all duration-500 text-right">
 
-                        @if($project->status === 'تم البيع')
+                        @if ($project->status === 'تم البيع')
                             {{-- Floating Cursor Badge --}}
                             <div x-show="showBadge"
-                                 class="fixed pointer-events-none z-[100] bg-[#498E49] text-white px-4 py-2 rounded-full font-bold shadow-2xl transform -translate-x-1/2 -translate-y-1/2"
-                                 :style="`left: ${x}px; top: ${y}px; transition: transform 0.05s linear;`"
-                                 x-transition:enter="transition ease-out duration-200"
-                                 x-transition:enter-start="opacity-0 scale-50"
-                                 x-transition:enter-end="opacity-100 scale-100"
-                                 x-transition:leave="transition ease-in duration-150"
-                                 x-transition:leave-start="opacity-100 scale-100"
-                                 x-transition:leave-end="opacity-0 scale-50"
-                                 style="will-change: left, top;">
+                                class="fixed pointer-events-none z-[100] bg-[#498E49] text-white px-4 py-2 rounded-full font-bold shadow-2xl transform -translate-x-1/2 -translate-y-1/2"
+                                :style="`left: ${x}px; top: ${y}px; transition: transform 0.05s linear;`"
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0 scale-50" x-transition:enter-end="opacity-100 scale-100"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-50"
+                                style="will-change: left, top;">
                                 تم البيع
                             </div>
                         @endif

@@ -1,4 +1,4 @@
-<div class="bg-[#EAF5EA] w-full flex flex-col justify-center items-stretch">
+<div class="bg-[#f5fdf5] w-full flex flex-col justify-center items-stretch">
     <h1 class="text-3xl font-bold text-[#49A035] my-20 text-center">اكتشف احدث المقالات</h1>
     <div
         class=" container m-auto w-full flex flex-col flex-wrap justify-center items-stretch gap-4 md:flex-row-reverse  md:items-stretch ">

@@ -1,6 +1,7 @@
 <div class="w-full">
+
     {{-- Buttons --}}
-    <div class="grid grid-cols-3 gap-2 w-full md:w-auto flex-1">
+    <div class="grid grid-cols-3 gap-2 w-full md:w-auto flex-1 ">
         <button wire:click="openForm('apartment')"
             class="group flex flex-col items-center justify-center gap-2 bg-white/5 hover:bg-[#49A035] border border-white/10 hover:border-[#49A035] rounded-xl py-4 px-2 transition-all duration-300 w-full cursor-pointer">
             <svg class="w-6 h-6 text-white group-hover:scale-110 transition-transform" fill="none" stroke="currentColor"

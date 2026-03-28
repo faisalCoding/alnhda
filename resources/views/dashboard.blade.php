@@ -1,7 +1,6 @@
 <x-layouts.app :title="__('Dashboard')">
     <div x-data="{ activeTab: 'projects' }" class="w-full">
         <!-- Tabs Navigation -->
-        <!-- Tabs Navigation -->
         <div class="flex flex-row-reverse mb-6 bg-neutral-800 p-2 rounded-2xl border border-neutral-700">
             <button @click="activeTab = 'projects'"
                 :class="{ 'bg-[#498e49] text-white shadow-lg shadow-[#498e49]/20': activeTab === 'projects', 'text-gray-400 hover:text-white hover:bg-neutral-700': activeTab !== 'projects' }"
