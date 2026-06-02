@@ -20,23 +20,8 @@
         <p class="text-gray-200 text-lg md:text-xl mb-12 max-w-2xl leading-relaxed font-light">
             مشاريعنا نبنيها لتدوم و تبقى نموذجا للجودة و الاستدامة </p>
 
-        {{-- Search/Filter Widget --}}
-        <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0"
-            style="position: fixed; top: 0px; left: 0px; pointer-events: none; z-index: 9998;">
-            <defs>
-                <filter id="liquid-glass-mru1450kp_filter" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB"
-                    x="0" y="0" width="768" height="112">
-                    <feImage id="liquid-glass-mru1450kp_map" width="768" height="112" xlink:href="/img/map.jpg">
-                    </feImage>
-                    <feDisplacementMap in="SourceGraphic" in2="liquid-glass-mru1450kp_map" xChannelSelector="R"
-                        yChannelSelector="G" scale="48.700230958000276">
-                    </feDisplacementMap>
-
-                </filter>
-            </defs>
-        </svg>
         <div
-            class="w-full max-w-3xl border hover:scale-110 duration-300 border-white/20 rounded-2xl p-2 md:p-3 shadow-2xl [backdrop-filter:url(#liquid-glass-mru1450kp_filter)_blur(2.5px)_contrast(1.01)_brightness(1.05)_saturate(1.1)]">
+            class="w-full max-w-3xl border hover:scale-105 duration-300 border-white/20 rounded-2xl p-2 md:p-3 shadow-2xl bg-white/10 backdrop-blur-md">
             <div class="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4">
                 <h2 class="text-white font-bold text-lg px-4 hidden md:block">عن ماذا تبحث؟</h2>
 
