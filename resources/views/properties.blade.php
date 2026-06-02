@@ -59,36 +59,43 @@
                         </span>
                     </div>
                 </div>
-                <div class="flex gap-4 items-center justify-center md:flex-row flex-col">
-                    {{-- YouTube Video --}}
-                    <div class="w-full">
-                        <div class="flex items-center mb-6">
-                            <div class="w-1.5 h-8 bg-[#498e49] rounded-full ml-3"></div>
-                            <h2 class="text-2xl font-bold text-gray-800">فيديو الوحدة</h2>
-                        </div>
-                        <div
-                            class="sm:w-full max-sm:w-full relative rounded-3xl overflow-hidden shadow-xl bg-gray-100 aspect-video">
-                            <iframe class=" w-full h-full" src="{{ $properties->unit_youtube }}" frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                allowfullscreen>
-                            </iframe>
-                        </div>
+                @if (!empty($properties->unit_youtube) || !empty($properties->stages_building_youtube))
+                    <div class="flex gap-4 items-center justify-center md:flex-row flex-col">
+                        {{-- YouTube Video - Unit --}}
+                        @if (!empty($properties->unit_youtube))
+                            <div class="w-full">
+                                <div class="flex items-center mb-6">
+                                    <div class="w-1.5 h-8 bg-[#498e49] rounded-full ml-3"></div>
+                                    <h2 class="text-2xl font-bold text-gray-800">فيديو الوحدة</h2>
+                                </div>
+                                <div
+                                    class="sm:w-full max-sm:w-full relative rounded-3xl overflow-hidden shadow-xl bg-gray-100 aspect-video">
+                                    <iframe class=" w-full h-full" src="{{ $properties->unit_youtube }}" frameborder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        allowfullscreen>
+                                    </iframe>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- YouTube Video - Stages --}}
+                        @if (!empty($properties->stages_building_youtube))
+                            <div class="w-full">
+                                <div class="flex items-center mb-6">
+                                    <div class="w-1.5 h-8 bg-[#498e49] rounded-full ml-3"></div>
+                                    <h2 class="text-2xl font-bold text-gray-800">فيديو مراحل انشاء الوحدة</h2>
+                                </div>
+                                <div
+                                    class="sm:w-full max-sm:w-full relative rounded-3xl overflow-hidden shadow-xl bg-gray-100 aspect-video">
+                                    <iframe class=" w-full h-full" src="{{ $properties->stages_building_youtube }}" frameborder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        allowfullscreen>
+                                    </iframe>
+                                </div>
+                            </div>
+                        @endif
                     </div>
-                    {{-- YouTube Video --}}
-                    <div class="w-full">
-                        <div class="flex items-center mb-6">
-                            <div class="w-1.5 h-8 bg-[#498e49] rounded-full ml-3"></div>
-                            <h2 class="text-2xl font-bold text-gray-800">فيديو مراحل انشاء الوحدة</h2>
-                        </div>
-                        <div
-                            class="sm:w-full max-sm:w-full relative rounded-3xl overflow-hidden shadow-xl bg-gray-100 aspect-video">
-                            <iframe class=" w-full h-full" src="{{ $properties->stages_building_youtube }}" frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                allowfullscreen>
-                            </iframe>
-                        </div>
-                    </div>
-                </div>
+                @endif
 
                 {{-- Description & Details --}}
                 <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">

@@ -26,7 +26,7 @@ class EditProperty extends Component
     #[Validate('required')]
     public $price;
 
-    #[Validate('required')]
+    #[Validate('nullable|numeric')]
     public $offer;
 
     #[Validate('required')]
@@ -62,10 +62,10 @@ class EditProperty extends Component
     #[Validate('required')]
     public $facade;
 
-    #[Validate('required')]
+    #[Validate('nullable')]
     public $unit_youtube;
 
-    #[Validate('required')]
+    #[Validate('nullable')]
     public $stages_building_youtube;
 
     #[Validate('boolean')]
@@ -107,7 +107,7 @@ class EditProperty extends Component
                 'name'         => $this->name,
                 'project_id'   => $this->project_id,
                 'price'        => $this->price,
-                'offer'        => $this->offer,
+                'offer'        => $this->offer ?: null,
                 'status'       => $this->status,
                 'rooms'        => $this->rooms,
                 'bathrooms'    => $this->bathrooms,
@@ -120,8 +120,8 @@ class EditProperty extends Component
                 'driver_room'  => $this->driver_room,
                 'facade'       => $this->facade,
                 'furniture'    => $this->furniture,
-                'unit_youtube'      => $this->unit_youtube,
-                'stages_building_youtube' => $this->stages_building_youtube,
+                'unit_youtube'      => $this->unit_youtube ?: null,
+                'stages_building_youtube' => $this->stages_building_youtube ?: null,
             ]);
 
             if (!empty($this->photos)) {

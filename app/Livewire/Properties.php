@@ -23,8 +23,8 @@ class Properties extends Component
     #[Validate('required')]
     public $price = 550000;
 
-    #[Validate('required')]
-    public $offer = 500000;
+    #[Validate('nullable|numeric')]
+    public $offer = null;
 
     #[Validate('required')]
     public $status   = 'جديد';
@@ -59,11 +59,11 @@ class Properties extends Component
     #[Validate('required')]
     public $facade = 'شرقية جنوبية';
 
-    #[Validate('required')]
-    public $unit_youtube = 'https://www.youtube.com/embed/PgmZoGOWf8M';
+    #[Validate('nullable')]
+    public $unit_youtube = null;
 
-    #[Validate('required')]
-    public $stages_building_youtube = 'https://www.youtube.com/embed/PgmZoGOWf8M';
+    #[Validate('nullable')]
+    public $stages_building_youtube = null;
 
     #[Validate('required')]
     public $furniture = true;
@@ -84,7 +84,7 @@ class Properties extends Component
             'name'         => $this->name,
             'project_id'   => $this->project_id,
             'price'        => $this->price,
-            'offer'        => $this->offer,
+            'offer'        => $this->offer ?: null,
             'status'       => $this->status,
             'rooms'        => $this->rooms,
             'bathrooms'    => $this->bathrooms,
@@ -97,9 +97,8 @@ class Properties extends Component
             'driver_room'  => $this->driver_room,
             'facade'       => $this->facade,
             'furniture'    => $this->furniture,
-            'unit_youtube'      => $this->unit_youtube,
-            'stages_building_youtube' => $this->stages_building_youtube,
-
+            'unit_youtube'      => $this->unit_youtube ?: null,
+            'stages_building_youtube' => $this->stages_building_youtube ?: null,
         ]);
         $this->saveImages($property->id);
         
