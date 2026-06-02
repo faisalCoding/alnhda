@@ -50,7 +50,7 @@
 
         {{-- Logo --}}
         <a href="{{ route('welcome') }}" class="flex-shrink-0" wire:navigate>
-            <img src="/img/alnhdafooterlogo.webp" class="h-12 w-auto object-contain" alt="Logo">
+            <img src="/img/alnhdafooterlogo.webp" class="h-12 w-auto object-contain" alt="شعار كيان النهضة العقارية" width="800" height="346">
         </a>
 
         {{-- Mobile Menu Button --}}

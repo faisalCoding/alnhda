@@ -5,7 +5,7 @@
 
             {{-- Brand Section --}}
             <div class="lg:col-span-4 flex flex-col items-center md:items-start text-center md:text-right space-y-6">
-                <img src="/img/alnhdafooterlogo.webp" alt="النهضة العقارية" class="h-24 w-auto object-contain">
+                <img src="/img/alnhdafooterlogo.webp" alt="النهضة العقارية" class="h-24 w-auto object-contain" width="800" height="346">
                 <p class="text-zinc-600 text-sm leading-relaxed max-w-sm">
                     اشترك في نشرتنا البريدية للحصول على آخر التحديثات والعروض العقارية المميزة مباشرة إلى بريدك
                     الإلكتروني.

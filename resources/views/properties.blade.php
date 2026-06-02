@@ -157,36 +157,36 @@
 
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4 text-center md:text-right">
                         <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
-                            <img class=" max-h-45"src="{{ url('/img/alfanar.webp') }}" alt="">
+                            <img class=" max-h-45" src="{{ url('/img/alfanar.webp') }}" alt="شركة الفنار" width="800" height="227">
                             <span class="block text-gray-600 text-md mb-1">المفاتيح والأفياش والطين والقواطع ضمان 25
                                 سنة</span>
                         </div>
                         <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
-                            <img class=" max-h-45"src="{{ url('/img/aljazira.webp') }}" alt="">
+                            <img class=" max-h-45" src="{{ url('/img/aljazira.webp') }}" alt="شركة الجزيرة" width="800" height="223">
                             <span class="block text-gray-600 text-md mb-1">الدهانات الخارجية</span>
                         </div>
                         <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
-                            <img class=" max-h-45"src="{{ url('/img/fosroc.webp') }}" alt="">
+                            <img class=" max-h-45" src="{{ url('/img/fosroc.webp') }}" alt="شركة فوسروك" width="709" height="768">
                             <span class="block text-gray-600 text-md mb-1">أرضيات المواقف</span>
                         </div>
                         <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
-                            <img class=" max-h-45"src="{{ url('/img/jontun.webp') }}" alt="">
+                            <img class=" max-h-45" src="{{ url('/img/jontun.webp') }}" alt="شركة جونتون" width="800" height="244">
                             <span class="block text-gray-600 text-md mb-1"> دهانات الداخلية</span>
                         </div>
                         <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
-                            <img class=" max-h-45"src="{{ url('/img/polybit.webp') }}" alt="">
+                            <img class=" max-h-45" src="{{ url('/img/polybit.webp') }}" alt="شركة بوليبيت" width="511" height="111">
                             <span class="block text-gray-600 text-md mb-1"> العازل الخارجي للخزانات</span>
                         </div>
                         <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
-                            <img class=" max-h-45"src="{{ url('/img/saveto.webp') }}" alt="">
+                            <img class=" max-h-45" src="{{ url('/img/saveto.webp') }}" alt="شركة سافيتو" width="600" height="600">
                             <span class="block text-gray-600 text-md mb-1"> غراء البلاط الحوائط</span>
                         </div>
                         <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
-                            <img class=" max-h-45"src="{{ url('/img/sika.webp') }}" alt="">
+                            <img class=" max-h-45" src="{{ url('/img/sika.webp') }}" alt="شركة سيكا" width="800" height="693">
                             <span class="block text-gray-600 text-md mb-1">العزل الداخلي لخزانات</span>
                         </div>
                         <div class="p-4 flex items-stretch justify-between bg-gray-50  flex-col rounded-xl">
-                            <img class=" max-h-45"src="{{ url('/img/weber.webp') }}" alt="">
+                            <img class=" max-h-45" src="{{ url('/img/weber.webp') }}" alt="شركة ويبر" width="800" height="281">
                             <span class="block text-gray-600 text-md mb-1"> عازل أرضيات الحمامات</span>
                         </div>
                     </div>
