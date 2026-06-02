@@ -5,7 +5,7 @@
         $image = $article->image_article ?? 'img/article.jpg';
         $imageUrl = filter_var($image, FILTER_VALIDATE_URL)
             ? $image
-            : (Str::contains($image, ['articles/', 'uploads/'])
+            : (Str::contains($image, ['articles/', 'uploads/', 'blogs/'])
                 ? asset('storage/' . $image)
                 : asset(str_replace('\\', '', $image)));
     @endphp
