@@ -1,7 +1,7 @@
 <div class="relative w-full h-[85vh] min-h-[600px] flex items-center justify-center bg-zinc-900 rtl" dir="rtl">
     {{-- Background Image --}}
     <div class="absolute inset-0 z-0">
-        <img src="/img/homebg.jpg" alt="Background" class="w-full h-full object-cover opacity-60">
+        <img src="/img/homebg.webp" alt="Background" class="w-full h-full object-cover opacity-60">
     </div>
 
     {{-- Content --}}
@@ -9,7 +9,7 @@
 
         {{-- Logo --}}
         <div class="mb-7 transform hover:scale-105 transition-transform duration-500">
-            <img src="/img/alnhdafooterlogo.png" alt="النهضة العقارية"
+            <img src="/img/alnhdafooterlogo.webp" alt="النهضة العقارية"
                 class="w-36 md:w-56 drop-shadow-2xl [filter:brightness(10)]">
         </div>
 

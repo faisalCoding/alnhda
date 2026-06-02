@@ -2,7 +2,7 @@
 
 <div x-data class="w-full max-w-2xl">
     @php
-        $image = $article->image_article ?? 'img/article.jpg';
+        $image = $article->image_article ?? 'img/article.webp';
         $imageUrl = filter_var($image, FILTER_VALIDATE_URL)
             ? $image
             : (Str::contains($image, ['articles/', 'uploads/', 'blogs/'])
@@ -34,7 +34,7 @@
         <div class="relative group-hover:w-1/4 w-1/12 duration-500 shrink-0 overflow-hidden">
             <img src="{{ $imageUrl }}"
                 class="absolute group-hover:blur-[0] blur-sm duration-500 inset-0 w-full h-full object-cover grayscale"
-                alt="{{ $article->title }}" onerror="this.src='{{ asset('img/article.jpg') }}'">
+                alt="{{ $article->title }}" onerror="this.src='{{ asset('img/article.webp') }}'">
             {{-- Green overlay --}}
             <div class="absolute inset-0 bg-[#498e49]/70 mix-blend-multiply"></div>
         </div>

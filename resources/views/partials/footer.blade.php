@@ -1,11 +1,11 @@
 <footer class="bg-zinc-50 border-t border-zinc-200 mt-20 bg-cover bg-center bg-no-repeat"
-    style="background-image: url('/img/footerbg.jpg');" dir="rtl">
+    style="background-image: url('/img/footerbg.webp');" dir="rtl">
     <div class="max-w-7xl mx-auto px-6 py-12 lg:py-16">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
 
             {{-- Brand Section --}}
             <div class="lg:col-span-4 flex flex-col items-center md:items-start text-center md:text-right space-y-6">
-                <img src="/img/alnhdafooterlogo.png" alt="النهضة العقارية" class="h-24 w-auto object-contain">
+                <img src="/img/alnhdafooterlogo.webp" alt="النهضة العقارية" class="h-24 w-auto object-contain">
                 <p class="text-zinc-600 text-sm leading-relaxed max-w-sm">
                     اشترك في نشرتنا البريدية للحصول على آخر التحديثات والعروض العقارية المميزة مباشرة إلى بريدك
                     الإلكتروني.

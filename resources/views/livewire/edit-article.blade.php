@@ -37,7 +37,7 @@
                             <input type="file" wire:model="image" class="w-full p-3 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200">
                             @if($image)
                                  <img src="{{ $image->temporaryUrl() }}" class="w-16 h-16 rounded object-cover shrink-0 border border-neutral-700">
-                            @elseif($existingImage && $existingImage != '\/img\/article.jpg' && $existingImage != '/img/article.jpg')
+                            @elseif($existingImage && $existingImage != '\/img\/article.webp' && $existingImage != '/img/article.webp')
                                  <img src="{{ asset('storage/' . $existingImage) }}" class="w-16 h-16 rounded object-cover shrink-0 border border-neutral-700">
                             @endif
                         </div>

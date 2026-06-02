@@ -35,7 +35,7 @@
                 {{-- Featured Image --}}
                 <div class="relative w-full aspect-video md:aspect-[21/9] rounded-3xl overflow-hidden shadow-2xl mb-12">
                     @php
-                        $image = $article->image_article ?? 'img/article.jpg';
+                        $image = $article->image_article ?? 'img/article.webp';
                         $imageUrl = filter_var($image, FILTER_VALIDATE_URL)
                             ? $image
                             : (Str::contains($image, ['articles/', 'uploads/', 'blogs/'])
@@ -44,7 +44,7 @@
                     @endphp
                     <img src="{{ $imageUrl }}" alt="{{ $article->title }}"
                         class="absolute inset-0 w-full h-full object-cover"
-                        onerror="this.src='{{ asset('img/article.jpg') }}'">
+                        onerror="this.src='{{ asset('img/article.webp') }}'">
 
                     <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
                 </div>

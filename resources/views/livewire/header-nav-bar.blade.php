@@ -50,7 +50,7 @@
 
         {{-- Logo --}}
         <a href="{{ route('welcome') }}" class="flex-shrink-0" wire:navigate>
-            <img src="/img/alnhdafooterlogo.png" class="h-12 w-auto object-contain" alt="Logo">
+            <img src="/img/alnhdafooterlogo.webp" class="h-12 w-auto object-contain" alt="Logo">
         </a>
 
         {{-- Mobile Menu Button --}}

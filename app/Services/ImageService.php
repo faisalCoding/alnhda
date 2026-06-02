@@ -23,7 +23,7 @@ class ImageService
      * @param int $quality
      * @return string Relpath of the saved image
      */
-    public static function uploadAndProcess($file, $folder = 'uploads', $width = null, $height = null, $format = 'webp', $quality = 90)
+    public static function uploadAndProcess($file, $folder = 'uploads', $width = null, $height = null, $format = 'webp', $quality = 95)
     {
         // Generate a unique filename
         $filename = Str::random(40) . '.' . $format;
