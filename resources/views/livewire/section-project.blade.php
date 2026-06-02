@@ -30,8 +30,8 @@
     }">
 
     <div class="relative mb-12 container mx-auto px-4">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-900">إكتشف مشاريعنا <span
-                class="text-[#49A035]">المتميزة</span></h1>
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900">إكتشف مشاريعنا <span
+                class="text-[#49A035]">المتميزة</span></h2>
         <div class="w-24 h-1.5 bg-[#49A035] mx-auto mt-4 rounded-full opacity-80"></div>
     </div>
 
