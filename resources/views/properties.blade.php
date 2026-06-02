@@ -2,6 +2,10 @@
 
 @section('title', 'KN | ' . $properties->name)
 
+@section('description', $properties->project->description ?? 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية.')
+
+@section('image', $properties->propertiesImages->first() ? asset('storage/' . $properties->propertiesImages->first()->url) : asset('img/KNicon.png'))
+
 @section('main')
     <div x-data="{ showModal: false, imgUrl: '' }" class="container mx-auto px-4 py-8 rtl" dir="rtl">
 
