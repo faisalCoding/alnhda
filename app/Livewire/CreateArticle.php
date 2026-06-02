@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Article;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use App\Services\ImageService;
 
 class CreateArticle extends Component
 {
@@ -24,7 +25,7 @@ class CreateArticle extends Component
             'content' => 'nullable|string',
         ]);
 
-        $imagePath = $this->image ? $this->image->store('articles', 'public') : '\/img\/article.jpg';
+        $imagePath = $this->image ? ImageService::uploadAndProcess($this->image, 'articles', 1000) : '/img/article.jpg';
 
         Article::create([
             'title' => $this->title,

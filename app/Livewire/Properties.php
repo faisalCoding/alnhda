@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use Livewire\Attributes\Validate;
 use Livewire\WithFileUploads;
+use App\Services\ImageService;
 
 
 
@@ -110,7 +111,7 @@ class Properties extends Component
     {
 
         foreach ($this->photos as $photo) {
-            $path = $photo->store('uploads', 'public');
+            $path = ImageService::uploadAndProcess($photo, 'uploads', 1200);
             $image = \App\Models\ImageProperties::create([
                 'url' => $path,
                 'properties_id' => $propertyId,

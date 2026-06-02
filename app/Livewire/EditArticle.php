@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Article;
 use Illuminate\Support\Facades\Storage;
+use App\Services\ImageService;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -47,7 +48,7 @@ class EditArticle extends Component
         ];
 
         if ($this->image) {
-            $data['image_article'] = $this->image->store('articles', 'public');
+            $data['image_article'] = ImageService::uploadAndProcess($this->image, 'articles', 1000);
             if ($this->existingImage && $this->existingImage != '\/img\/article.jpg' && $this->existingImage != '/img/article.jpg') {
                 Storage::disk('public')->delete($this->existingImage);
             }

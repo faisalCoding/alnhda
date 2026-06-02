@@ -8,6 +8,7 @@ use Livewire\WithFileUploads;
 use App\Models\Properties;
 use App\Models\ImageProperties;
 use Illuminate\Support\Facades\Storage;
+use App\Services\ImageService;
 use Livewire\Attributes\Layout;
 
 class EditProperty extends Component
@@ -125,7 +126,7 @@ class EditProperty extends Component
 
             if (!empty($this->photos)) {
                 foreach ($this->photos as $photo) {
-                    $path = $photo->store('uploads', 'public');
+                    $path = ImageService::uploadAndProcess($photo, 'uploads', 1200);
                      ImageProperties::create([
                         'url' => $path,
                         'properties_id' => $this->propertyModel->id,

@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\Attributes\Rule;
 use Livewire\WithFileUploads;
 use App\Models\Project;
+use App\Services\ImageService;
 
 class Projects extends Component
 {
@@ -47,7 +48,7 @@ class Projects extends Component
     {
 
         try {
-            $path =  $this->image->store('uploads', 'public');
+            $path = ImageService::uploadAndProcess($this->image, 'uploads', 800);
         } catch (\Throwable $th) {
             $this->addError('catch_upload', 'هناك مشكلة حدثت أثناء رفع الصورة');
         }

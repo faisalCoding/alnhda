@@ -8,6 +8,7 @@ use App\Models\Project;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\Storage;
+use App\Services\ImageService;
 
 class EditProject extends Component
 {
@@ -60,7 +61,7 @@ class EditProject extends Component
             ];
 
             if ($this->image) {
-                $data['image_url'] = $this->image->store('uploads', 'public');
+                $data['image_url'] = ImageService::uploadAndProcess($this->image, 'uploads', 800);
                 Storage::disk('public')->delete($this->existingImage);
             }
 
