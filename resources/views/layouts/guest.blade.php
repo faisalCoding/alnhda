@@ -25,6 +25,11 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="{{ url()->current() }}" />
 
+    {{-- Preload Hero Image for LCP Optimization --}}
+    @if (request()->routeIs('home') || request()->path() == '/')
+        <link rel="preload" href="/img/homebg.webp" as="image" type="image/webp" fetchpriority="high">
+    @endif
+
     {{-- بقية الروابط وملفات الـ CSS --}}
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

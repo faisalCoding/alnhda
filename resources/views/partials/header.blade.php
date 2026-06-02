@@ -1,7 +1,7 @@
 <div class="relative w-full h-[85vh] min-h-[600px] flex items-center justify-center bg-zinc-900 rtl" dir="rtl">
     {{-- Background Image --}}
     <div class="absolute inset-0 z-0">
-        <img src="/img/homebg.webp" alt="Background" class="w-full h-full object-cover opacity-60">
+        <img src="/img/homebg.webp" alt="Background" class="w-full h-full object-cover opacity-60" fetchpriority="high" loading="eager">
     </div>
 
     {{-- Content --}}

@@ -39,7 +39,8 @@
                     {{--  Placeholder image if no specific one exists.  --}}
                     <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop"
                         alt="مبنى عصري"
-                        class="w-full h-[500px] object-cover hover:scale-105 transition-transform duration-700">
+                        class="w-full h-[500px] object-cover hover:scale-105 transition-transform duration-700"
+                        loading="lazy">
 
                     {{-- Overlay Gradient --}}
                     <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>

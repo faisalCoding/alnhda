@@ -34,7 +34,8 @@
         <div class="relative group-hover:w-1/4 w-1/12 duration-500 shrink-0 overflow-hidden">
             <img src="{{ $imageUrl }}"
                 class="absolute group-hover:blur-[0] blur-sm duration-500 inset-0 w-full h-full object-cover grayscale"
-                alt="{{ $article->title }}" onerror="this.src='{{ asset('img/article.webp') }}'">
+                alt="{{ $article->title }}" onerror="this.src='{{ asset('img/article.webp') }}'"
+                loading="lazy">
             {{-- Green overlay --}}
             <div class="absolute inset-0 bg-[#498e49]/70 mix-blend-multiply"></div>
         </div>
