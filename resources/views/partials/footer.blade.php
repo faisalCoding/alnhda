@@ -91,6 +91,7 @@
 
                 <div class="flex items-center gap-4">
                     <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer"
+                        aria-label="حساب تويتر لشركة كيان النهضة العقارية"
                         class="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-500 hover:text-white hover:bg-black hover:border-black transition-all duration-300 group">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path
@@ -98,6 +99,7 @@
                         </svg>
                     </a>
                     <a href="https://www.youtube.com/@KayanAlnhda" target="_blank" rel="noopener noreferrer"
+                        aria-label="قناة اليوتيوب لشركة كيان النهضة العقارية"
                         class="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-500 hover:text-white hover:bg-[#FF0000] hover:border-[#FF0000] transition-all duration-300 group">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path
@@ -105,6 +107,7 @@
                         </svg>
                     </a>
                     <a href="https://www.instagram.com/nahda_realestate/" target="_blank" rel="noopener noreferrer"
+                        aria-label="حساب إنستغرام لشركة كيان النهضة العقارية"
                         class="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-500 hover:text-white hover:bg-gradient-to-tr hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] hover:border-transparent transition-all duration-300 group">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path
@@ -119,6 +122,7 @@
                 <div class="w-full h-48  min-h-[200px] rounded-2xl overflow-hidden shadow-sm border border-zinc-200">
                     <iframe
                         src="https://maps.google.com/maps?q=جامع%20الانصار%20حي%20الواحة%20جدة@21.5660262,39.2480873&z=15&output=embed&z=17"
+                        title="موقع كيان النهضة العقارية على خريطة جوجل"
                         width="600" height="600" style="border:0;" allowfullscreen="" loading="lazy" z=6
                         referrerpolicy="no-referrer-when-downgrade"></iframe>
                 </div>
