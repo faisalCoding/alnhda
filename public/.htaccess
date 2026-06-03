@@ -63,4 +63,12 @@
     ExpiresDefault "access plus 1 month"
 </IfModule>
 
+# Alternative fallback using mod_headers (if mod_expires is disabled)
+<IfModule mod_headers.c>
+    <FilesMatch "\.(ico|pdf|flv|jpg|jpeg|png|gif|webp|js|css|swf|svg|woff|woff2)$">
+        Header set Cache-Control "max-age=31536000, public"
+    </FilesMatch>
+</IfModule>
+
+
 
