@@ -271,7 +271,7 @@
     </div>
 
     <!-- Swiper JS -->
-    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+    <script src="{{ asset('js/swiper-bundle.min.js') }}"></script>
 
     <!-- Initialize Swiper -->
     <script>

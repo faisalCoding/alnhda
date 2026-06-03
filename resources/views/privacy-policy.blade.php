@@ -8,7 +8,7 @@
         <div class="relative bg-zinc-900 h-[200px] flex items-center justify-center overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
             <div
-                class="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=2670&auto=format&fit=crop')] bg-cover bg-center">
+                class="absolute inset-0 opacity-20 bg-[url('/img/privacybg.webp')] bg-cover bg-center">
             </div>
             <div class="relative z-10 text-center px-4">
                 <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">سياسة الخصوصية</h1>

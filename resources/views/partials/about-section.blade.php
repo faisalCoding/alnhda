@@ -37,10 +37,10 @@
             <div class="relative" data-aos="fade-right">
                 <div class="relative rounded-2xl overflow-hidden shadow-2xl">
                     {{--  Placeholder image if no specific one exists.  --}}
-                    <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop"
+                    <img src="/img/aboutbg.webp"
                         alt="مبنى عصري"
                         class="w-full h-[500px] object-cover hover:scale-105 transition-transform duration-700"
-                        loading="lazy">
+                        loading="lazy" width="800" height="500">
 
                     {{-- Overlay Gradient --}}
                     <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>

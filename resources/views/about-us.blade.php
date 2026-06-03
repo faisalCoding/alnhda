@@ -9,7 +9,7 @@
         {{-- Hero Section --}}
         <div class="relative bg-zinc-900 h-[300px] flex items-center justify-center overflow-hidden">
             <div
-                class="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2670&auto=format&fit=crop')] bg-cover bg-center">
+                class="absolute inset-0 opacity-20 bg-[url('/img/aboutbg.webp')] bg-cover bg-center">
             </div>
             <div class="relative z-10 text-center px-4">
                 <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">من نحن</h1>

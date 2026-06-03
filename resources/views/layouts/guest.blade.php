@@ -47,7 +47,7 @@
     </style>
     @vite('resources/css/app.css')
 
-    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="{{ asset('css/swiper-bundle.min.css') }}" />
 
     <!-- Google Tag Manager -->
     <script>
