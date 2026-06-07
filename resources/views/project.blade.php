@@ -2,6 +2,38 @@
 
 @section('title', 'KN | ' . $project->name)
 
+@section('description', \Illuminate\Support\Str::limit(strip_tags($project->description), 155))
+
+@section('image', $project->image_url ? asset('storage/' . $project->image_url) : asset('img/KNicon.png'))
+
+@push('jsonld')
+    @php
+        $projectImage = $project->image_url ? asset('storage/' . $project->image_url) : asset('img/KNicon.png');
+        $projectSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Product',
+            'name' => $project->name,
+            'image' => $projectImage,
+            'description' => \Illuminate\Support\Str::limit(strip_tags($project->description), 155),
+            'brand' => ['@type' => 'Brand', 'name' => 'كيان النهضة العقارية'],
+        ];
+        $projectBreadcrumb = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => [
+                ['@type' => 'ListItem', 'position' => 1, 'name' => 'المشاريع', 'item' => route('projects')],
+                ['@type' => 'ListItem', 'position' => 2, 'name' => $project->name, 'item' => url()->current()],
+            ],
+        ];
+    @endphp
+    <script type="application/ld+json">
+        {!! json_encode($projectSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+    </script>
+    <script type="application/ld+json">
+        {!! json_encode($projectBreadcrumb, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+    </script>
+@endpush
+
 @section('main')
     <div class="container mx-auto px-4 py-8 rtl" dir="rtl">
 
@@ -31,6 +63,20 @@
             </p>
         </div>
 
+        {{-- Project PDF Download --}}
+        @if (!empty($project->pdf_path))
+            <div class="flex mb-8">
+                <a href="{{ route('project.download', $project) }}"
+                    class="flex items-center justify-center gap-3 bg-white text-[#498e49] border border-[#498e49] hover:bg-[#498e49] hover:text-white transition-all duration-300 px-6 py-3.5 rounded-2xl font-bold shadow-sm hover:shadow-md transform hover:-translate-y-0.5 w-full sm:w-auto">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    <span>تحميل ملف عرض المشروع (PDF)</span>
+                </a>
+            </div>
+        @endif
+
         {{-- Project Details Bar --}}
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-8 p-6">
             <div
@@ -49,6 +95,28 @@
                 </div>
             </div>
         </div>
+
+        {{-- Guarantees Section --}}
+        @if (!empty($project->guarantees))
+            <div class="bg-white rounded-2xl shadow-sm p-8 mb-8 border border-gray-100">
+                <div class="flex items-center mb-6">
+                    <div class="w-1.5 h-8 bg-[#498e49] rounded-full ml-3"></div>
+                    <h2 class="text-2xl font-bold text-gray-800">ضمانات المشروع</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @foreach ($project->guarantees as $guarantee)
+                        <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                            <div class="w-10 h-10 rounded-full bg-[#498e49]/10 flex items-center justify-center text-[#498e49] flex-shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                </svg>
+                            </div>
+                            <span class="text-gray-700 font-medium text-base leading-relaxed">{{ $guarantee }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
 
         {{-- Properties Section --}}
         <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">

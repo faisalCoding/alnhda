@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="scroll-smooth" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html class="scroll-smooth" lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="rtl">
 
 <head>
     <meta charset="utf-8">
@@ -9,7 +9,7 @@
     <title>@yield('title') | {{ config('app.name', 'كيان النهضة العقارية') }}</title>
     <link rel="icon" type="image/png" href="{{ asset('img/KNicon.png') }}">
     <link rel="shortcut icon" href="{{ asset('img/KNicon.png') }}">
-    <link rel="canonical" href="https://kayanalnhda.com/">
+    <link rel="canonical" href="{{ url()->current() }}">
     <link rel="apple-touch-icon" href="{{ asset('img/KNicon.png') }}">
 
 
@@ -24,6 +24,13 @@
     <meta property="og:image" content="@yield('image', asset('img/KNicon.png'))" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="{{ url()->current() }}" />
+    <meta property="og:locale" content="ar_SA" />
+
+    {{-- 4. Twitter Card --}}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@yield('title', 'كيان النهضة العقارية')" />
+    <meta name="twitter:description" content="@yield('description', 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية. اكتشف مشاريعنا الآن!')" />
+    <meta name="twitter:image" content="@yield('image', asset('img/KNicon.png'))" />
 
     {{-- Preload Hero Image for LCP Optimization --}}
     @if (request()->routeIs('home') || request()->path() == '/')
@@ -67,6 +74,10 @@
         })(window, document, 'script', 'dataLayer', 'GTM-5KBXGPRJ');
     </script>
     <!-- End Google Tag Manager -->
+
+    {{-- Structured Data (JSON-LD) --}}
+    @include('partials.structured-data')
+    @stack('jsonld')
 </head>
 
 <body

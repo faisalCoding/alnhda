@@ -2,6 +2,53 @@
 
 @section('title', $article->title)
 
+@section('description', \Illuminate\Support\Str::limit(strip_tags($article->content), 155))
+
+@php
+    $ogImage = $article->image_article ?? 'img/article.webp';
+    $ogImageUrl = filter_var($ogImage, FILTER_VALIDATE_URL)
+        ? $ogImage
+        : (\Illuminate\Support\Str::contains($ogImage, ['articles/', 'uploads/', 'blogs/'])
+            ? asset('storage/' . $ogImage)
+            : asset(str_replace('\\', '', $ogImage)));
+@endphp
+
+@section('image', $ogImageUrl)
+
+@push('jsonld')
+    @php
+        $articleSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Article',
+            'headline' => $article->title,
+            'image' => $ogImageUrl,
+            'datePublished' => $article->created_at->toAtomString(),
+            'dateModified' => $article->updated_at->toAtomString(),
+            'author' => ['@type' => 'Organization', 'name' => 'كيان النهضة العقارية'],
+            'publisher' => [
+                '@type' => 'Organization',
+                'name' => 'كيان النهضة العقارية',
+                'logo' => ['@type' => 'ImageObject', 'url' => asset('img/KNicon.png')],
+            ],
+            'mainEntityOfPage' => url()->current(),
+        ];
+        $articleBreadcrumb = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => [
+                ['@type' => 'ListItem', 'position' => 1, 'name' => 'المقالات', 'item' => route('articles')],
+                ['@type' => 'ListItem', 'position' => 2, 'name' => $article->title, 'item' => url()->current()],
+            ],
+        ];
+    @endphp
+    <script type="application/ld+json">
+        {!! json_encode($articleSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+    </script>
+    <script type="application/ld+json">
+        {!! json_encode($articleBreadcrumb, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+    </script>
+@endpush
+
 @section('main')
     <article class="w-full bg-[#fcfcfc] min-h-screen py-10 md:py-20" dir="rtl">
         <div class="container mx-auto px-4 lg:px-0 max-w-4xl">
