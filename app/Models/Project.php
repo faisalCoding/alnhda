@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Project extends Model
 {
     //
     use HasFactory;
-    
+
     protected $fillable = [
         'name',
         'description',
@@ -17,14 +17,22 @@ class Project extends Model
         'project_type',
         'location',
         'image_url',
+        'map_url',
+        'pdf_path',
+        'guarantees',
     ];
 
-    public function properties(){
+    protected $casts = [
+        'guarantees' => 'array',
+    ];
+
+    public function properties()
+    {
         return $this->hasMany(Properties::class);
     }
 
-    public function projectImage() {
+    public function projectImage()
+    {
         return $this->hasOne(ImageProject::class);
     }
 }
-

@@ -2,21 +2,37 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use Livewire\Attributes\Rule;
-use Livewire\WithFileUploads;
 use App\Models\Project;
 use App\Services\ImageService;
+use App\Services\PdfService;
+use Livewire\Attributes\Validate;
+use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Projects extends Component
 {
-
     use WithFileUploads;
 
-    #[Validate('required|image|max:2048|dimensions:max_width=3000,max_height=3000|mimes:jpg,jpeg,png,webp,bmp,gif')]
+    #[Validate('required|image|max:40960|dimensions:max_width=3000,max_height=3000|mimes:jpg,jpeg,png,webp,bmp,gif')]
     public $image;
 
+    #[Validate('nullable|file|mimes:pdf|max:40960')]
+    public $pdf_file;
+
     public $project = [];
+
+    public $guarantees = [];
+
+    public function addGuarantee()
+    {
+        $this->guarantees[] = '';
+    }
+
+    public function removeGuarantee($index)
+    {
+        unset($this->guarantees[$index]);
+        $this->guarantees = array_values($this->guarantees);
+    }
 
     public function render()
     {
@@ -29,6 +45,15 @@ class Projects extends Component
         try {
             $upload_and_path = $this->uploadFile();
 
+            $pdf_path = null;
+            if ($this->pdf_file) {
+                $pdf_path = $this->pdf_file->store('presentations', 'public');
+                $pdf_path = PdfService::compress($pdf_path);
+            }
+
+            // Filter out empty guarantees
+            $filteredGuarantees = array_values(array_filter(array_map('trim', $this->guarantees)));
+
             Project::create(
                 [
                     'name' => $this->project['name'],
@@ -37,8 +62,14 @@ class Projects extends Component
                     'status' => $this->project['status'],
                     'project_type' => $this->project['project_type'],
                     'image_url' => $upload_and_path,
+                    'map_url' => $this->project['map_url'] ?? null,
+                    'pdf_path' => $pdf_path,
+                    'guarantees' => ! empty($filteredGuarantees) ? $filteredGuarantees : null,
                 ]
             );
+
+            // Reset fields
+            $this->reset(['project', 'image', 'pdf_file', 'guarantees']);
         } catch (\Throwable $th) {
             $this->addError('creating_error', 'هناك مشكلة حدثت أثناء إنشاء المشروع');
         }
@@ -55,6 +86,7 @@ class Projects extends Component
 
         return $path;
     }
+
     public function deleteProject($id)
     {
         Project::find($id)->delete();

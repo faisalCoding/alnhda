@@ -87,6 +87,18 @@
                                 <option value="محجوز بالكامل">محجوز بالكامل</option>
                             </select>
                         </div>
+
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm font-medium text-gray-400">رابط خريطة المشروع (Google Maps)</label>
+                            <input type="text" wire:model="project.map_url" placeholder="مثال: https://maps.google.com/..."
+                                class="w-full p-3 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200 placeholder-neutral-500 focus:border-[#498e49] focus:ring focus:ring-[#498e49]/20 outline-none transition-all">
+                        </div>
+
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm font-medium text-gray-400">ملف عرض المشروع (PDF) - اختياري</label>
+                            <input type="file" wire:model="pdf_file" accept="application/pdf"
+                                class="w-full p-2.5 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200 focus:border-[#498e49] focus:ring focus:ring-[#498e49]/20 outline-none transition-all">
+                        </div>
                     </div>
                 </div>
 
@@ -100,6 +112,44 @@
                         <label class="text-sm font-medium text-gray-400">الوصف</label>
                         <textarea wire:model="project.description" rows="4" placeholder="اكتب وصفاً مختصراً للمشروع..."
                             class="w-full p-3 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200 placeholder-neutral-500 focus:border-[#498e49] focus:ring focus:ring-[#498e49]/20 outline-none transition-all resize-none"></textarea>
+                    </div>
+                </div>
+
+                {{-- Guarantees --}}
+                <div class="border-b border-neutral-700 pb-6">
+                    <div class="mb-4 flex items-center justify-between">
+                        <h3 class="font-bold text-gray-300 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-[#498e49]"></span>
+                            ضمانات المشروع (اختياري)
+                        </h3>
+                        <button type="button" wire:click="addGuarantee"
+                            class="text-xs bg-[#498e49]/20 hover:bg-[#498e49] text-[#498e49] hover:text-white px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            إضافة ضمان
+                        </button>
+                    </div>
+                    
+                    <div class="flex flex-col gap-3">
+                        @foreach ($guarantees as $index => $guarantee)
+                            <div class="flex items-center gap-2" wire:key="guarantee-{{ $index }}">
+                                <input type="text" wire:model="guarantees.{{ $index }}" placeholder="مثال: ضمان السباكة 10 سنوات"
+                                    class="w-full p-3 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200 placeholder-neutral-500 focus:border-[#498e49] focus:ring focus:ring-[#498e49]/20 outline-none transition-all">
+                                <button type="button" wire:click="removeGuarantee({{ $index }})"
+                                    class="p-3 bg-red-900/20 text-red-400 hover:bg-red-900 hover:text-white rounded-xl transition-all border border-red-500/20">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        @endforeach
+
+                        @if (empty($guarantees))
+                            <div class="text-sm text-neutral-500 text-center py-4 bg-neutral-900/30 rounded-xl border border-dashed border-neutral-700">
+                                لم يتم إضافة أي ضمانات بعد. اضغط على "إضافة ضمان" للبدء.
+                            </div>
+                        @endif
                     </div>
                 </div>
 

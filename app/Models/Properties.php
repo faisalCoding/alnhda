@@ -27,13 +27,16 @@ class Properties extends Model
         'properties_image',
         'unit_youtube',
         'stages_building_youtube',
+        'pdf_path',
     ];
 
-    public function project(){
+    public function project()
+    {
         return $this->belongsTo(Project::class);
     }
-    
-    public function propertiesImages() {
+
+    public function propertiesImages()
+    {
         return $this->hasMany(ImageProperties::class);
     }
 }

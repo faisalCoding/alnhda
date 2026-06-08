@@ -229,6 +229,11 @@
                             <input type="text" wire:model="stages_building_youtube" placeholder="0"
                                 class="w-full p-3 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200 placeholder-neutral-500 focus:border-[#498e49] focus:ring focus:ring-[#498e49]/20 outline-none transition-all">
                         </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm font-medium text-gray-400">ملف عرض الوحدة (PDF)</label>
+                            <input type="file" wire:model="pdf_file" accept="application/pdf"
+                                class="w-full p-2.5 rounded-xl bg-neutral-900 border border-neutral-600 text-gray-200 placeholder-neutral-500 focus:border-[#498e49] focus:ring focus:ring-[#498e49]/20 outline-none transition-all">
+                        </div>
                     </div>
                 </div>
 

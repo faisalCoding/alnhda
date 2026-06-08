@@ -2,17 +2,14 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use Livewire\Attributes\Validate;
-use Livewire\WithFileUploads;
 use App\Services\ImageService;
-
-
+use Livewire\Attributes\Validate;
+use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Properties extends Component
 {
     use WithFileUploads;
-
 
     #[Validate('required|min:3')]
     public $name = 'شقة';
@@ -27,7 +24,7 @@ class Properties extends Component
     public $offer = null;
 
     #[Validate('required')]
-    public $status   = 'جديد';
+    public $status = 'جديد';
 
     #[Validate('required')]
     public $rooms = 5;
@@ -67,9 +64,11 @@ class Properties extends Component
 
     #[Validate('required')]
     public $furniture = true;
+
     public $photos = [];
 
-
+    #[Validate('nullable|file|mimes:pdf|max:40960')]
+    public $pdf_file;
 
     public function render()
     {
@@ -80,29 +79,36 @@ class Properties extends Component
     {
         $this->validate();
 
+        $pdf_path = null;
+        if ($this->pdf_file) {
+            $pdf_path = $this->pdf_file->store('presentations', 'public');
+            $pdf_path = \App\Services\PdfService::compress($pdf_path);
+        }
+
         $property = \App\Models\Properties::create([
-            'name'         => $this->name,
-            'project_id'   => $this->project_id,
-            'price'        => $this->price,
-            'offer'        => $this->offer ?: null,
-            'status'       => $this->status,
-            'rooms'        => $this->rooms,
-            'bathrooms'    => $this->bathrooms,
+            'name' => $this->name,
+            'project_id' => $this->project_id,
+            'price' => $this->price,
+            'offer' => $this->offer ?: null,
+            'status' => $this->status,
+            'rooms' => $this->rooms,
+            'bathrooms' => $this->bathrooms,
             'living_rooms' => $this->living_rooms,
-            'mainds_room'  => $this->mainds_room,
-            'area'         => $this->area,
-            'doors'        => $this->doors,
-            'type'         => $this->type,
-            'parkings'     => $this->parkings,
-            'driver_room'  => $this->driver_room,
-            'facade'       => $this->facade,
-            'furniture'    => $this->furniture,
-            'unit_youtube'      => $this->unit_youtube ?: null,
+            'mainds_room' => $this->mainds_room,
+            'area' => $this->area,
+            'doors' => $this->doors,
+            'type' => $this->type,
+            'parkings' => $this->parkings,
+            'driver_room' => $this->driver_room,
+            'facade' => $this->facade,
+            'furniture' => $this->furniture,
+            'unit_youtube' => $this->unit_youtube ?: null,
             'stages_building_youtube' => $this->stages_building_youtube ?: null,
+            'pdf_path' => $pdf_path,
         ]);
         $this->saveImages($property->id);
-        
-        $this->reset(['name', 'price', 'offer', 'status', 'rooms', 'bathrooms', 'living_rooms', 'mainds_room', 'area', 'doors', 'type', 'parkings', 'driver_room', 'facade', 'furniture', 'photos']);
+
+        $this->reset(['name', 'price', 'offer', 'status', 'rooms', 'bathrooms', 'living_rooms', 'mainds_room', 'area', 'doors', 'type', 'parkings', 'driver_room', 'facade', 'furniture', 'photos', 'pdf_file']);
         session()->flash('message', 'Units successfully created.');
     }
 
@@ -115,7 +121,7 @@ class Properties extends Component
                 'url' => $path,
                 'properties_id' => $propertyId,
             ]);
-           
+
         }
     }
 
@@ -123,6 +129,7 @@ class Properties extends Component
     {
         array_splice($this->photos, $index, 1);
     }
+
     public function deleteProperty($id)
     {
         \App\Models\Properties::find($id)->delete();
