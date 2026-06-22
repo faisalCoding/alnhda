@@ -59,6 +59,10 @@
 @endpush
 
 @section('main')
+    <style>
+        .safe-top  { padding-top:    max(0.75rem, env(safe-area-inset-top)); }
+        .safe-bottom { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+    </style>
     <div x-data="{ showModal: false }" class="container mx-auto px-4 py-8 rtl" dir="rtl">
 
         {{-- Breadcrumb --}}
@@ -399,9 +403,9 @@
         </div>
 
         {{-- Image Modal --}}
-        <div x-show="showModal" 
+        <div x-show="showModal"
              style="display: none;"
-             class="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm"
+             class="fixed inset-0 z-[100] flex flex-col bg-black/95"
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
@@ -410,43 +414,47 @@
              x-transition:leave-end="opacity-0"
              @keydown.escape.window="showModal = false"
              @close-lightbox.window="showModal = false">
-            
-            {{-- Close Button --}}
-            <button @click="showModal = false" class="absolute top-6 right-6 text-white/70 hover:text-white transition-colors z-[120] p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
 
-            {{-- Swiper Container --}}
-            <div @click.outside="showModal = false" class="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center">
-                <div class="swiper lightboxSwiper w-full h-full" dir="ltr" style="--swiper-theme-color: #498e49; --swiper-pagination-bullet-inactive-color: #ffffff; --swiper-pagination-bullet-inactive-opacity: 0.4;">
-                    <div class="swiper-wrapper">
+            {{-- Top bar --}}
+            <div class="flex-none flex items-center justify-end px-4 py-3 safe-top">
+                <button @click="showModal = false"
+                    class="text-white/70 hover:text-white transition-colors p-2 bg-white/10 hover:bg-white/20 rounded-full">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Swiper (fills remaining space) --}}
+            <div class="flex-1 overflow-hidden">
+                <div class="swiper lightboxSwiper h-full w-full" dir="ltr"
+                    style="--swiper-theme-color: #498e49; --swiper-pagination-bullet-inactive-color: #ffffff; --swiper-pagination-bullet-inactive-opacity: 0.4;">
+                    <div class="swiper-wrapper h-full">
                         @foreach ($properties->propertiesImages as $image)
-                            <div class="swiper-slide flex items-center justify-center select-none">
-                                <img src="{{ asset('storage/' . $image->url) }}" 
-                                     class="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl pointer-events-none" 
-                                     draggable="false" 
+                            <div class="swiper-slide flex items-center justify-center select-none px-2">
+                                <img src="{{ asset('storage/' . $image->url) }}"
+                                     class="max-w-full max-h-full object-contain rounded-xl pointer-events-none"
+                                     draggable="false"
                                      alt="{{ $properties->name }}">
                             </div>
                         @endforeach
                     </div>
-
-                    {{-- Navigation Controls --}}
-                    <button class="lightbox-next absolute right-4 top-1/2 -translate-y-1/2 z-[110] text-white/70 hover:text-white transition-colors p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md select-none">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
-                    <button class="lightbox-prev absolute left-4 top-1/2 -translate-y-1/2 z-[110] text-white/70 hover:text-white transition-colors p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md select-none">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                        </svg>
-                    </button>
-
-                    {{-- Pagination --}}
-                    <div class="lightbox-pagination absolute bottom-4 left-0 right-0 flex justify-center z-[110]"></div>
                 </div>
+            </div>
+
+            {{-- Bottom bar: prev / pagination / next --}}
+            <div class="flex-none flex items-center justify-between px-4 py-3 safe-bottom">
+                <button class="lightbox-prev text-white/70 hover:text-white transition-colors p-2 bg-white/10 hover:bg-white/20 rounded-full select-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <div class="lightbox-pagination"></div>
+                <button class="lightbox-next text-white/70 hover:text-white transition-colors p-2 bg-white/10 hover:bg-white/20 rounded-full select-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
             </div>
         </div>
 
