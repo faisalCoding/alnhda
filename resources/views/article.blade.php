@@ -14,6 +14,7 @@
 @endphp
 
 @section('image', $ogImageUrl)
+@section('og_type', 'article')
 
 @push('jsonld')
     @php

@@ -22,7 +22,7 @@
     <meta property="og:title" content="@yield('title', 'كيان النهضة العقارية')" />
     <meta property="og:description" content="@yield('description', 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية. اكتشف مشاريعنا الآن!')" />
     <meta property="og:image" content="@yield('image', asset('img/KNicon.png'))" />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content="@yield('og_type', 'website')" />
     <meta property="og:url" content="{{ url()->current() }}" />
     <meta property="og:locale" content="ar_SA" />
 

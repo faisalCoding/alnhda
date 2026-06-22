@@ -10,7 +10,8 @@
                 : asset(str_replace('\\', '', $image)));
     @endphp
 
-    <div x-on:click="navigateTo('{{ route('article', $article->id) }}');"
+    <a href="{{ route('article', $article->id) }}"
+        x-on:click.prevent="navigateTo('{{ route('article', $article->id) }}')"
         class="group flex flex-row-reverse h-36 bg-white shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer border border-transparent hover:border-[#498e49]/30"
         dir="rtl">
 
@@ -39,5 +40,5 @@
             {{-- Green overlay --}}
             <div class="absolute inset-0 bg-[#498e49]/70 mix-blend-multiply"></div>
         </div>
-    </div>
+    </a>
 </div>
