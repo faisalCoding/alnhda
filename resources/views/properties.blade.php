@@ -121,8 +121,27 @@
                         </span>
                     </div>
                 </div>
+                @php
+                    function extractYoutubeId(string $url): ?string
+                    {
+                        preg_match('/(?:youtube\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $url, $m);
+                        return $m[1] ?? null;
+                    }
+                    function youtubeEmbedUrl(string $url): string
+                    {
+                        $id = extractYoutubeId($url);
+                        return $id ? "https://www.youtube-nocookie.com/embed/{$id}?autoplay=1&rel=0&iv_load_policy=3" : $url;
+                    }
+                    function youtubeThumbnail(string $url): string
+                    {
+                        $id = extractYoutubeId($url);
+                        return $id ? "https://img.youtube.com/vi/{$id}/maxresdefault.jpg" : '';
+                    }
+                @endphp
+
                 @if (!empty($properties->unit_youtube) || !empty($properties->stages_building_youtube))
                     <div class="flex gap-4 items-center justify-center md:flex-row flex-col">
+
                         {{-- YouTube Video - Unit --}}
                         @if (!empty($properties->unit_youtube))
                             <div class="w-full">
@@ -130,10 +149,29 @@
                                     <div class="w-1.5 h-8 bg-[#498e49] rounded-full ml-3"></div>
                                     <h2 class="text-2xl font-bold text-gray-800">فيديو الوحدة</h2>
                                 </div>
-                                <div
-                                    class="sm:w-full max-sm:w-full relative rounded-3xl overflow-hidden shadow-xl bg-gray-100 aspect-video">
-                                    <iframe class=" w-full h-full" src="{{ $properties->unit_youtube }}" frameborder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                <div x-data="{ playing: false }"
+                                    class="sm:w-full max-sm:w-full relative rounded-3xl overflow-hidden shadow-xl bg-gray-900 aspect-video">
+                                    <div x-show="!playing" @click="playing = true"
+                                        class="absolute inset-0 cursor-pointer group">
+                                        <img src="{{ youtubeThumbnail($properties->unit_youtube) }}"
+                                            class="w-full h-full object-cover"
+                                            onerror="this.src='{{ asset('img/article.webp') }}'"
+                                            alt="فيديو الوحدة">
+                                        <div class="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors"></div>
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <div class="w-20 h-20 rounded-full bg-white/90 group-hover:bg-white group-hover:scale-110 transition-all duration-300 flex items-center justify-center shadow-2xl">
+                                                <svg class="w-8 h-8 text-[#498e49] ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M8 5v14l11-7z"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <iframe x-show="playing" x-cloak
+                                        class="w-full h-full"
+                                        src=""
+                                        :src="playing ? '{{ youtubeEmbedUrl($properties->unit_youtube) }}' : ''"
+                                        frameborder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowfullscreen>
                                     </iframe>
                                 </div>
@@ -147,10 +185,29 @@
                                     <div class="w-1.5 h-8 bg-[#498e49] rounded-full ml-3"></div>
                                     <h2 class="text-2xl font-bold text-gray-800">فيديو مراحل انشاء الوحدة</h2>
                                 </div>
-                                <div
-                                    class="sm:w-full max-sm:w-full relative rounded-3xl overflow-hidden shadow-xl bg-gray-100 aspect-video">
-                                    <iframe class=" w-full h-full" src="{{ $properties->stages_building_youtube }}" frameborder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                <div x-data="{ playing: false }"
+                                    class="sm:w-full max-sm:w-full relative rounded-3xl overflow-hidden shadow-xl bg-gray-900 aspect-video">
+                                    <div x-show="!playing" @click="playing = true"
+                                        class="absolute inset-0 cursor-pointer group">
+                                        <img src="{{ youtubeThumbnail($properties->stages_building_youtube) }}"
+                                            class="w-full h-full object-cover"
+                                            onerror="this.src='{{ asset('img/article.webp') }}'"
+                                            alt="فيديو مراحل الإنشاء">
+                                        <div class="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors"></div>
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <div class="w-20 h-20 rounded-full bg-white/90 group-hover:bg-white group-hover:scale-110 transition-all duration-300 flex items-center justify-center shadow-2xl">
+                                                <svg class="w-8 h-8 text-[#498e49] ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M8 5v14l11-7z"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <iframe x-show="playing" x-cloak
+                                        class="w-full h-full"
+                                        src=""
+                                        :src="playing ? '{{ youtubeEmbedUrl($properties->stages_building_youtube) }}' : ''"
+                                        frameborder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowfullscreen>
                                     </iframe>
                                 </div>
