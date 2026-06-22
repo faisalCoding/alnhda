@@ -13,18 +13,27 @@
 
 <div
     x-data="{
+        visible: false,
         open: false,
         init() {
-            const cycle = () => {
-                this.open = true;
-                setTimeout(() => {
-                    this.open = false;
-                    setTimeout(cycle, 2500);
-                }, 3500);
-            };
-            setTimeout(cycle, 1200);
+            setTimeout(() => {
+                this.visible = true;
+                const cycle = () => {
+                    this.open = true;
+                    setTimeout(() => {
+                        this.open = false;
+                        setTimeout(cycle, 2500);
+                    }, 3500);
+                };
+                setTimeout(cycle, 1200);
+            }, 5000);
         }
     }"
+    x-show="visible"
+    x-transition:enter="transition ease-out duration-700"
+    x-transition:enter-start="opacity-0 translate-y-12"
+    x-transition:enter-end="opacity-100 translate-y-0"
+    style="display:none"
     class="fixed bottom-6 right-6 z-50 flex items-center justify-end"
     dir="rtl">
 
