@@ -121,6 +121,29 @@
                         </span>
                     </div>
                 </div>
+
+                {{-- Guarantees Section --}}
+                @if (!empty($properties->project->guarantees))
+                    <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
+                        <div class="flex items-center mb-6">
+                            <div class="w-1.5 h-8 bg-[#498e49] rounded-full ml-3"></div>
+                            <h2 class="text-2xl font-bold text-gray-800">ضمانات المشروع</h2>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            @foreach ($properties->project->guarantees as $guarantee)
+                                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                    <div class="w-10 h-10 rounded-full bg-[#498e49]/10 flex items-center justify-center text-[#498e49] flex-shrink-0">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                        </svg>
+                                    </div>
+                                    <span class="text-gray-700 font-medium text-base leading-relaxed">{{ $guarantee }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 @php
                     function extractYoutubeId(string $url): ?string
                     {
@@ -159,8 +182,8 @@
                                             alt="فيديو الوحدة">
                                         <div class="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors"></div>
                                         <div class="absolute inset-0 flex items-center justify-center">
-                                            <div class="w-20 h-20 rounded-full bg-white/90 group-hover:bg-white group-hover:scale-110 transition-all duration-300 flex items-center justify-center shadow-2xl">
-                                                <svg class="w-8 h-8 text-[#498e49] ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                            <div class="w-12 h-12 rounded-full bg-white/90 group-hover:bg-white group-hover:scale-110 transition-all duration-300 flex items-center justify-center shadow-2xl">
+                                                <svg class="w-5 h-5 text-[#498e49] ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                                                     <path d="M8 5v14l11-7z"/>
                                                 </svg>
                                             </div>
@@ -195,8 +218,8 @@
                                             alt="فيديو مراحل الإنشاء">
                                         <div class="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors"></div>
                                         <div class="absolute inset-0 flex items-center justify-center">
-                                            <div class="w-20 h-20 rounded-full bg-white/90 group-hover:bg-white group-hover:scale-110 transition-all duration-300 flex items-center justify-center shadow-2xl">
-                                                <svg class="w-8 h-8 text-[#498e49] ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                            <div class="w-12 h-12 rounded-full bg-white/90 group-hover:bg-white group-hover:scale-110 transition-all duration-300 flex items-center justify-center shadow-2xl">
+                                                <svg class="w-5 h-5 text-[#498e49] ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                                                     <path d="M8 5v14l11-7z"/>
                                                 </svg>
                                             </div>
@@ -336,28 +359,6 @@
                         </div>
                     </div>
                 </div>
-
-                {{-- Guarantees Section --}}
-                @if (!empty($properties->project->guarantees))
-                    <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
-                        <div class="flex items-center mb-6">
-                            <div class="w-1.5 h-8 bg-[#498e49] rounded-full ml-3"></div>
-                            <h2 class="text-2xl font-bold text-gray-800">ضمانات المشروع</h2>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            @foreach ($properties->project->guarantees as $guarantee)
-                                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                                    <div class="w-10 h-10 rounded-full bg-[#498e49]/10 flex items-center justify-center text-[#498e49] flex-shrink-0">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                                        </svg>
-                                    </div>
-                                    <span class="text-gray-700 font-medium text-base leading-relaxed">{{ $guarantee }}</span>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
 
             </div>
 
