@@ -37,8 +37,8 @@
        aria-label="تواصل معنا على واتساب"
        @mouseenter="open = true"
        @mouseleave="open = false"
-       class="relative flex items-center gap-3 bg-[#25D366] hover:bg-[#1ead57] text-white rounded-full shadow-2xl overflow-hidden transition-all duration-500 ease-in-out"
-       :class="open ? 'px-5 py-3.5' : 'p-3.5'">
+       class="relative flex items-center bg-[#25D366] hover:bg-[#1ead57] text-white rounded-full shadow-2xl overflow-hidden transition-all duration-500 ease-in-out"
+       :class="open ? 'px-5 py-3.5 gap-3' : 'p-3.5 gap-0'">
 
         {{-- WhatsApp icon (always visible) --}}
         <svg viewBox="0 0 24 24" class="w-7 h-7 fill-current flex-shrink-0" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
