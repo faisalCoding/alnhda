@@ -15,14 +15,14 @@
     x-data="{
         open: false,
         init() {
-            setTimeout(() => {
+            const cycle = () => {
                 this.open = true;
-                setTimeout(() => { this.open = false; }, 4500);
-            }, 2000);
-            setInterval(() => {
-                this.open = true;
-                setTimeout(() => { this.open = false; }, 4500);
-            }, 12000);
+                setTimeout(() => {
+                    this.open = false;
+                    setTimeout(cycle, 2500);
+                }, 3500);
+            };
+            setTimeout(cycle, 1200);
         }
     }"
     class="fixed bottom-6 right-6 z-50 flex items-center justify-end"
