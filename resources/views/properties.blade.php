@@ -158,7 +158,7 @@
                     function youtubeThumbnail(string $url): string
                     {
                         $id = extractYoutubeId($url);
-                        return $id ? "https://img.youtube.com/vi/{$id}/maxresdefault.jpg" : '';
+                        return $id ? "https://img.youtube.com/vi/{$id}/hqdefault.jpg" : '';
                     }
                 @endphp
 
