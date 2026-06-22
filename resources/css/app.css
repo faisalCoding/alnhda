@@ -104,49 +104,12 @@ select:focus[data-flux-control] {
     }
 }
 
-.animate-expand-width {
-    animation: expand-width 7s infinite ease-in-out;
+@keyframes wa-pulse {
+    0%   { transform: scale(1);    opacity: 0.6; }
+    70%  { transform: scale(1.9);  opacity: 0;   }
+    100% { transform: scale(1.9);  opacity: 0;   }
 }
 
-.animate-expand-width span {
-    animation: reveal-text 7s infinite ease-in-out;
-}
-
-@keyframes expand-width {
-
-    0%,
-    20% {
-        max-width: 4.5rem;
-    }
-
-    40%,
-    70% {
-        max-width: 18rem;
-    }
-
-    90%,
-    100% {
-        max-width: 4.5rem;
-    }
-}
-
-@keyframes reveal-text {
-
-    0%,
-    25% {
-        opacity: 0;
-        display: none;
-    }
-
-    40%,
-    70% {
-        opacity: 1;
-        display: inline-block;
-    }
-
-    85%,
-    100% {
-        opacity: 0;
-        display: none;
-    }
+.wa-pulse-ring {
+    animation: wa-pulse 2s ease-out infinite;
 }
