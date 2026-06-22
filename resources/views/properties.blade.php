@@ -60,8 +60,17 @@
 
 @section('main')
     <style>
-        .safe-top  { padding-top:    max(0.75rem, env(safe-area-inset-top)); }
+        .safe-top    { padding-top:    max(0.75rem, env(safe-area-inset-top)); }
         .safe-bottom { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+        .lightbox-pagination .swiper-pagination-bullet {
+            width: 8px; height: 8px;
+            background: rgba(255,255,255,0.45);
+            opacity: 1;
+        }
+        .lightbox-pagination .swiper-pagination-bullet-active {
+            background: #498e49;
+            transform: scale(1.25);
+        }
     </style>
     <div x-data="{ showModal: false }" class="container mx-auto px-4 py-8 rtl" dir="rtl">
 
@@ -426,12 +435,11 @@
             </div>
 
             {{-- Swiper (fills remaining space) --}}
-            <div class="flex-1 overflow-hidden">
-                <div class="swiper lightboxSwiper h-full w-full" dir="ltr"
-                    style="--swiper-theme-color: #498e49; --swiper-pagination-bullet-inactive-color: #ffffff; --swiper-pagination-bullet-inactive-opacity: 0.4;">
-                    <div class="swiper-wrapper h-full">
+            <div class="flex-1 min-h-0 overflow-hidden">
+                <div class="swiper lightboxSwiper h-full w-full" dir="ltr">
+                    <div class="swiper-wrapper">
                         @foreach ($properties->propertiesImages as $image)
-                            <div class="swiper-slide flex items-center justify-center select-none px-2">
+                            <div class="swiper-slide !flex items-center justify-center select-none px-2">
                                 <img src="{{ asset('storage/' . $image->url) }}"
                                      class="max-w-full max-h-full object-contain rounded-xl pointer-events-none"
                                      draggable="false"
@@ -442,15 +450,15 @@
                 </div>
             </div>
 
-            {{-- Bottom bar: prev / pagination / next --}}
+            {{-- Bottom bar: next(left) / pagination / prev(right) — RTL order --}}
             <div class="flex-none flex items-center justify-between px-4 py-3 safe-bottom">
-                <button class="lightbox-prev text-white/70 hover:text-white transition-colors p-2 bg-white/10 hover:bg-white/20 rounded-full select-none">
+                <button class="lightbox-next text-white/70 hover:text-white transition-colors p-2 bg-white/10 hover:bg-white/20 rounded-full select-none">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
                 </button>
                 <div class="lightbox-pagination"></div>
-                <button class="lightbox-next text-white/70 hover:text-white transition-colors p-2 bg-white/10 hover:bg-white/20 rounded-full select-none">
+                <button class="lightbox-prev text-white/70 hover:text-white transition-colors p-2 bg-white/10 hover:bg-white/20 rounded-full select-none">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
@@ -485,6 +493,7 @@
         var lightboxSwiper = new Swiper(".lightboxSwiper", {
             observer: true,
             observeParents: true,
+            centeredSlides: true,
             pagination: {
                 el: ".lightbox-pagination",
                 clickable: true,
