@@ -29,10 +29,11 @@
 
     {{-- Modal --}}
     @if ($isOpen)
-        <div class="fixed inset-0  flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" x-data
+        @teleport('body')
+        <div class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" x-data
             @keydown.escape.window="$wire.closeForm()">
             <div
-                class="z-50 bg-white rounded-2xl w-full max-w-lg p-6 relative shadow-2xl animate-in fade-in zoom-in duration-300">
+                class="bg-white rounded-2xl w-full max-w-lg p-6 relative shadow-2xl animate-in fade-in zoom-in duration-300">
                 <button wire:click="closeForm"
                     class="absolute top-4 left-4 text-gray-400 hover:text-gray-600 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,6 +97,7 @@
                 </form>
             </div>
         </div>
+        @endteleport
     @endif
 
     {{-- Success Message Toast --}}
