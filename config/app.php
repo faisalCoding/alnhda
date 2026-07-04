@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Registration
+    |--------------------------------------------------------------------------
+    |
+    | When disabled, the admin registration routes on the panel subdomain
+    | return 404. Enable it temporarily only when a new admin account
+    | needs to be created.
+    |
+    */
+
+    'admin_registration_enabled' => (bool) env('ADMIN_REGISTRATION_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

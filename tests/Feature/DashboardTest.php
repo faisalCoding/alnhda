@@ -1,18 +1,26 @@
 <?php
 
-use App\Models\User;
+use App\Models\Admin;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
-test('guests are redirected to the login page', function () {
-    $response = $this->get('/dashboard');
-    $response->assertRedirect('/login');
+beforeEach(function () {
+    $this->withoutVite();
 });
 
-test('authenticated users can visit the dashboard', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
-
-    $response = $this->get('/dashboard');
-    $response->assertStatus(200);
+test('guests are redirected to the admin login page', function () {
+    $this->get(panelUrl('/dashboard'))->assertRedirect(route('login'));
 });
+
+test('an authenticated admin can visit every dashboard page', function (string $path) {
+    $admin = Admin::factory()->create();
+
+    $this->actingAs($admin, 'admin')
+        ->get(panelUrl($path))
+        ->assertSuccessful();
+})->with([
+    'overview' => '/dashboard',
+    'projects' => '/projects-dashboard',
+    'articles' => '/articles-dashboard',
+    'visitors' => '/visitors-dashboard',
+]);

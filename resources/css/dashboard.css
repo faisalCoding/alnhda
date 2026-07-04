@@ -1,0 +1,62 @@
+@import 'tailwindcss';
+
+@source '../views/admin';
+@source '../js/dashboard';
+@source '../js/dashboard.js';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-sans: 'Almarai', ui-sans-serif, system-ui, sans-serif;
+
+    --color-primary-50: #f2f8f2;
+    --color-primary-100: #e0eee0;
+    --color-primary-200: #c2dcc2;
+    --color-primary-300: #96c296;
+    --color-primary-400: #6aa56a;
+    --color-primary-500: #498e49;
+    --color-primary-600: #3a7440;
+    --color-primary-700: #305c35;
+    --color-primary-800: #294a2d;
+    --color-primary-900: #223d26;
+    --color-primary-950: #0f2113;
+}
+
+@layer base {
+    html {
+        font-family: var(--font-sans);
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@keyframes panel-slide-in {
+    from {
+        transform: translateX(-100%);
+        opacity: 0.5;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.panel-slide-enter {
+    animation: panel-slide-in 0.25s ease-out;
+}
+
+@keyframes pulse-dot {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.35;
+    }
+}
+
+.sync-pulse {
+    animation: pulse-dot 1.2s ease-in-out infinite;
+}

@@ -45,3 +45,8 @@ function something()
 {
     // ..
 }
+
+function panelUrl(string $path = ''): string
+{
+    return 'http://panel.localhost'.$path;
+}

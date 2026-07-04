@@ -158,20 +158,26 @@
                 @endif
 
                 @php
-                    function extractYoutubeId(string $url): ?string
-                    {
-                        preg_match('/(?:youtube\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $url, $m);
-                        return $m[1] ?? null;
+                    if (! function_exists('extractYoutubeId')) {
+                        function extractYoutubeId(string $url): ?string
+                        {
+                            preg_match('/(?:youtube\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $url, $m);
+                            return $m[1] ?? null;
+                        }
                     }
-                    function youtubeEmbedUrl(string $url): string
-                    {
-                        $id = extractYoutubeId($url);
-                        return $id ? "https://www.youtube-nocookie.com/embed/{$id}?autoplay=1&rel=0&iv_load_policy=3" : $url;
+                    if (! function_exists('youtubeEmbedUrl')) {
+                        function youtubeEmbedUrl(string $url): string
+                        {
+                            $id = extractYoutubeId($url);
+                            return $id ? "https://www.youtube-nocookie.com/embed/{$id}?autoplay=1&rel=0&iv_load_policy=3" : $url;
+                        }
                     }
-                    function youtubeThumbnail(string $url): string
-                    {
-                        $id = extractYoutubeId($url);
-                        return $id ? "https://img.youtube.com/vi/{$id}/hqdefault.jpg" : '';
+                    if (! function_exists('youtubeThumbnail')) {
+                        function youtubeThumbnail(string $url): string
+                        {
+                            $id = extractYoutubeId($url);
+                            return $id ? "https://img.youtube.com/vi/{$id}/hqdefault.jpg" : '';
+                        }
                     }
                 @endphp
 
@@ -454,13 +460,13 @@
             <div class="flex-none flex items-center justify-between px-4 py-3 safe-bottom">
                 <button class="lightbox-next text-white/70 hover:text-white transition-colors p-2 bg-white/10 hover:bg-white/20 rounded-full select-none">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
                 </button>
                 <div class="lightbox-pagination"></div>
                 <button class="lightbox-prev text-white/70 hover:text-white transition-colors p-2 bg-white/10 hover:bg-white/20 rounded-full select-none">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
                 </button>
             </div>
