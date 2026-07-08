@@ -1,10 +1,8 @@
 <?php
 
-use App\Jobs\PingGoogleSitemap;
 use App\Models\Admin;
 use App\Models\Article;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -26,9 +24,7 @@ it('lists articles', function () {
         ->assertJsonCount(3, 'data');
 });
 
-it('creates an article with the default cover image and pings the sitemap', function () {
-    Queue::fake();
-
+it('creates an article with the default cover image', function () {
     $this->actingAs($this->admin, 'admin')
         ->postJson(panelUrl('/api/articles'), [
             'title' => 'مقال جديد عن العقارات',
@@ -37,8 +33,6 @@ it('creates an article with the default cover image and pings the sitemap', func
         ->assertCreated()
         ->assertJsonPath('data.title', 'مقال جديد عن العقارات')
         ->assertJsonPath('data.image_article', '/img/article.jpg');
-
-    Queue::assertPushed(PingGoogleSitemap::class);
 });
 
 it('requires a title to create an article', function () {
@@ -72,7 +66,6 @@ it('deletes an article', function () {
 });
 
 it('does not duplicate an article when the same idempotency key is replayed', function () {
-    Queue::fake();
     $headers = ['Idempotency-Key' => 'op-33333333-3333-3333-3333-333333333333'];
     $payload = ['title' => 'مقال مزامن', 'content' => null];
 

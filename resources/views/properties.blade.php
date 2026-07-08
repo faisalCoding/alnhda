@@ -1,6 +1,6 @@
 @extends('layouts.guest')
 
-@section('title', 'KN | ' . $properties->name)
+@section('title', implode(' - ', array_filter([$properties->name, $properties->type, $properties->project?->name])))
 
 @php
     $unitDescriptionParts = array_filter([
@@ -25,18 +25,37 @@
             : asset('img/KNicon.png');
         $unitSchema = [
             '@context' => 'https://schema.org',
-            '@type' => 'Product',
+            '@type' => 'RealEstateListing',
             'name' => $properties->name,
+            'url' => url()->current(),
             'image' => $unitImage,
             'description' => $unitDescription,
-            'brand' => ['@type' => 'Brand', 'name' => 'كيان النهضة العقارية'],
+            'datePosted' => $properties->created_at->toAtomString(),
+            'dateModified' => $properties->updated_at->toAtomString(),
+            'about' => array_filter([
+                '@type' => 'Residence',
+                'name' => $properties->name,
+                'numberOfRooms' => $properties->rooms,
+                'numberOfBathroomsTotal' => $properties->bathrooms,
+                'floorSize' => $properties->area
+                    ? ['@type' => 'QuantitativeValue', 'value' => $properties->area, 'unitCode' => 'MTK']
+                    : null,
+                'address' => array_filter([
+                    '@type' => 'PostalAddress',
+                    'streetAddress' => $properties->project?->location,
+                    'addressLocality' => 'جدة',
+                    'addressCountry' => 'SA',
+                ]),
+            ], fn ($value) => $value !== null),
         ];
         if (! empty($properties->price)) {
             $unitSchema['offers'] = [
                 '@type' => 'Offer',
                 'price' => (string) $properties->price,
                 'priceCurrency' => 'SAR',
-                'availability' => 'https://schema.org/InStock',
+                'availability' => $properties->status === 'تم البيع'
+                    ? 'https://schema.org/SoldOut'
+                    : 'https://schema.org/InStock',
                 'url' => url()->current(),
             ];
         }

@@ -1,44 +1,54 @@
+{!! '<?xml version="1.0" encoding="UTF-8"?>' !!}
+@php
+    $latestProjectUpdate = $projects->max('updated_at');
+    $latestArticleUpdate = $articles->max('updated_at');
+    $latestContentUpdate = collect([$latestProjectUpdate, $latestArticleUpdate, $properties->max('updated_at')])
+        ->filter()
+        ->max();
+@endphp
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     {{-- Static Pages --}}
     <url>
         <loc>{{ route('welcome') }}</loc>
-        <lastmod>{{ now()->startOfDay()->toAtomString() }}</lastmod>
+        @if ($latestContentUpdate)
+            <lastmod>{{ $latestContentUpdate->toAtomString() }}</lastmod>
+        @endif
         <changefreq>daily</changefreq>
         <priority>1.0</priority>
     </url>
     <url>
         <loc>{{ route('projects') }}</loc>
-        <lastmod>{{ now()->startOfDay()->toAtomString() }}</lastmod>
+        @if ($latestProjectUpdate)
+            <lastmod>{{ $latestProjectUpdate->toAtomString() }}</lastmod>
+        @endif
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>{{ route('articles') }}</loc>
-        <lastmod>{{ now()->startOfDay()->toAtomString() }}</lastmod>
+        @if ($latestArticleUpdate)
+            <lastmod>{{ $latestArticleUpdate->toAtomString() }}</lastmod>
+        @endif
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>{{ route('about-us') }}</loc>
-        <lastmod>{{ now()->startOfDay()->toAtomString() }}</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
     </url>
     <url>
         <loc>{{ route('contact-us') }}</loc>
-        <lastmod>{{ now()->startOfDay()->toAtomString() }}</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
     </url>
     <url>
         <loc>{{ route('privacy-policy') }}</loc>
-        <lastmod>{{ now()->startOfDay()->toAtomString() }}</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.3</priority>
     </url>
     <url>
         <loc>{{ route('terms-of-use') }}</loc>
-        <lastmod>{{ now()->startOfDay()->toAtomString() }}</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.3</priority>
     </url>
@@ -63,7 +73,7 @@
         </url>
     @endforeach
 
-    {{-- Articles/Articles --}}
+    {{-- Articles --}}
     @foreach ($articles as $article)
         <url>
             <loc>{{ route('article', $article) }}</loc>

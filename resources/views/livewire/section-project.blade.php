@@ -46,10 +46,14 @@
         @mouseleave="dragging = false; $refs.track.style.cursor = 'grab'">
 
         @foreach ($projects as $project)
-            <div class="shrink-0 w-[80vw] sm:w-[45vw] lg:w-[30vw] xl:w-[22vw]" dir="rtl"
-                @if($project->status !== 'تم البيع')
-                    @click="if (!moved) navigateTo('{{ route('project', $project->id) }}')"
-                @endif>
+            @if ($project->status !== 'تم البيع')
+                <a href="{{ route('project', $project) }}" wire:key="project-{{ $project->id }}"
+                    class="block shrink-0 w-[80vw] sm:w-[45vw] lg:w-[30vw] xl:w-[22vw]" dir="rtl" draggable="false"
+                    x-on:click.prevent="if (!moved) navigateTo('{{ route('project', $project) }}')">
+            @else
+                <div wire:key="project-{{ $project->id }}" class="shrink-0 w-[80vw] sm:w-[45vw] lg:w-[30vw] xl:w-[22vw]"
+                    dir="rtl">
+            @endif
                 <div
                     @if($project->status === 'تم البيع')
                         x-data="{ showBadge: false, x: 0, y: 0 }"
@@ -133,12 +137,16 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            @if ($project->status !== 'تم البيع')
+                </a>
+            @else
+                </div>
+            @endif
         @endforeach
     </div>
 
     <div class="flex justify-center mt-12">
-        <button onclick="navigateTo('{{ route('projects') }}');"
+        <a href="{{ route('projects') }}" onclick="event.preventDefault(); navigateTo('{{ route('projects') }}');"
             class="group bg-white text-[#498E49] border border-[#498E49] px-8 py-3 rounded-full font-bold hover:bg-[#498E49] hover:text-white transition-all duration-300 shadow-sm hover:shadow-md flex items-center gap-2">
             <span>عرض جميع المشاريع</span>
             <svg class="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" fill="none"
@@ -146,6 +154,6 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-        </button>
+        </a>
     </div>
 </div>

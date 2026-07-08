@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
-    <title>@yield('title') | {{ config('app.name', 'كيان النهضة العقارية') }}</title>
+    <title>@hasSection('title')@yield('title') | @endif{{ config('app.name', 'كيان النهضة العقارية') }}</title>
     <link rel="icon" type="image/png" href="{{ asset('img/KNicon.png') }}">
     <link rel="shortcut icon" href="{{ asset('img/KNicon.png') }}">
     <link rel="canonical" href="{{ url()->current() }}">

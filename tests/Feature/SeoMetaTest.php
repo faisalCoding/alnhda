@@ -84,7 +84,7 @@ it('renders rtl direction, twitter card and locale meta on the layout', function
         ->assertSee('<meta name="twitter:card" content="summary_large_image" />', false);
 });
 
-it('renders valid product and breadcrumb json-ld on a project page', function () {
+it('renders real estate listing and breadcrumb json-ld on a project page', function () {
     $project = Project::factory()->create();
 
     $html = $this->get(route('project', $project))->assertOk()->getContent();
@@ -94,11 +94,12 @@ it('renders valid product and breadcrumb json-ld on a project page', function ()
     $types = collect($blocks)->pluck('@type');
 
     expect($types)->toContain('RealEstateAgent')
-        ->toContain('Product')
-        ->toContain('BreadcrumbList');
+        ->toContain('RealEstateListing')
+        ->toContain('BreadcrumbList')
+        ->not->toContain('Product');
 });
 
-it('renders product json-ld with a SAR offer on a properties page', function () {
+it('renders real estate listing json-ld with a SAR offer on a properties page', function () {
     $project = Project::factory()->create();
     $unit = Properties::create([
         'name' => 'فيلا تجريبية رقم 7',
@@ -109,12 +110,99 @@ it('renders product json-ld with a SAR offer on a properties page', function () 
 
     $html = $this->get(route('properties', $unit))->assertOk()->getContent();
 
-    $product = collect(extractJsonLd($html))->firstWhere('@type', 'Product');
+    $listing = collect(extractJsonLd($html))->firstWhere('@type', 'RealEstateListing');
 
-    expect($product)->not->toBeNull()
-        ->and($product['name'])->toBe($unit->name)
-        ->and($product['offers']['priceCurrency'])->toBe('SAR')
-        ->and($product['offers']['price'])->toBe('1500000');
+    expect($listing)->not->toBeNull()
+        ->and($listing['name'])->toBe($unit->name)
+        ->and($listing['offers']['priceCurrency'])->toBe('SAR')
+        ->and($listing['offers']['price'])->toBe('1500000')
+        ->and($listing['offers']['availability'])->toBe('https://schema.org/InStock');
+});
+
+it('marks a sold unit offer as sold out in the json-ld', function () {
+    $project = Project::factory()->create();
+    $unit = Properties::create([
+        'name' => 'فيلا مباعة',
+        'project_id' => $project->id,
+        'status' => 'تم البيع',
+        'price' => 2000000,
+    ]);
+
+    $html = $this->get(route('properties', $unit))->assertOk()->getContent();
+
+    $listing = collect(extractJsonLd($html))->firstWhere('@type', 'RealEstateListing');
+
+    expect($listing['offers']['availability'])->toBe('https://schema.org/SoldOut');
+});
+
+it('declares the document language as arabic with rtl direction', function () {
+    $this->get(route('welcome'))
+        ->assertOk()
+        ->assertSee('lang="ar"', false)
+        ->assertSee('dir="rtl"', false);
+});
+
+it('links to project pages with crawlable anchors on the projects index', function () {
+    $project = Project::factory()->create();
+
+    $this->get(route('projects'))
+        ->assertOk()
+        ->assertSee('href="'.route('project', $project).'"', false);
+});
+
+it('links to project pages with crawlable anchors on the home page carousel', function () {
+    $project = Project::factory()->create();
+
+    $this->get(route('welcome'))
+        ->assertOk()
+        ->assertSee('href="'.route('project', $project).'"', false);
+});
+
+it('does not link to sold project pages from the projects index', function () {
+    $soldProject = Project::factory()->create(['status' => 'تم البيع']);
+
+    $this->get(route('projects'))
+        ->assertOk()
+        ->assertDontSee('href="'.route('project', $soldProject).'"', false);
+});
+
+it('links to the projects and articles pages from the footer', function () {
+    $this->get(route('privacy-policy'))
+        ->assertOk()
+        ->assertSee('href="'.route('projects').'"', false)
+        ->assertSee('href="'.route('articles').'"', false);
+});
+
+it('renders keyword-rich titles without the KN prefix', function () {
+    $project = Project::factory()->create(['name' => 'مشروع كيان التجريبي']);
+
+    $this->get(route('projects'))
+        ->assertOk()
+        ->assertSee('<title>مشاريعنا العقارية - فلل وشقق للبيع في جدة | '.config('app.name').'</title>', false)
+        ->assertDontSee('KN |', false);
+
+    $this->get(route('project', $project))
+        ->assertOk()
+        ->assertSee('<title>مشروع كيان التجريبي - مشروع سكني في جدة | '.config('app.name').'</title>', false)
+        ->assertDontSee('KN |', false);
+});
+
+it('serves an xml sitemap with an xml declaration and real content urls', function () {
+    $project = Project::factory()->create();
+    $article = Article::factory()->create();
+
+    $response = $this->get(route('sitemap'))->assertOk();
+
+    expect($response->headers->get('Content-Type'))->toContain('text/xml')
+        ->and($response->getContent())->toStartWith('<?xml version="1.0" encoding="UTF-8"?>')
+        ->and($response->getContent())->toContain(route('project', $project))
+        ->and($response->getContent())->toContain(route('article', $article));
+});
+
+it('marks auth pages as noindex', function () {
+    $this->get('http://localhost/login')
+        ->assertOk()
+        ->assertSee('<meta name="robots" content="noindex, nofollow" />', false);
 });
 
 it('renders article json-ld with publish dates', function () {

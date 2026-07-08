@@ -37,11 +37,19 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#"
+                        <a href="{{ route('projects') }}"
                             class="text-zinc-600 hover:text-[#498E49] transition-colors duration-300 flex items-center gap-2 group">
                             <span
                                 class="block w-1.5 h-1.5 rounded-full bg-zinc-300 group-hover:bg-[#498E49] transition-colors"></span>
                             المشاريع
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('articles') }}"
+                            class="text-zinc-600 hover:text-[#498E49] transition-colors duration-300 flex items-center gap-2 group">
+                            <span
+                                class="block w-1.5 h-1.5 rounded-full bg-zinc-300 group-hover:bg-[#498E49] transition-colors"></span>
+                            المقالات
                         </a>
                     </li>
                     <li>
@@ -90,14 +98,6 @@
                 </ul>
 
                 <div class="flex items-center gap-4">
-                    <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer"
-                        aria-label="حساب تويتر لشركة كيان النهضة العقارية"
-                        class="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-500 hover:text-white hover:bg-black hover:border-black transition-all duration-300 group">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path
-                                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                        </svg>
-                    </a>
                     <a href="https://www.youtube.com/@KayanAlnhda" target="_blank" rel="noopener noreferrer"
                         aria-label="قناة اليوتيوب لشركة كيان النهضة العقارية"
                         class="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-500 hover:text-white hover:bg-[#FF0000] hover:border-[#FF0000] transition-all duration-300 group">

@@ -1,6 +1,6 @@
 @extends('layouts.guest')
 
-@section('title', 'KN | ' . $project->name)
+@section('title', $project->name . ' - مشروع سكني في جدة')
 
 @section('description', \Illuminate\Support\Str::limit(strip_tags($project->description), 155))
 
@@ -11,11 +11,23 @@
         $projectImage = $project->image_url ? asset('storage/' . $project->image_url) : asset('img/KNicon.png');
         $projectSchema = [
             '@context' => 'https://schema.org',
-            '@type' => 'Product',
+            '@type' => 'RealEstateListing',
             'name' => $project->name,
+            'url' => url()->current(),
             'image' => $projectImage,
             'description' => \Illuminate\Support\Str::limit(strip_tags($project->description), 155),
-            'brand' => ['@type' => 'Brand', 'name' => 'كيان النهضة العقارية'],
+            'datePosted' => $project->created_at->toAtomString(),
+            'dateModified' => $project->updated_at->toAtomString(),
+            'about' => [
+                '@type' => 'Residence',
+                'name' => $project->name,
+                'address' => array_filter([
+                    '@type' => 'PostalAddress',
+                    'streetAddress' => $project->location,
+                    'addressLocality' => 'جدة',
+                    'addressCountry' => 'SA',
+                ]),
+            ],
         ];
         $projectBreadcrumb = [
             '@context' => 'https://schema.org',

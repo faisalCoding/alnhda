@@ -1,4 +1,11 @@
 User-agent: *
-Disallow:
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /confirm-password
+Disallow: /settings
+Disallow: /control-board
 
 Sitemap: https://kayanalnhda.com/sitemap.xml

@@ -1,6 +1,7 @@
 @extends('layouts.guest')
 
-@section('title', 'KN | المشاريع')
+@section('title', 'مشاريعنا العقارية - فلل وشقق للبيع في جدة')
+@section('description', 'تصفح مشاريع كيان النهضة العقارية السكنية في جدة — فلل وشقق بمواصفات عصرية وضمانات شاملة. اكتشف المشروع المناسب لك الآن.')
 
 
 @section('main')
@@ -10,12 +11,15 @@
             <div dir="rtl" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 
                 @foreach (App\Models\Project::get() as $project)
-                    <div @if ($project->status !== 'تم البيع') onclick="navigateTo('{{ route('project', $project->id) }}');" @endif
-                        @if ($project->status === 'تم البيع') x-data="{ showBadge: false, x: 0, y: 0 }"
-                            @mousemove="x = $event.clientX; y = $event.clientY"
-                            @mouseenter="showBadge = true"
-                            @mouseleave="showBadge = false" @endif
-                        class="group relative rounded-[2rem] overflow-hidden h-[500px] {{ $project->status !== 'تم البيع' ? 'cursor-pointer' : 'cursor-none' }} shadow-lg hover:shadow-2xl transition-all duration-500 text-right">
+                    @if ($project->status !== 'تم البيع')
+                        <a href="{{ route('project', $project) }}"
+                            onclick="event.preventDefault(); navigateTo('{{ route('project', $project) }}');"
+                            class="group relative block rounded-[2rem] overflow-hidden h-[500px] cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-500 text-right">
+                    @else
+                        <div x-data="{ showBadge: false, x: 0, y: 0 }" @mousemove="x = $event.clientX; y = $event.clientY"
+                            @mouseenter="showBadge = true" @mouseleave="showBadge = false"
+                            class="group relative rounded-[2rem] overflow-hidden h-[500px] cursor-none shadow-lg hover:shadow-2xl transition-all duration-500 text-right">
+                    @endif
 
                         @if ($project->status === 'تم البيع')
                             {{-- Floating Cursor Badge --}}
@@ -97,7 +101,11 @@
                                 @endif
                             </div>
                         </div>
-                    </div>
+                    @if ($project->status !== 'تم البيع')
+                        </a>
+                    @else
+                        </div>
+                    @endif
                 @endforeach
 
             </div>
