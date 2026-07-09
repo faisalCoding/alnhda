@@ -37,7 +37,8 @@
 
                         {{-- Background Image --}}
                         <img class="absolute inset-0 w-full h-full object-cover transform @if ($project->status !== 'تم البيع') group-hover:scale-110 @endif transition-transform duration-700 @if ($project->status === 'تم البيع') grayscale @endif"
-                            src="/storage/{{ $project->image_url }}" alt="{{ $project->name }}">
+                            src="/storage/{{ $project->image_url }}" alt="{{ $project->name }}"
+                            loading="{{ $loop->index < 3 ? 'eager' : 'lazy' }}" width="800" height="600">
 
                         @if ($project->status === 'تم البيع')
                             {{-- Green Overlay for Sold Projects --}}

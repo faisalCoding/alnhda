@@ -43,9 +43,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
 
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
-
     <!-- Styles -->
     <style>
         body {
@@ -54,7 +51,7 @@
     </style>
     @vite('resources/css/app.css')
 
-    <link rel="stylesheet" href="{{ asset('css/swiper-bundle.min.css') }}" />
+    @stack('styles')
 
     <!-- Google Tag Manager -->
     <script>

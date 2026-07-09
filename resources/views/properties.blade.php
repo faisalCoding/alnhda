@@ -18,6 +18,10 @@
 
 @section('image', $properties->propertiesImages->first() ? asset('storage/' . $properties->propertiesImages->first()->url) : asset('img/KNicon.png'))
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/swiper-bundle.min.css') }}" />
+@endpush
+
 @push('jsonld')
     @php
         $unitImage = $properties->propertiesImages->first()

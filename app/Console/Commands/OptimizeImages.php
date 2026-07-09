@@ -2,16 +2,14 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Intervention\Image\Laravel\Facades\Image;
-use Intervention\Image\Encoders\WebpEncoder;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
-use App\Models\Project;
-use App\Models\Properties;
-use App\Models\ImageProperties;
 use App\Models\Article;
+use App\Models\ImageProperties;
+use App\Models\Project;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Encoders\WebpEncoder;
+use Intervention\Image\Laravel\Facades\Image;
 
 class OptimizeImages extends Command
 {
@@ -20,76 +18,65 @@ class OptimizeImages extends Command
      *
      * @var string
      */
-    protected $signature = 'app:optimize-images';
+    protected $signature = 'app:optimize-images
+                            {--quality=87 : WebP encoding quality}
+                            {--skip-static : Skip the public/img static images}
+                            {--skip-dynamic : Skip the uploaded storage images}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Optimize, resize, and convert all website images (uploaded and static) to WebP format';
+    protected $description = 'Resize, compress, and convert all website images (uploaded and static) to WebP, keeping the smaller file';
 
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): int
     {
-        $this->info('Starting full image optimization process (Target Quality: 95%)...');
+        $quality = (int) $this->option('quality');
 
-        // 1. Process Projects
-        $this->optimizeProjects();
+        $this->info("Starting image optimization (target quality: {$quality}%)...");
 
-        // 2. Process Properties
-        $this->optimizeProperties();
+        if (! $this->option('skip-dynamic')) {
+            $this->optimizeProjects($quality);
+            $this->optimizeProperties($quality);
+            $this->optimizeArticles($quality);
+        }
 
-        // 3. Process Articles
-        $this->optimizeArticles();
-
-        // 4. Process Static Images
-        $this->optimizeStaticImages();
+        if (! $this->option('skip-static')) {
+            $this->optimizeStaticImages($quality);
+        }
 
         $this->info('Image optimization process completed successfully!');
+
+        return self::SUCCESS;
     }
 
     /**
      * Optimize all dynamic project cover images.
      */
-    private function optimizeProjects()
+    private function optimizeProjects(int $quality): void
     {
         $this->info('Optimizing Projects images...');
-        $projects = Project::whereNotNull('image_url')->get();
         $count = 0;
 
-        foreach ($projects as $project) {
-            $path = $project->image_url;
-            if (Str::endsWith(strtolower($path), '.webp')) {
-                continue;
-            }
-
-            if (!Storage::disk('public')->exists($path)) {
-                $this->warn("Project image not found: {$path}");
-                continue;
-            }
-
-            $absolutePath = Storage::disk('public')->path($path);
-            $newPath = preg_replace('/\.(jpg|jpeg|png|gif|bmp)$/i', '.webp', $path);
-            $newAbsolutePath = Storage::disk('public')->path($newPath);
-
+        foreach (Project::whereNotNull('image_url')->get() as $project) {
             try {
-                $img = Image::decode($absolutePath);
-                $img->scaleDown(width: 1200);
-                $encoded = $img->encode(new WebpEncoder(quality: 95));
-                
-                Storage::disk('public')->put($newPath, (string) $encoded);
-                
-                if ($absolutePath !== $newAbsolutePath) {
-                    @unlink($absolutePath);
+                $newPath = $this->optimizeStoredImage($project->image_url, 1200, $quality);
+
+                if ($newPath === null) {
+                    continue;
                 }
 
-                $project->update(['image_url' => $newPath]);
+                if ($newPath !== $project->image_url) {
+                    $project->update(['image_url' => $newPath]);
+                }
+
                 $count++;
             } catch (\Exception $e) {
-                $this->error("Failed to process project image {$path}: " . $e->getMessage());
+                $this->error("Failed to process project image {$project->image_url}: ".$e->getMessage());
             }
         }
 
@@ -99,42 +86,26 @@ class OptimizeImages extends Command
     /**
      * Optimize all dynamic properties images.
      */
-    private function optimizeProperties()
+    private function optimizeProperties(int $quality): void
     {
         $this->info('Optimizing Properties images...');
-        $images = ImageProperties::whereNotNull('url')->get();
         $count = 0;
 
-        foreach ($images as $imgRecord) {
-            $path = $imgRecord->url;
-            if (Str::endsWith(strtolower($path), '.webp')) {
-                continue;
-            }
-
-            if (!Storage::disk('public')->exists($path)) {
-                $this->warn("Property image not found: {$path}");
-                continue;
-            }
-
-            $absolutePath = Storage::disk('public')->path($path);
-            $newPath = preg_replace('/\.(jpg|jpeg|png|gif|bmp)$/i', '.webp', $path);
-            $newAbsolutePath = Storage::disk('public')->path($newPath);
-
+        foreach (ImageProperties::whereNotNull('url')->get() as $imgRecord) {
             try {
-                $img = Image::decode($absolutePath);
-                $img->scaleDown(width: 1200);
-                $encoded = $img->encode(new WebpEncoder(quality: 95));
-                
-                Storage::disk('public')->put($newPath, (string) $encoded);
-                
-                if ($absolutePath !== $newAbsolutePath) {
-                    @unlink($absolutePath);
+                $newPath = $this->optimizeStoredImage($imgRecord->url, 1200, $quality);
+
+                if ($newPath === null) {
+                    continue;
                 }
 
-                $imgRecord->update(['url' => $newPath]);
+                if ($newPath !== $imgRecord->url) {
+                    $imgRecord->update(['url' => $newPath]);
+                }
+
                 $count++;
             } catch (\Exception $e) {
-                $this->error("Failed to process property image {$path}: " . $e->getMessage());
+                $this->error("Failed to process property image {$imgRecord->url}: ".$e->getMessage());
             }
         }
 
@@ -144,42 +115,26 @@ class OptimizeImages extends Command
     /**
      * Optimize all dynamic articles/blogs cover images.
      */
-    private function optimizeArticles()
+    private function optimizeArticles(int $quality): void
     {
         $this->info('Optimizing Articles images...');
-        $articles = Article::whereNotNull('image_article')->get();
         $count = 0;
 
-        foreach ($articles as $article) {
-            $path = $article->image_article;
-            if (Str::endsWith(strtolower($path), '.webp')) {
-                continue;
-            }
-
-            if (!Storage::disk('public')->exists($path)) {
-                $this->warn("Article image not found: {$path}");
-                continue;
-            }
-
-            $absolutePath = Storage::disk('public')->path($path);
-            $newPath = preg_replace('/\.(jpg|jpeg|png|gif|bmp)$/i', '.webp', $path);
-            $newAbsolutePath = Storage::disk('public')->path($newPath);
-
+        foreach (Article::whereNotNull('image_article')->get() as $article) {
             try {
-                $img = Image::decode($absolutePath);
-                $img->scaleDown(width: 1000);
-                $encoded = $img->encode(new WebpEncoder(quality: 95));
-                
-                Storage::disk('public')->put($newPath, (string) $encoded);
-                
-                if ($absolutePath !== $newAbsolutePath) {
-                    @unlink($absolutePath);
+                $newPath = $this->optimizeStoredImage($article->image_article, 1000, $quality);
+
+                if ($newPath === null) {
+                    continue;
                 }
 
-                $article->update(['image_article' => $newPath]);
+                if ($newPath !== $article->image_article) {
+                    $article->update(['image_article' => $newPath]);
+                }
+
                 $count++;
             } catch (\Exception $e) {
-                $this->error("Failed to process article image {$path}: " . $e->getMessage());
+                $this->error("Failed to process article image {$article->image_article}: ".$e->getMessage());
             }
         }
 
@@ -187,72 +142,110 @@ class OptimizeImages extends Command
     }
 
     /**
-     * Optimize all static public/img files.
+     * Re-encode one image on the public disk as WebP, keeping the original when re-encoding would not shrink it.
+     * Returns the (possibly new) relative path, or null when the file is missing or was kept as-is.
      */
-    private function optimizeStaticImages()
+    private function optimizeStoredImage(string $path, int $maxWidth, int $quality): ?string
+    {
+        if (str_starts_with($path, '/img/') || ! Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        $absolutePath = Storage::disk('public')->path($path);
+        $newPath = preg_replace('/\.(jpg|jpeg|png|gif|bmp)$/i', '.webp', $path);
+        $isConversion = $newPath !== $path;
+        $originalSize = filesize($absolutePath);
+
+        $img = Image::decode($absolutePath);
+        $img->scaleDown(width: $maxWidth);
+        $encoded = (string) $img->encode(new WebpEncoder(quality: $quality));
+
+        if (! $isConversion && strlen($encoded) >= $originalSize) {
+            return null;
+        }
+
+        Storage::disk('public')->put($newPath, $encoded);
+
+        if ($isConversion) {
+            @unlink($absolutePath);
+        }
+
+        $savedKb = round(($originalSize - strlen($encoded)) / 1024);
+        $this->line("  {$path} → {$newPath} (saved {$savedKb}KB)");
+
+        return $newPath;
+    }
+
+    /**
+     * Optimize all static public/img files, including re-compressing existing WebP files.
+     */
+    private function optimizeStaticImages(int $quality): void
     {
         $this->info('Optimizing static images in public/img/...');
         $imgDir = public_path('img');
-        if (!File::exists($imgDir)) {
+
+        if (! File::exists($imgDir)) {
             $this->warn('public/img directory not found.');
+
             return;
         }
 
-        $files = File::files($imgDir);
         $count = 0;
         $replacements = [];
 
-        foreach ($files as $file) {
+        foreach (File::files($imgDir) as $file) {
             $filename = $file->getFilename();
             $extension = strtolower($file->getExtension());
 
-            // Skip SVGs, already existing webp, DS_Store, etc.
-            if (in_array($extension, ['svg', 'webp', 'ico'])) {
+            if (in_array($extension, ['svg', 'ico', 'pdf'])) {
                 continue;
             }
 
-            // Skip favicon/KNicon.png to prevent compatibility issues
-            if (strpos(strtolower($filename), 'knicon') !== false) {
+            if (str_contains(strtolower($filename), 'knicon')) {
                 continue;
             }
 
             $absolutePath = $file->getRealPath();
             $baseName = pathinfo($filename, PATHINFO_FILENAME);
-            $webpFilename = $baseName . '.webp';
-            $webpAbsolutePath = $imgDir . DIRECTORY_SEPARATOR . $webpFilename;
+            $webpFilename = $baseName.'.webp';
+            $webpAbsolutePath = $imgDir.DIRECTORY_SEPARATOR.$webpFilename;
 
-            // Determine max width based on image type
-            $maxWidth = 800; // default for logos/materials
-            if (in_array(strtolower($filename), ['homebg.jpg', 'footerbg.jpg'])) {
-                $maxWidth = 1920;
-            } elseif (in_array(strtolower($filename), ['rebarandplan.jpg', 'frontvilla.jpg', 'villa.jpg'])) {
-                $maxWidth = 1600;
-            } elseif (in_array(strtolower($filename), ['map.jpg', 'map2.jpg'])) {
-                $maxWidth = 1200;
-            }
+            $maxWidth = match (strtolower($baseName)) {
+                'homebg', 'footerbg' => 1920,
+                'rebarandplan' => 1200,
+                default => 1600,
+            };
 
             try {
-                $this->info("Processing static image: {$filename} (Max Width: {$maxWidth}px)");
+                $originalSize = filesize($absolutePath);
                 $img = Image::decode($absolutePath);
                 $img->scaleDown(width: $maxWidth);
-                $encoded = $img->encode(new WebpEncoder(quality: 95));
+                $encoded = (string) $img->encode(new WebpEncoder(quality: $quality));
 
-                File::put($webpAbsolutePath, (string) $encoded);
+                if ($absolutePath === $webpAbsolutePath && strlen($encoded) >= $originalSize) {
+                    $this->line("  {$filename} kept as-is (already smaller)");
 
-                // Add to replacement map
-                $replacements[$filename] = $webpFilename;
+                    continue;
+                }
 
-                // Delete old image
-                @unlink($absolutePath);
+                File::put($webpAbsolutePath, $encoded);
+
+                if ($absolutePath !== $webpAbsolutePath) {
+                    $replacements[$filename] = $webpFilename;
+                    @unlink($absolutePath);
+                }
+
+                $savedKb = round(($originalSize - strlen($encoded)) / 1024);
+                $this->line("  {$filename} → {$webpFilename} (saved {$savedKb}KB)");
                 $count++;
             } catch (\Exception $e) {
-                $this->error("Failed to process static image {$filename}: " . $e->getMessage());
+                $this->error("Failed to process static image {$filename}: ".$e->getMessage());
             }
         }
 
         $this->info("Optimized {$count} static images in public/img/.");
 
-        if (!empty($replacements)) {
+        if (! empty($replacements)) {
             $this->updateBladeReferences($replacements);
         }
     }
@@ -260,16 +253,17 @@ class OptimizeImages extends Command
     /**
      * Scan and replace old image filename references with the new WebP versions in Blade files.
      */
-    private function updateBladeReferences(array $replacements)
+    private function updateBladeReferences(array $replacements): void
     {
         $this->info('Updating image references in Blade templates...');
         $viewsDir = resource_path('views');
-        if (!File::exists($viewsDir)) {
+
+        if (! File::exists($viewsDir)) {
             $this->warn('resources/views directory not found.');
+
             return;
         }
 
-        // Get all blade files recursively
         $files = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($viewsDir, \RecursiveDirectoryIterator::SKIP_DOTS)
         );
@@ -283,14 +277,13 @@ class OptimizeImages extends Command
                 $originalContent = $content;
 
                 foreach ($replacements as $oldName => $newName) {
-                    // Direct replace of filenames
                     $content = str_replace($oldName, $newName, $content);
                 }
 
                 if ($content !== $originalContent) {
                     File::put($filePath, $content);
                     $updatedCount++;
-                    $this->line("Updated references in: " . $file->getFilename());
+                    $this->line('Updated references in: '.$file->getFilename());
                 }
             }
         }
