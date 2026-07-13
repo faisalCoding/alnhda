@@ -140,6 +140,16 @@ it('uploads a project image and deletes the previous one', function () {
     Storage::disk('public')->assertMissing('uploads/old.webp');
 });
 
+it('returns a browser-usable absolute image url regardless of APP_URL scheme', function () {
+    config(['app.url' => 'localhost']);
+    $project = Project::factory()->create(['image_url' => 'uploads/photo.webp']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(panelUrl('/api/projects'))
+        ->assertSuccessful()
+        ->assertJsonPath('data.0.image_full_url', fn (string $url) => str_starts_with($url, 'http') && str_ends_with($url, '/storage/uploads/photo.webp'));
+});
+
 it('rejects a non-image upload for the project image', function () {
     Storage::fake('public');
     $project = Project::factory()->create();

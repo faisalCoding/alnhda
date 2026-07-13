@@ -218,6 +218,8 @@ async function execute(op) {
 }
 
 function handleSuccess(op, payload) {
+    completeOp(op);
+
     if (op.action === 'create') {
         const record = payload?.data;
 
@@ -228,8 +230,6 @@ function handleSuccess(op, payload) {
     } else if (op.action === 'update' && payload?.data) {
         data().confirmUpdate(op.entity, payload.data);
     }
-
-    completeOp(op);
 }
 
 /**

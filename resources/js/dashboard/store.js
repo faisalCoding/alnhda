@@ -132,7 +132,7 @@ export const dataStore = {
         const deletedIds = pendingDeleteIds(entity);
 
         const localPending = this[entity].filter(
-            (record) => record._meta && record._meta.syncState !== 'synced'
+            (record) => record._meta && record._meta.syncState !== 'synced' && hasPendingFor(entity, record.id)
         );
         const pendingIds = new Set(localPending.map((record) => record.id));
 

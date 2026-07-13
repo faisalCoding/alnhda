@@ -2,12 +2,13 @@
 
 namespace App\Http\Resources\Admin\Concerns;
 
-use Illuminate\Support\Facades\Storage;
-
 trait ResolvesPublicUrl
 {
     /**
      * Resolve a stored file path to a browser-usable URL.
+     *
+     * Uses asset() (request-root based, like the public site views) instead of
+     * Storage::url() so the result stays valid even when APP_URL is misconfigured.
      */
     protected function publicUrl(?string $path): ?string
     {
@@ -19,6 +20,6 @@ trait ResolvesPublicUrl
             return $path;
         }
 
-        return Storage::disk('public')->url($path);
+        return asset('storage/'.$path);
     }
 }
