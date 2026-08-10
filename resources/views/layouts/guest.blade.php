@@ -86,8 +86,9 @@
     <!-- End Google Tag Manager (noscript) -->
 
     @section('header')
-        <header
-            class="sticky top-0 z-50 flex justify-center items-center w-full h-25 bg-white/80 backdrop-blur-md border-b border-white/10 shadow-sm">
+        <header x-data="{ scrolled: false }" x-on:scroll.window="scrolled = window.scrollY > 20"
+            x-bind:class="scrolled ? 'h-16! md:h-20! bg-white/95! shadow-md!' : ''"
+            class="sticky top-0 z-50 flex justify-center items-center w-full h-20 md:h-25 bg-white/80 backdrop-blur-md border-b border-white/10 shadow-sm transition-all duration-300">
             @livewire('header-nav-bar')
         </header>
     @show
