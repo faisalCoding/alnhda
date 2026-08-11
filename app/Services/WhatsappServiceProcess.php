@@ -3,9 +3,10 @@
 namespace App\Services;
 
 /**
- * Starts the local Node service from the panel, so an admin can bring the
- * gateway back up without shell access. On a real server systemd should own the
- * process; this only fills the gap when nothing is listening yet.
+ * Supervises the local Node gateway as a detached background process, so it
+ * survives closing the terminal and outlives `composer run dev`. On a real
+ * server systemd should own the process; this covers local use and lets an
+ * admin restart the gateway from the panel without shell access.
  */
 class WhatsappServiceProcess
 {
@@ -16,11 +17,39 @@ class WhatsappServiceProcess
         return is_int($port) ? $port : 3000;
     }
 
+    public function directory(): string
+    {
+        return base_path('whatsapp-service');
+    }
+
+    public function logPath(): string
+    {
+        return $this->directory().'/node.log';
+    }
+
+    /**
+     * The pid is read back from whoever holds the port rather than a pid file,
+     * so the service is found no matter how it was started (artisan, the panel
+     * button, systemd, or by hand).
+     */
+    public function runningPid(): ?int
+    {
+        // -a ANDs the filters; without it lsof ORs them and matches every node process.
+        $output = $this->run('lsof -nP -a -t -c node -i :'.$this->port().' 2>/dev/null');
+        $pid = trim((string) $output);
+
+        if ($pid === '') {
+            return null;
+        }
+
+        $first = strtok($pid, "\n");
+
+        return ctype_digit((string) $first) ? (int) $first : null;
+    }
+
     public function isRunning(): bool
     {
-        $output = $this->run('lsof -nP -i :'.$this->port().' 2>/dev/null');
-
-        return $output !== null && str_contains($output, 'node');
+        return $this->runningPid() !== null;
     }
 
     /**
@@ -28,7 +57,7 @@ class WhatsappServiceProcess
      */
     public function start(): string
     {
-        if (! function_exists('popen') || ! function_exists('shell_exec')) {
+        if (! $this->canRunCommands()) {
             return 'unavailable';
         }
 
@@ -36,23 +65,89 @@ class WhatsappServiceProcess
             return 'already_running';
         }
 
-        $directory = escapeshellarg(base_path('whatsapp-service'));
-
-        // pclose(popen(…)) returns immediately instead of blocking on the server.
-        $handle = popen("cd {$directory} && nohup node index.js > node.log 2>&1 &", 'r');
-
-        if ($handle === false) {
+        if (! function_exists('proc_open')) {
             return 'unavailable';
         }
 
-        pclose($handle);
+        // Every descriptor is a file, never a pipe: shell_exec/popen would block
+        // until the spawned service exits, because the child keeps the pipe open.
+        // proc_close then only waits for the shell, which returns as soon as it
+        // has backgrounded node.
+        $descriptors = [
+            ['file', '/dev/null', 'r'],
+            ['file', $this->logPath(), 'a'],
+            ['file', $this->logPath(), 'a'],
+        ];
 
-        return 'started';
+        $handle = @proc_open('nohup node index.js > /dev/null 2>&1 &', $descriptors, $pipes, $this->directory());
+
+        if (! is_resource($handle)) {
+            return 'unavailable';
+        }
+
+        proc_close($handle);
+
+        return $this->waitUntilRunning() ? 'started' : 'unavailable';
+    }
+
+    /**
+     * Node needs a moment to bind the port; report success only once it has.
+     */
+    private function waitUntilRunning(int $attempts = 20): bool
+    {
+        for ($i = 0; $i < $attempts; $i++) {
+            if ($this->isRunning()) {
+                return true;
+            }
+
+            usleep(250_000);
+        }
+
+        return false;
+    }
+
+    /**
+     * @return 'stopped'|'not_running'|'unavailable'
+     */
+    public function stop(): string
+    {
+        if (! $this->canRunCommands()) {
+            return 'unavailable';
+        }
+
+        $pid = $this->runningPid();
+
+        if ($pid === null) {
+            return 'not_running';
+        }
+
+        $this->run('kill '.$pid.' 2>/dev/null');
+
+        return 'stopped';
+    }
+
+    public function isInstalled(): bool
+    {
+        return is_dir($this->directory().'/node_modules');
+    }
+
+    private function canRunCommands(): bool
+    {
+        return function_exists('shell_exec')
+            && ! in_array('shell_exec', $this->disabledFunctions(), true);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function disabledFunctions(): array
+    {
+        return array_map('trim', explode(',', (string) ini_get('disable_functions')));
     }
 
     private function run(string $command): ?string
     {
-        if (! function_exists('shell_exec')) {
+        if (! $this->canRunCommands()) {
             return null;
         }
 

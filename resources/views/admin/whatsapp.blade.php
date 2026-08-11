@@ -79,8 +79,8 @@
                 </button>
 
                 <p class="text-xs leading-relaxed">
-                    أو شغّلها يدويًا على الخادم:
-                    <code class="mt-1 block font-mono" dir="ltr">cd whatsapp-service &amp;&amp; npm install &amp;&amp; npm start</code>
+                    أو شغّلها من الطرفية — تعمل في الخلفية ولا تحجزها:
+                    <code class="mt-1 block font-mono" dir="ltr">php artisan whatsapp:start</code>
                 </p>
             </div>
         </section>
@@ -91,7 +91,11 @@
                 <li>يُربط رقمك عبر «الأجهزة المرتبطة» في واتساب — لا يُطلب منك أي كلمة مرور.</li>
                 <li>لكل مدير جلسة مستقلة، وتبقى محفوظة على الخادم بعد إعادة التشغيل.</li>
                 <li>تُرسل رسائل الحملات عبر طابور المهام بفواصل زمنية عشوائية لتقليل خطر الحظر.</li>
-                <li>محليًا يشغّل <code class="font-mono" dir="ltr">composer run dev</code> الخادم والطابور وخدمة الواتساب معًا.</li>
+                <li>تعمل الخدمة في الخلفية وتبقى بعد إغلاق الطرفية:
+                    <code class="font-mono" dir="ltr">whatsapp:start</code> /
+                    <code class="font-mono" dir="ltr">whatsapp:stop</code> /
+                    <code class="font-mono" dir="ltr">whatsapp:status</code>
+                </li>
             </ul>
         </section>
     </div>
