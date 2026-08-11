@@ -1,0 +1,16 @@
+{
+  "name": "alnhda-whatsapp-service",
+  "version": "1.0.0",
+  "description": "خدمة واتساب محلية للوحة تحكم كيان النهضة العقارية",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "start": "node index.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "qrcode": "^1.5.4",
+    "whatsapp-web.js": "^1.34.7"
+  }
+}

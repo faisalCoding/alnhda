@@ -32,12 +32,13 @@ export default function overviewPage() {
                     properties: this.$store.data.properties.length,
                     articles: this.$store.data.articles.length,
                     visitors: this.$store.data.visitors.length,
+                    leads: this.$store.data.leads.length,
                 }
             );
         },
 
         get latest() {
-            return this.$store.data.stats?.latest ?? { projects: [], properties: [], articles: [], visitors: [] };
+            return this.$store.data.stats?.latest ?? { projects: [], properties: [], articles: [], visitors: [], leads: [] };
         },
 
         get ops() {

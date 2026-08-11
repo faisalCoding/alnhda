@@ -28,6 +28,13 @@ return [
         'key' => env('RESEND_KEY'),
     ],
 
+    'whatsapp' => [
+        'url' => rtrim((string) env('WHATSAPP_SERVICE_URL', 'http://127.0.0.1:3000'), '/'),
+        'key' => env('WHATSAPP_SERVICE_KEY', ''),
+        'send_delay_min' => (int) env('WHATSAPP_SEND_DELAY_MIN', 6),
+        'send_delay_max' => (int) env('WHATSAPP_SEND_DELAY_MAX', 14),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

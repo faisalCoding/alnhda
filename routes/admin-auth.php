@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\Api\ArticleController;
 use App\Http\Controllers\Admin\Api\ArticleFileController;
 use App\Http\Controllers\Admin\Api\DashboardController;
+use App\Http\Controllers\Admin\Api\LeadController;
 use App\Http\Controllers\Admin\Api\ProjectController;
 use App\Http\Controllers\Admin\Api\ProjectFileController;
 use App\Http\Controllers\Admin\Api\PropertyController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Admin\Api\PropertyFileController;
 use App\Http\Controllers\Admin\Api\PropertyImageController;
 use App\Http\Controllers\Admin\Api\SessionController;
 use App\Http\Controllers\Admin\Api\VisitorController;
+use App\Http\Controllers\Admin\Api\WhatsappController;
 use App\Http\Controllers\Admin\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\Auth\RegisteredAdminController;
 use Illuminate\Support\Facades\Route;
@@ -29,6 +31,8 @@ Route::middleware('auth:admin')->group(function () {
     Route::view('projects-dashboard', 'admin.projects')->name('projects-dashboard');
     Route::view('articles-dashboard', 'admin.articles')->name('articles-dashboard');
     Route::view('visitors-dashboard', 'admin.visitors')->name('visitors-dashboard');
+    Route::view('leads-dashboard', 'admin.leads')->name('leads-dashboard');
+    Route::view('whatsapp-dashboard', 'admin.whatsapp')->name('whatsapp-dashboard');
 });
 
 Route::prefix('api')->name('panel.api.')->group(function () {
@@ -41,6 +45,12 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('properties', [PropertyController::class, 'index'])->name('properties.index');
         Route::get('articles', [ArticleController::class, 'index'])->name('articles.index');
         Route::get('visitors', [VisitorController::class, 'index'])->name('visitors.index');
+        Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
+
+        Route::get('whatsapp/status', [WhatsappController::class, 'status'])->name('whatsapp.status');
+        Route::post('whatsapp/disconnect', [WhatsappController::class, 'disconnect'])->name('whatsapp.disconnect');
+        Route::post('whatsapp/reset', [WhatsappController::class, 'reset'])->name('whatsapp.reset');
+        Route::post('whatsapp/send', [WhatsappController::class, 'send'])->name('whatsapp.send');
 
         Route::middleware('idempotency')->group(function () {
             Route::post('projects', [ProjectController::class, 'store'])->name('projects.store');
@@ -54,6 +64,10 @@ Route::prefix('api')->name('panel.api.')->group(function () {
             Route::post('articles', [ArticleController::class, 'store'])->name('articles.store');
             Route::put('articles/{article}', [ArticleController::class, 'update'])->name('articles.update');
             Route::delete('articles/{article}', [ArticleController::class, 'destroy'])->name('articles.destroy');
+
+            Route::post('leads', [LeadController::class, 'store'])->name('leads.store');
+            Route::put('leads/{lead}', [LeadController::class, 'update'])->name('leads.update');
+            Route::delete('leads/{lead}', [LeadController::class, 'destroy'])->name('leads.destroy');
 
             Route::delete('property-images/{image}', [PropertyImageController::class, 'destroy'])->name('property-images.destroy');
         });
