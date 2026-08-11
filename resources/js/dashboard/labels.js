@@ -2,6 +2,7 @@ export const ENTITY_LABELS = {
     projects: 'مشروع',
     properties: 'وحدة',
     articles: 'مقال',
+    leads: 'عميل محتمل',
 };
 
 export const ACTION_LABELS = {

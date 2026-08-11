@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\ArticleResource;
+use App\Http\Resources\Admin\LeadResource;
 use App\Http\Resources\Admin\ProjectResource;
 use App\Http\Resources\Admin\PropertyResource;
 use App\Http\Resources\Admin\VisitorResource;
 use App\Models\Article;
+use App\Models\Lead;
 use App\Models\Project;
 use App\Models\Properties;
 use App\Models\Visitor;
@@ -24,6 +26,7 @@ class DashboardController extends Controller
                     'properties' => Properties::query()->count(),
                     'articles' => Article::query()->count(),
                     'visitors' => Visitor::query()->count(),
+                    'leads' => Lead::query()->count(),
                 ],
                 'latest' => [
                     'projects' => ProjectResource::collection(
@@ -37,6 +40,9 @@ class DashboardController extends Controller
                     ),
                     'visitors' => VisitorResource::collection(
                         Visitor::query()->latest()->limit(5)->get()
+                    ),
+                    'leads' => LeadResource::collection(
+                        Lead::query()->latest()->limit(5)->get()
                     ),
                 ],
             ],

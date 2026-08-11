@@ -7,13 +7,14 @@
     <div x-data="overviewPage()" class="space-y-8">
 
         {{-- Stat cards --}}
-        <div class="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
             @php
                 $cards = [
                     ['key' => 'projects', 'label' => 'المشاريع', 'route' => 'projects-dashboard'],
                     ['key' => 'properties', 'label' => 'الوحدات', 'route' => 'projects-dashboard'],
                     ['key' => 'articles', 'label' => 'المقالات', 'route' => 'articles-dashboard'],
                     ['key' => 'visitors', 'label' => 'الزوار', 'route' => 'visitors-dashboard'],
+                    ['key' => 'leads', 'label' => 'العملاء المحتملون', 'route' => 'leads-dashboard'],
                 ];
             @endphp
 
