@@ -71,8 +71,15 @@
             <div x-show="status === 'error'" x-cloak
                 class="mt-6 space-y-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-400">
                 <p class="font-bold">تعذّر الوصول إلى خدمة الواتساب.</p>
+
+                <button type="button" @click="startService()" :disabled="busy"
+                    class="w-fit rounded-xl bg-red-500/15 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-500/25 disabled:opacity-50 dark:text-red-300">
+                    <span x-show="!busy">تشغيل الخدمة الآن</span>
+                    <span x-show="busy" x-cloak>جارٍ التشغيل…</span>
+                </button>
+
                 <p class="text-xs leading-relaxed">
-                    شغّل الخدمة على الخادم ثم حدّث الصفحة:
+                    أو شغّلها يدويًا على الخادم:
                     <code class="mt-1 block font-mono" dir="ltr">cd whatsapp-service &amp;&amp; npm install &amp;&amp; npm start</code>
                 </p>
             </div>
@@ -84,7 +91,7 @@
                 <li>يُربط رقمك عبر «الأجهزة المرتبطة» في واتساب — لا يُطلب منك أي كلمة مرور.</li>
                 <li>لكل مدير جلسة مستقلة، وتبقى محفوظة على الخادم بعد إعادة التشغيل.</li>
                 <li>تُرسل رسائل الحملات عبر طابور المهام بفواصل زمنية عشوائية لتقليل خطر الحظر.</li>
-                <li>يتطلب الإرسال تشغيل معالج الطابور: <code class="font-mono" dir="ltr">php artisan queue:work</code></li>
+                <li>محليًا يشغّل <code class="font-mono" dir="ltr">composer run dev</code> الخادم والطابور وخدمة الواتساب معًا.</li>
             </ul>
         </section>
     </div>

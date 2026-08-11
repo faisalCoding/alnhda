@@ -7,13 +7,28 @@ const path = require('path');
 const app = express();
 app.use(express.json());
 
+/**
+ * يقرأ متغيراً من ملف .env الخاص بـ Laravel (المجلد الأعلى) حتى يبقى المفتاح
+ * معرَّفاً في مكان واحد، فلا يحتاج المشغّل إلى تمريره يدوياً عند التشغيل.
+ */
+function laravelEnv(key) {
+    try {
+        const file = fs.readFileSync(path.join(__dirname, '..', '.env'), 'utf8');
+        const match = file.match(new RegExp('^' + key + '\\s*=\\s*(.*)$', 'm'));
+
+        return match ? match[1].trim().replace(/^["']|["']$/g, '') : '';
+    } catch {
+        return '';
+    }
+}
+
 // الخدمة داخلية فقط: يستقبل الطلبات من Laravel على نفس الخادم، لذا نربط على
 // localhost حصراً ولا حاجة لـ CORS (لا يوجد اتصال من المتصفح مباشرة).
-const port = parseInt(process.env.WHATSAPP_PORT || '3000', 10);
+const port = parseInt(process.env.WHATSAPP_PORT || laravelEnv('WHATSAPP_PORT') || '3000', 10);
 const host = process.env.WHATSAPP_BIND_HOST || '127.0.0.1';
 
-// مفتاح سري مشترك مع Laravel: إذا عُرّف WHATSAPP_API_KEY تُرفض أي طلبات بدونه.
-const apiKey = process.env.WHATSAPP_API_KEY || '';
+// مفتاح سري مشترك مع Laravel: إذا عُرّف تُرفض أي طلبات بدونه.
+const apiKey = process.env.WHATSAPP_API_KEY || laravelEnv('WHATSAPP_SERVICE_KEY');
 app.use((req, res, next) => {
     if (apiKey && req.get('x-api-key') !== apiKey) {
         return res.status(401).json({ success: false, message: 'غير مصرح.' });

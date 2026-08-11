@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\SendWhatsappRequest;
 use App\Jobs\SendLeadWhatsappJob;
 use App\Models\Lead;
 use App\Services\WhatsappGateway;
+use App\Services\WhatsappServiceProcess;
 use Illuminate\Http\JsonResponse;
 
 class WhatsappController extends Controller
@@ -34,6 +35,26 @@ class WhatsappController extends Controller
         $this->whatsapp->reset($this->clientId());
 
         return response()->json(['data' => ['status' => 'starting', 'message' => 'جاري إعادة التهيئة بالكامل...']]);
+    }
+
+    public function start(WhatsappServiceProcess $process): JsonResponse
+    {
+        $outcome = $process->start();
+
+        if ($outcome === 'unavailable') {
+            return response()->json([
+                'message' => 'تشغيل الخدمة من المتصفح غير متاح على هذا الخادم — شغّلها يدويًا.',
+            ], 409);
+        }
+
+        return response()->json([
+            'data' => [
+                'status' => 'starting',
+                'message' => $outcome === 'started'
+                    ? 'تم إرسال أمر تشغيل الخدمة، انتظر لحظات...'
+                    : 'الخدمة تعمل مسبقًا.',
+            ],
+        ]);
     }
 
     /**

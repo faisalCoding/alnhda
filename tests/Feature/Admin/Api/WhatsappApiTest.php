@@ -4,6 +4,7 @@ use App\Jobs\SendLeadWhatsappJob;
 use App\Models\Admin;
 use App\Models\Lead;
 use App\Services\WhatsappGateway;
+use App\Services\WhatsappServiceProcess;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -151,6 +152,44 @@ it('delivers a queued message through the gateway', function () {
         && $request['phone'] === '966555555555'
         && $request['clientId'] === 'admin_1'
         && $request['message'] === 'مرحباً');
+});
+
+it('starts the node service when nothing is listening', function () {
+    $this->mock(WhatsappServiceProcess::class)->shouldReceive('start')->once()->andReturn('started');
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelUrl('/api/whatsapp/start'))
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', 'starting');
+});
+
+it('reports that the node service is already running', function () {
+    $this->mock(WhatsappServiceProcess::class)->shouldReceive('start')->once()->andReturn('already_running');
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelUrl('/api/whatsapp/start'))
+        ->assertSuccessful()
+        ->assertJsonPath('data.message', 'الخدمة تعمل مسبقًا.');
+});
+
+it('explains when the host forbids starting processes from the browser', function () {
+    $this->mock(WhatsappServiceProcess::class)->shouldReceive('start')->once()->andReturn('unavailable');
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelUrl('/api/whatsapp/start'))
+        ->assertConflict();
+});
+
+it('rejects guests from starting the node service', function () {
+    $this->postJson(panelUrl('/api/whatsapp/start'))->assertUnauthorized();
+});
+
+it('reads the service port from the configured url', function () {
+    config()->set('services.whatsapp.url', 'http://127.0.0.1:3999');
+    expect(app(WhatsappServiceProcess::class)->port())->toBe(3999);
+
+    config()->set('services.whatsapp.url', 'http://127.0.0.1');
+    expect(app(WhatsappServiceProcess::class)->port())->toBe(3000);
 });
 
 it('renders the whatsapp dashboard page for an authenticated admin', function () {

@@ -47,6 +47,10 @@ export default function whatsappPage() {
             await this.command('/api/whatsapp/disconnect');
         },
 
+        async startService() {
+            await this.command('/api/whatsapp/start');
+        },
+
         async resetSession() {
             if (!confirm('سيتم حذف الجلسة بالكامل وستحتاج إلى مسح رمز QR من جديد. هل أنت متأكد؟')) {
                 return;
