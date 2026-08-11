@@ -196,6 +196,7 @@
                                         <option value="جديد مكتمل">جديد مكتمل</option>
                                         <option value="مكتمل">مكتمل</option>
                                         <option value="مباع">مباع</option>
+                                        <option value="تم البيع">تم البيع</option>
                                     </select>
                                 </div>
                                 <div>

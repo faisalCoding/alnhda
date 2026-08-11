@@ -140,6 +140,13 @@ it('uploads a project image and deletes the previous one', function () {
     Storage::disk('public')->assertMissing('uploads/old.webp');
 });
 
+it('offers the sold status option in the projects dashboard form', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->get(panelUrl('/projects-dashboard'))
+        ->assertSuccessful()
+        ->assertSee('<option value="تم البيع">تم البيع</option>', false);
+});
+
 it('returns a browser-usable absolute image url regardless of APP_URL scheme', function () {
     config(['app.url' => 'localhost']);
     $project = Project::factory()->create(['image_url' => 'uploads/photo.webp']);
