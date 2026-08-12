@@ -1,5 +1,7 @@
 import { request } from '../api';
 
+const POLL_INTERVAL = 10000;
+
 export const DELIVERY_STATUSES = {
     queued: { label: 'في الطابور', tone: 'amber' },
     sent: { label: 'أُرسلت', tone: 'sky' },
@@ -17,8 +19,26 @@ export default function whatsappMessagesPage() {
         search: '',
         statusFilter: '',
 
+        timer: null,
+
         init() {
             this.refresh();
+
+            // Delivery states arrive after the page has loaded, so it polls
+            // while anything is still in flight and stops once all are final.
+            this.timer = setInterval(() => {
+                if (!document.hidden && !this.loading && this.hasPending) {
+                    this.refresh();
+                }
+            }, POLL_INTERVAL);
+
+            this.$el.addEventListener('alpine:destroyed', () => clearInterval(this.timer));
+        },
+
+        get hasPending() {
+            return this.messages.some(
+                (message) => message.counts.queued > 0 || message.counts.sent > 0
+            );
         },
 
         async refresh() {
