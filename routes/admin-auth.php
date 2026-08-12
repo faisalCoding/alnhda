@@ -51,6 +51,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::post('whatsapp/disconnect', [WhatsappController::class, 'disconnect'])->name('whatsapp.disconnect');
         Route::post('whatsapp/reset', [WhatsappController::class, 'reset'])->name('whatsapp.reset');
         Route::post('whatsapp/start', [WhatsappController::class, 'start'])->name('whatsapp.start');
+        Route::get('whatsapp/log', [WhatsappController::class, 'log'])->name('whatsapp.log');
         Route::post('whatsapp/send', [WhatsappController::class, 'send'])->name('whatsapp.send');
 
         Route::middleware('idempotency')->group(function () {

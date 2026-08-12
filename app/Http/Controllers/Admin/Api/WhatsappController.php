@@ -37,6 +37,17 @@ class WhatsappController extends Controller
         return response()->json(['data' => ['status' => 'starting', 'message' => 'جاري إعادة التهيئة بالكامل...']]);
     }
 
+    public function log(WhatsappServiceProcess $process): JsonResponse
+    {
+        return response()->json([
+            'data' => [
+                'path' => $process->logPath(),
+                'lines' => $process->tailLog(),
+                'running' => $process->isRunning(),
+            ],
+        ]);
+    }
+
     public function start(WhatsappServiceProcess $process): JsonResponse
     {
         $outcome = $process->start();

@@ -85,6 +85,49 @@
             </div>
         </section>
 
+        {{-- Service log --}}
+        <section class="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+            <header class="flex items-center gap-3 px-6 py-4">
+                <button type="button" @click="toggleLog()" class="flex flex-1 items-center gap-2 text-right">
+                    <svg class="h-4 w-4 shrink-0 text-zinc-400 transition-transform" :class="logOpen && 'rotate-90'"
+                        fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span class="font-extrabold">سجل الخدمة</span>
+                    <span class="text-xs text-zinc-400">node.log</span>
+                </button>
+
+                <button type="button" x-show="logOpen" x-cloak @click="loadLog()" :disabled="logLoading"
+                    class="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-bold text-zinc-600 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800">
+                    <span x-show="!logLoading">تحديث</span>
+                    <span x-show="logLoading" x-cloak>...</span>
+                </button>
+            </header>
+
+            <div x-show="logOpen" x-cloak x-transition.opacity.duration.150ms
+                class="border-t border-zinc-200 dark:border-zinc-800">
+                <div x-ref="logBox"
+                    class="max-h-80 overflow-auto bg-zinc-950 px-4 py-3 font-mono text-xs leading-relaxed text-zinc-300">
+                    <template x-for="(line, index) in logLines" :key="index">
+                        {{-- dir=auto orders each mixed line correctly; text-left keeps them
+                             flush on one edge so the log stays scannable top to bottom. --}}
+                        <p dir="auto" class="whitespace-pre-wrap break-words text-left"
+                            :class="{
+                                'text-red-400': /فشل|خطأ|error|Error|تعذر/.test(line),
+                                'text-emerald-400': /جاهز|QR Code|تمت المصادقة/.test(line),
+                            }"
+                            x-text="line"></p>
+                    </template>
+
+                    <p x-show="!logLines.length" class="text-zinc-500">
+                        السجل فارغ — شغّل الخدمة ثم افتح الصفحة لتوليد رمز QR.
+                    </p>
+                </div>
+
+                <p class="px-6 py-2 text-[11px] text-zinc-400" dir="ltr" x-text="logPath"></p>
+            </div>
+        </section>
+
         <section class="rounded-2xl border border-zinc-200 bg-white p-6 text-sm dark:border-zinc-800 dark:bg-zinc-900">
             <h3 class="mb-3 font-extrabold">كيف يعمل الربط</h3>
             <ul class="list-inside list-disc space-y-2 leading-relaxed text-zinc-600 dark:text-zinc-400">

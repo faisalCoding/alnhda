@@ -131,6 +131,47 @@ class WhatsappServiceProcess
         return is_dir($this->directory().'/node_modules');
     }
 
+    /**
+     * Last lines of the service log. Only the tail of the file is read, so the
+     * log can grow without the panel paying for it.
+     *
+     * @return array<int, string>
+     */
+    public function tailLog(int $lines = 200): array
+    {
+        $path = $this->logPath();
+
+        if (! is_file($path) || ! is_readable($path)) {
+            return [];
+        }
+
+        $chunk = 64 * 1024;
+        $size = (int) filesize($path);
+        $handle = fopen($path, 'rb');
+
+        if ($handle === false) {
+            return [];
+        }
+
+        $seeked = $size > $chunk;
+
+        if ($seeked) {
+            fseek($handle, -$chunk, SEEK_END);
+        }
+
+        $content = (string) stream_get_contents($handle);
+        fclose($handle);
+
+        $all = preg_split('/\r\n|\n|\r/', trim($content)) ?: [];
+
+        // Seeking mid-file almost certainly lands inside a line; drop that scrap.
+        if ($seeked && count($all) > 1) {
+            array_shift($all);
+        }
+
+        return array_values(array_slice($all, -max(1, $lines)));
+    }
+
     private function canRunCommands(): bool
     {
         return function_exists('shell_exec')

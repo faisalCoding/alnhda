@@ -10,16 +10,60 @@ export default function whatsappPage() {
         clientId: '',
         busy: false,
         timer: null,
+        logOpen: false,
+        logLines: [],
+        logPath: '',
+        logLoading: false,
 
         init() {
             this.checkStatus();
             this.timer = setInterval(() => {
-                if (!this.busy && this.status !== 'ready' && !document.hidden) {
+                if (document.hidden || this.busy) {
+                    return;
+                }
+
+                if (this.status !== 'ready') {
                     this.checkStatus();
+                }
+
+                if (this.logOpen) {
+                    this.loadLog();
                 }
             }, POLL_INTERVAL);
 
             this.$el.addEventListener('alpine:destroyed', () => clearInterval(this.timer));
+        },
+
+        toggleLog() {
+            this.logOpen = !this.logOpen;
+
+            if (this.logOpen) {
+                this.loadLog();
+            }
+        },
+
+        async loadLog() {
+            this.logLoading = true;
+
+            try {
+                const payload = await request('GET', '/api/whatsapp/log');
+
+                this.logLines = payload?.data?.lines ?? [];
+                this.logPath = payload?.data?.path ?? '';
+                this.$nextTick(() => this.scrollLogToEnd());
+            } catch (error) {
+                this.logLines = ['تعذر قراءة السجل: ' + error.message];
+            } finally {
+                this.logLoading = false;
+            }
+        },
+
+        scrollLogToEnd() {
+            const box = this.$refs.logBox;
+
+            if (box) {
+                box.scrollTop = box.scrollHeight;
+            }
         },
 
         async checkStatus() {

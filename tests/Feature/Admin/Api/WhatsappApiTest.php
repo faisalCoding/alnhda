@@ -192,6 +192,56 @@ it('reads the service port from the configured url', function () {
     expect(app(WhatsappServiceProcess::class)->port())->toBe(3000);
 });
 
+it('returns the tail of the service log', function () {
+    $this->mock(WhatsappServiceProcess::class, function ($mock) {
+        $mock->shouldReceive('logPath')->andReturn('/tmp/node.log');
+        $mock->shouldReceive('tailLog')->once()->andReturn(['خدمة الواتساب تعمل', '[admin_1] QR Code جديد.']);
+        $mock->shouldReceive('isRunning')->andReturn(true);
+    });
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(panelUrl('/api/whatsapp/log'))
+        ->assertSuccessful()
+        ->assertJsonCount(2, 'data.lines')
+        ->assertJsonPath('data.lines.1', '[admin_1] QR Code جديد.')
+        ->assertJsonPath('data.running', true);
+});
+
+it('rejects guests from reading the service log', function () {
+    $this->getJson(panelUrl('/api/whatsapp/log'))->assertUnauthorized();
+});
+
+it('returns no log lines when the file is missing', function () {
+    $process = app(WhatsappServiceProcess::class);
+
+    expect($process->tailLog())->toBe([]);
+})->skip(fn () => is_file(base_path('whatsapp-service/node.log')), 'a real log exists locally');
+
+it('reads only the last lines of the log', function () {
+    $path = base_path('whatsapp-service/node.log');
+    $existing = is_file($path) ? file_get_contents($path) : null;
+
+    file_put_contents($path, implode("\n", array_map(fn ($i) => "line {$i}", range(1, 500))));
+
+    try {
+        $lines = app(WhatsappServiceProcess::class)->tailLog(10);
+
+        expect($lines)->toHaveCount(10)
+            ->and($lines[0])->toBe('line 491')
+            ->and(end($lines))->toBe('line 500');
+    } finally {
+        $existing === null ? @unlink($path) : file_put_contents($path, $existing);
+    }
+});
+
+it('renders the log panel on the whatsapp page', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->get(panelUrl('/whatsapp-dashboard'))
+        ->assertSuccessful()
+        ->assertSee('سجل الخدمة')
+        ->assertSee('toggleLog()', false);
+});
+
 it('renders the whatsapp dashboard page for an authenticated admin', function () {
     $this->actingAs($this->admin, 'admin')
         ->get(panelUrl('/whatsapp-dashboard'))
