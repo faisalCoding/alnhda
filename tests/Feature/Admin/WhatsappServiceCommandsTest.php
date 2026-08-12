@@ -160,6 +160,23 @@ it('blames a restart when the gateway never saw any acknowledgement', function (
     $this->artisan('whatsapp:doctor')->expectsOutputToContain('whatsapp:restart');
 })->group('doctor');
 
+it('surfaces rows that were sent without a message id', function () {
+    // These predate the gateway returning ids: nothing can ever confirm them,
+    // and the earlier check skipped them entirely, reporting "nothing waiting"
+    // while the panel showed messages stuck on "sent".
+    App\Models\WhatsappMessageRecipient::factory()->create([
+        'status' => App\Models\WhatsappMessageRecipient::STATUS_SENT,
+        'provider_message_id' => null,
+        'sent_at' => now(),
+    ]);
+
+    doctorWithGateway(['acks_tracked' => 0], []);
+
+    $this->artisan('whatsapp:doctor')
+        ->expectsOutputToContain('1 رسالة أُرسلت دون تسجيل معرّفها')
+        ->assertFailed();
+})->group('doctor');
+
 it('warns when no callback url is configured', function () {
     config()->set('services.whatsapp.callback_url', '');
     doctorWithGateway(['acks_tracked' => 0], []);

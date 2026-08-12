@@ -150,6 +150,24 @@ class WhatsappDoctor extends Command
             'عرّف WHATSAPP_CALLBACK_URL في .env ثم: php artisan config:clear && php artisan whatsapp:restart'
         );
 
+        // Rows sent before the gateway returned message ids have nothing to match
+        // an acknowledgement against, so they can never leave "sent". Counted
+        // separately, or the check reports "nothing waiting" while the panel
+        // plainly shows otherwise.
+        $untrackable = WhatsappMessageRecipient::query()
+            ->whereNull('provider_message_id')
+            ->where('status', WhatsappMessageRecipient::STATUS_SENT)
+            ->count();
+
+        if ($untrackable > 0) {
+            $check(
+                'رسائل بلا معرّف',
+                false,
+                $untrackable.' رسالة أُرسلت دون تسجيل معرّفها',
+                'أُرسلت بنسخة سابقة من البوابة، ولا يمكن تأكيد استلامها أبدًا. ستبقى على "أُرسلت" — أرسل رسالة جديدة للاختبار.'
+            );
+        }
+
         $awaiting = WhatsappMessageRecipient::query()
             ->whereNotNull('provider_message_id')
             ->where('status', WhatsappMessageRecipient::STATUS_SENT)
@@ -158,7 +176,7 @@ class WhatsappDoctor extends Command
             ->get();
 
         if ($awaiting->isEmpty()) {
-            $check('تأكيدات معلّقة', true, 'لا توجد رسائل عالقة على "أُرسلت"', '');
+            $check('تأكيدات معلّقة', true, 'لا توجد رسائل قابلة للتتبّع عالقة على "أُرسلت"', '');
 
             return;
         }
