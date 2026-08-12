@@ -147,11 +147,13 @@ class WhatsappGateway
 
     /**
      * Current acknowledgement level for messages Laravel has not confirmed yet.
+     * Returns null when the gateway could not be reached, which is a different
+     * thing from it having nothing new to report.
      *
      * @param  array<int, string>  $messageIds
-     * @return array<string, int>
+     * @return array<string, int>|null
      */
-    public function acknowledgements(array $messageIds): array
+    public function acknowledgements(array $messageIds): ?array
     {
         if ($messageIds === []) {
             return [];
@@ -160,9 +162,9 @@ class WhatsappGateway
         try {
             $response = $this->client(10)->post($this->baseUrl().'/acks', ['ids' => array_values($messageIds)]);
 
-            return $response->successful() ? (array) $response->json('acks', []) : [];
+            return $response->successful() ? (array) $response->json('acks', []) : null;
         } catch (\Throwable) {
-            return [];
+            return null;
         }
     }
 

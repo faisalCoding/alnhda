@@ -380,6 +380,25 @@ it('never walks a delivery status backwards on a late acknowledgement', function
         ->and($recipient->fresh()->status)->toBe(WhatsappMessageRecipient::STATUS_READ);
 });
 
+it('does not report failure when the gateway simply has nothing new', function () {
+    WhatsappMessageRecipient::factory()->sent()->create();
+    Http::fake(['*/acks' => Http::response(['acks' => []])]);
+
+    // This runs every five minutes; an empty result is normal, not an error.
+    $this->artisan('whatsapp:sync-acks')
+        ->expectsOutputToContain('حُدّثت حالة 0')
+        ->assertSuccessful();
+});
+
+it('reports failure when the gateway is unreachable', function () {
+    WhatsappMessageRecipient::factory()->sent()->create();
+    Http::fake(fn () => throw new ConnectionException('refused'));
+
+    $this->artisan('whatsapp:sync-acks')
+        ->expectsOutputToContain('تعذر الوصول إلى البوابة')
+        ->assertFailed();
+});
+
 it('leaves queued rows alone when syncing acknowledgements', function () {
     $queued = WhatsappMessageRecipient::factory()->create();
     Http::fake(['*/acks' => Http::response(['acks' => []])]);

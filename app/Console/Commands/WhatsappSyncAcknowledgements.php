@@ -46,8 +46,11 @@ class WhatsappSyncAcknowledgements extends Command
 
         $acks = $gateway->acknowledgements($pending->pluck('provider_message_id')->all());
 
-        if ($acks === []) {
-            $this->warn('لم تُرجع البوابة أي تأكيدات — تأكد أنها تعمل ولم يُعد تشغيلها بعد الإرسال.');
+        // Only an unreachable gateway is a failure. Having nothing new to report
+        // is the normal case, and this runs on a schedule — treating it as an
+        // error would cry wolf every few minutes.
+        if ($acks === null) {
+            $this->error('تعذر الوصول إلى البوابة — تأكد أن الخدمة تعمل.');
 
             return self::FAILURE;
         }
