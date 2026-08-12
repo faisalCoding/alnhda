@@ -53,11 +53,11 @@ class WhatsappDoctor extends Command
         );
 
         $browser = $process->browserCheck();
-        $check(
+        $browserOk = $check(
             'متصفح Chromium',
             str_starts_with($browser, 'ok: '),
             str_replace('ok: ', '', $browser),
-            'على لينكس ثبّت مكتبات Chromium: sudo apt install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2'
+            'ينقص المتصفحَ مكتباتُ النظام — انظر الإصلاح المقترح أسفل الجدول'
         );
 
         $key = (string) config('services.whatsapp.key');
@@ -83,6 +83,10 @@ class WhatsappDoctor extends Command
 
         $this->table(['', 'الفحص', 'النتيجة'], $rows);
 
+        if (! $browserOk) {
+            $this->browserFixHint();
+        }
+
         $lines = $process->tailLog(15);
 
         if ($lines !== []) {
@@ -105,5 +109,22 @@ class WhatsappDoctor extends Command
         $this->error("فشل {$failed} فحص — عالج الأول في القائمة ثم أعد التشغيل.");
 
         return self::FAILURE;
+    }
+
+    /**
+     * Package names for these libraries differ between distro releases (Ubuntu
+     * 24.04 renamed them to the t64 variants), so rather than a list that breaks
+     * on half the servers, let apt resolve Chrome's own dependencies.
+     */
+    private function browserFixHint(): void
+    {
+        $this->newLine();
+        $this->line('<comment>الإصلاح المقترح (دبيان/أوبنتو) — يترك apt يجلب كل المكتبات المطلوبة:</comment>');
+        $this->newLine();
+        $this->line('  wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb');
+        $this->line('  sudo apt-get update && sudo apt-get install -y ./google-chrome-stable_current_amd64.deb');
+        $this->line('  rm google-chrome-stable_current_amd64.deb');
+        $this->newLine();
+        $this->line('  ثم أعد تشغيل الخدمة: php artisan whatsapp:stop && php artisan whatsapp:start');
     }
 }

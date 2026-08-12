@@ -124,6 +124,22 @@ it('points at the missing chromium libraries when the browser will not run', fun
 
     $this->artisan('whatsapp:doctor')
         ->expectsOutputToContain('libnss3')
+        ->expectsOutputToContain('google-chrome-stable_current_amd64.deb')
+        ->expectsOutputToContain('whatsapp:start')
+        ->assertFailed();
+});
+
+it('does not print the browser fix when the browser is fine', function () {
+    $this->mock(WhatsappServiceProcess::class, function ($mock) {
+        $mock->shouldReceive('nodeVersion')->andReturn('v22.0.0');
+        $mock->shouldReceive('isInstalled')->andReturn(true);
+        $mock->shouldReceive('browserCheck')->andReturn('ok: Chrome for Testing 146');
+        $mock->shouldReceive('isRunning')->andReturn(false);
+        $mock->shouldReceive('tailLog')->andReturn([]);
+    });
+
+    $this->artisan('whatsapp:doctor')
+        ->doesntExpectOutputToContain('google-chrome-stable_current_amd64.deb')
         ->assertFailed();
 });
 
