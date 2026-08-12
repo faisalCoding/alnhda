@@ -84,6 +84,12 @@ class WhatsappGateway
         try {
             $response = $this->client(3)->get($this->baseUrl().'/health');
 
+            if ($response->notFound()) {
+                // /health shipped with the current service; a 404 means the
+                // running process is an older build that survived the deploy.
+                return ['ok' => false, 'outdated' => true, 'message' => 'الخدمة تعمل بنسخة قديمة من الكود'];
+            }
+
             if (! $response->successful()) {
                 return ['ok' => false, 'message' => 'الخدمة ردّت بحالة '.$response->status()];
             }

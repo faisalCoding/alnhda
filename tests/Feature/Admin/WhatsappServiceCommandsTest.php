@@ -74,6 +74,45 @@ it('reports a running gateway with its pid', function () {
         ->assertSuccessful();
 });
 
+it('restarts the gateway so a deployed change takes effect', function () {
+    $this->mock(WhatsappServiceProcess::class, function ($mock) {
+        $mock->shouldReceive('isInstalled')->andReturn(true);
+        $mock->shouldReceive('restart')->once()->andReturn('started');
+        $mock->shouldReceive('port')->andReturn(3000);
+    });
+
+    $this->artisan('whatsapp:restart')
+        ->expectsOutputToContain('أُعيد تشغيل الخدمة')
+        ->assertSuccessful();
+});
+
+it('reports when the old gateway could not be stopped', function () {
+    $this->mock(WhatsappServiceProcess::class, function ($mock) {
+        $mock->shouldReceive('isInstalled')->andReturn(true);
+        $mock->shouldReceive('restart')->once()->andReturn('stop_failed');
+    });
+
+    $this->artisan('whatsapp:restart')
+        ->expectsOutputToContain('تعذر إيقاف الخدمة القديمة')
+        ->assertFailed();
+});
+
+it('tells the operator to restart when the running service predates /health', function () {
+    $this->mock(WhatsappServiceProcess::class, function ($mock) {
+        $mock->shouldReceive('nodeVersion')->andReturn('v18.19.1');
+        $mock->shouldReceive('isInstalled')->andReturn(true);
+        $mock->shouldReceive('browserCheck')->andReturn('ok: Chrome 146');
+        $mock->shouldReceive('isRunning')->andReturn(true);
+        $mock->shouldReceive('tailLog')->andReturn([]);
+    });
+
+    Illuminate\Support\Facades\Http::fake(['*/health' => Illuminate\Support\Facades\Http::response('Not Found', 404)]);
+
+    $this->artisan('whatsapp:doctor')
+        ->expectsOutputToContain('whatsapp:restart')
+        ->assertFailed();
+});
+
 it('says so when the service is up but its pid cannot be resolved', function () {
     $this->mock(WhatsappServiceProcess::class)->shouldReceive('stop')->once()->andReturn('pid_unknown');
 

@@ -80,7 +80,9 @@ class WhatsappDoctor extends Command
                 'استجابة البوابة',
                 $health['ok'],
                 $health['ok'] ? 'سليمة' : ($health['message'] ?? 'لا تستجيب'),
-                'راجع السجل أدناه'
+                ($health['outdated'] ?? false)
+                    ? 'شغّل: php artisan whatsapp:restart'
+                    : 'راجع السجل أدناه'
             );
 
             if ($health['ok']) {

@@ -72,7 +72,7 @@
             "npm install",
             "npm install --prefix whatsapp-service",
             "npm run build",
-            "@php artisan whatsapp:start"
+            "@php artisan whatsapp:restart"
         ]
     },
     "extra": {

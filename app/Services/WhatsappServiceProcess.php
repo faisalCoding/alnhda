@@ -128,6 +128,29 @@ class WhatsappServiceProcess
     }
 
     /**
+     * Stop then start. Needed after every deploy: start() alone is a no-op when
+     * the port is served, so a pulled index.js would never actually take effect.
+     *
+     * @return 'started'|'stop_failed'|'unavailable'
+     */
+    public function restart(): string
+    {
+        $this->stop();
+
+        // The port lingers briefly after the process dies; starting too early
+        // would look "already running" and leave the old build in place.
+        for ($i = 0; $i < 20 && $this->isRunning(); $i++) {
+            usleep(250_000);
+        }
+
+        if ($this->isRunning()) {
+            return 'stop_failed';
+        }
+
+        return $this->start() === 'started' ? 'started' : 'unavailable';
+    }
+
+    /**
      * @return 'stopped'|'not_running'|'pid_unknown'|'unavailable'
      */
     public function stop(): string
@@ -145,6 +168,16 @@ class WhatsappServiceProcess
         }
 
         $this->run('kill '.$pid.' 2>/dev/null');
+
+        // Closing the browsers takes a moment; escalate only if it never lets go.
+        for ($i = 0; $i < 40 && $this->isRunning(); $i++) {
+            usleep(250_000);
+        }
+
+        if ($this->isRunning() && ($stubborn = $this->runningPid()) !== null) {
+            $this->run('kill -9 '.$stubborn.' 2>/dev/null');
+            usleep(500_000);
+        }
 
         return 'stopped';
     }

@@ -173,15 +173,35 @@ function failSession(session, message) {
 /**
  * تُسقط جلسة عالقة حتى يبدأ الطلب التالي محاولة جديدة بدل الانتظار بلا نهاية.
  */
+/**
+ * destroy() قد يعود قبل أن يموت Chromium فعلاً (أو يُرفض إن كانت الصفحة قيد
+ * الحقن)، فيبقى المتصفح يتيماً. كل جلسة مُسقطة كانت تسرّب متصفحاً كاملاً، وهو
+ * ما يستنزف ذاكرة الخادم عند تكرار حلقة الفصل. لذا نُجهز على العملية بعدها.
+ */
+async function closeClient(clientId, client) {
+    const browserProcess = client?.pupBrowser?.process?.();
+
+    try {
+        await client?.destroy();
+    } catch (error) {
+        console.error(`[${clientId}] تعذر إغلاق الجلسة:`, error.message);
+    }
+
+    try {
+        if (browserProcess && browserProcess.exitCode === null && !browserProcess.killed) {
+            browserProcess.kill('SIGKILL');
+            console.log(`[${clientId}] أُغلق المتصفح المتبقي.`);
+        }
+    } catch (error) {
+        console.error(`[${clientId}] تعذر إنهاء المتصفح:`, error.message);
+    }
+}
+
 function dropSession(clientId, session) {
     console.log(`[${clientId}] إسقاط الجلسة (الحالة: ${session.status}).`);
     sessions.delete(clientId);
 
-    // destroy() وعدٌ يُرفض إن كانت الصفحة قيد الحقن، وهو ما كان يظهر كـ
-    // unhandledRejection: "Attempted to use detached Frame".
-    return Promise.resolve()
-        .then(() => session.client?.destroy())
-        .catch((error) => console.error(`[${clientId}] تعذر إغلاق الجلسة:`, error.message));
+    return closeClient(clientId, session.client);
 }
 
 // ── GET /health ───────────────────────────────────────────────────────────────
@@ -321,6 +341,33 @@ app.post('/reset/:clientId', async (req, res) => {
 
     return res.json({ success: true, message: 'تم إعادة تعيين الجلسة بنجاح.' });
 });
+
+/**
+ * إغلاق مرتب: بدونه يبقى Chromium حياً بعد قتل Node، ممسكاً بالمنفذ الموروث،
+ * فتفشل إعادة التشغيل وتتراكم متصفحات يتيمة تلتهم ذاكرة الخادم.
+ */
+let shuttingDown = false;
+
+function shutdown(signal) {
+    if (shuttingDown) {
+        return;
+    }
+
+    shuttingDown = true;
+    console.log(`إيقاف الخدمة (${signal})...`);
+
+    const closing = Promise.allSettled(
+        Array.from(sessions.entries()).map(([id, session]) => closeClient(id, session.client))
+    );
+
+    // لا ننتظر متصفحاً عالقاً إلى ما لا نهاية.
+    const deadline = new Promise((resolve) => setTimeout(resolve, 8000));
+
+    Promise.race([closing, deadline]).then(() => process.exit(0));
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 // whatsapp-web.js تُصدر أحياناً أخطاء Promise غير معالجة (انقطاع جلسة، تغيّر
 // واجهة واتساب ويب). نسجلها ونبقي الخدمة حية بدل أن يُنهي Node العملية.
