@@ -17,7 +17,21 @@
                 تحديث
             </button>
 
+            <button type="button" @click="syncAcks()" :disabled="syncing"
+                class="flex items-center gap-1.5 rounded-xl border border-zinc-300 px-4 py-2 text-sm font-bold text-zinc-600 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <span x-show="!syncing">تحديث حالات التسليم</span>
+                <span x-show="syncing" x-cloak>جارٍ التحقق…</span>
+            </button>
+
             <span class="text-sm text-zinc-500 dark:text-zinc-400" x-text="messages.length + ' رسالة'"></span>
+
+            <span x-show="syncResult" x-cloak
+                class="rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+                x-text="syncResult"></span>
 
             <a href="{{ route('leads-dashboard') }}"
                 class="mr-auto rounded-xl bg-primary-500 px-4 py-2 text-sm font-bold text-white hover:bg-primary-600">

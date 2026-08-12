@@ -10,6 +10,7 @@ use App\Jobs\SendLeadWhatsappJob;
 use App\Models\Lead;
 use App\Models\WhatsappMessage;
 use App\Models\WhatsappMessageRecipient;
+use App\Services\WhatsappAcknowledgementSync;
 use App\Services\WhatsappGateway;
 use App\Services\WhatsappServiceProcess;
 use Illuminate\Http\JsonResponse;
@@ -79,6 +80,44 @@ class WhatsappController extends Controller
         }
 
         return response()->json(['data' => ['updated' => $updated, 'received' => $acks->count()]]);
+    }
+
+    /**
+     * Runs the acknowledgement sync on demand. The scheduled command needs cron
+     * and the push needs a callback URL; this button needs neither, so delivery
+     * states can be refreshed — and diagnosed — from the panel alone.
+     */
+    public function syncAcknowledgements(WhatsappAcknowledgementSync $sync): JsonResponse
+    {
+        $result = $sync->sync();
+
+        if (! $result['reachable']) {
+            return response()->json(['message' => 'تعذر الوصول إلى خدمة الواتساب.'], 409);
+        }
+
+        return response()->json(['data' => $result + ['message' => $this->syncSummary($result)]]);
+    }
+
+    /**
+     * @param  array{checked: int, updated: int, known: int, untrackable: int}  $result
+     */
+    private function syncSummary(array $result): string
+    {
+        if ($result['checked'] === 0 && $result['untrackable'] === 0) {
+            return 'كل الرسائل مؤكدة — لا شيء بانتظار التحديث.';
+        }
+
+        if ($result['updated'] > 0) {
+            return 'حُدّثت حالة '.$result['updated'].' رسالة.';
+        }
+
+        if ($result['checked'] > 0 && $result['known'] === 0) {
+            return 'لم تصل تأكيدات لهذه الرسائل من واتساب بعد.';
+        }
+
+        return $result['untrackable'] > 0
+            ? $result['untrackable'].' رسالة أُرسلت دون معرّف ولا يمكن تأكيد استلامها.'
+            : 'لا جديد.';
     }
 
     public function log(WhatsappServiceProcess $process): JsonResponse

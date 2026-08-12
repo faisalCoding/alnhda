@@ -505,6 +505,55 @@ it('lists message history with recipients and status counts', function () {
         ->assertJsonPath('data.0.recipients.0.name', 'محمد');
 });
 
+it('syncs delivery states on demand from the panel', function () {
+    $recipient = WhatsappMessageRecipient::factory()->sent()->create();
+    Http::fake(['*/acks' => Http::response(['acks' => [$recipient->provider_message_id => 3]])]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelUrl('/api/whatsapp/sync-acks'))
+        ->assertSuccessful()
+        ->assertJsonPath('data.updated', 1);
+
+    expect($recipient->fresh()->status)->toBe(WhatsappMessageRecipient::STATUS_READ);
+});
+
+it('explains an on-demand sync that found nothing to confirm', function () {
+    WhatsappMessageRecipient::factory()->sent()->create();
+    Http::fake(['*/acks' => Http::response(['acks' => []])]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelUrl('/api/whatsapp/sync-acks'))
+        ->assertSuccessful()
+        ->assertJsonPath('data.updated', 0)
+        ->assertJsonPath('data.message', 'لم تصل تأكيدات لهذه الرسائل من واتساب بعد.');
+});
+
+it('reports untrackable rows through the on-demand sync', function () {
+    WhatsappMessageRecipient::factory()->create([
+        'status' => WhatsappMessageRecipient::STATUS_SENT,
+        'provider_message_id' => null,
+        'sent_at' => now(),
+    ]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelUrl('/api/whatsapp/sync-acks'))
+        ->assertSuccessful()
+        ->assertJsonPath('data.untrackable', 1);
+});
+
+it('fails the on-demand sync when the gateway is unreachable', function () {
+    WhatsappMessageRecipient::factory()->sent()->create();
+    Http::fake(fn () => throw new ConnectionException('refused'));
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelUrl('/api/whatsapp/sync-acks'))
+        ->assertConflict();
+});
+
+it('rejects guests from the on-demand sync', function () {
+    $this->postJson(panelUrl('/api/whatsapp/sync-acks'))->assertUnauthorized();
+});
+
 it('rejects guests from the message history', function () {
     $this->getJson(panelUrl('/api/whatsapp/messages'))->assertUnauthorized();
 });

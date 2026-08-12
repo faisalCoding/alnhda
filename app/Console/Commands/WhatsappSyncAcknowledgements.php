@@ -2,8 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\WhatsappMessageRecipient;
-use App\Services\WhatsappGateway;
+use App\Services\WhatsappAcknowledgementSync;
 use Illuminate\Console\Command;
 
 /**
@@ -30,42 +29,30 @@ class WhatsappSyncAcknowledgements extends Command
     /**
      * Execute the console command.
      */
-    public function handle(WhatsappGateway $gateway): int
+    public function handle(WhatsappAcknowledgementSync $sync): int
     {
-        $pending = WhatsappMessageRecipient::query()
-            ->whereNotNull('provider_message_id')
-            ->whereIn('status', [WhatsappMessageRecipient::STATUS_SENT, WhatsappMessageRecipient::STATUS_DELIVERED])
-            ->where('sent_at', '>=', now()->subHours((int) $this->option('hours')))
-            ->get();
-
-        if ($pending->isEmpty()) {
-            $this->info('لا توجد رسائل بانتظار تأكيد الاستلام.');
-
-            return self::SUCCESS;
-        }
-
-        $acks = $gateway->acknowledgements($pending->pluck('provider_message_id')->all());
+        $result = $sync->sync((int) $this->option('hours'));
 
         // Only an unreachable gateway is a failure. Having nothing new to report
         // is the normal case, and this runs on a schedule — treating it as an
         // error would cry wolf every few minutes.
-        if ($acks === null) {
+        if (! $result['reachable']) {
             $this->error('تعذر الوصول إلى البوابة — تأكد أن الخدمة تعمل.');
 
             return self::FAILURE;
         }
 
-        $updated = 0;
-
-        foreach ($pending as $recipient) {
-            $ack = $acks[$recipient->provider_message_id] ?? null;
-
-            if ($ack !== null && $recipient->applyAcknowledgement((int) $ack)) {
-                $updated++;
-            }
+        if ($result['untrackable'] > 0) {
+            $this->warn($result['untrackable'].' رسالة أُرسلت دون معرّف ولا يمكن تأكيد استلامها.');
         }
 
-        $this->info("حُدّثت حالة {$updated} رسالة من أصل {$pending->count()}.");
+        if ($result['checked'] === 0) {
+            $this->info('لا توجد رسائل بانتظار تأكيد الاستلام.');
+
+            return self::SUCCESS;
+        }
+
+        $this->info("حُدّثت حالة {$result['updated']} رسالة من أصل {$result['checked']} (البوابة تعرف {$result['known']}).");
 
         return self::SUCCESS;
     }

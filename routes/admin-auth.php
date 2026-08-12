@@ -60,6 +60,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::post('whatsapp/start', [WhatsappController::class, 'start'])->name('whatsapp.start');
         Route::get('whatsapp/log', [WhatsappController::class, 'log'])->name('whatsapp.log');
         Route::get('whatsapp/messages', [WhatsappController::class, 'messages'])->name('whatsapp.messages');
+        Route::post('whatsapp/sync-acks', [WhatsappController::class, 'syncAcknowledgements'])->name('whatsapp.sync-acks');
         Route::post('whatsapp/send', [WhatsappController::class, 'send'])->name('whatsapp.send');
 
         Route::middleware('idempotency')->group(function () {

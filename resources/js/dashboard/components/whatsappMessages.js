@@ -56,6 +56,26 @@ export default function whatsappMessagesPage() {
             }
         },
 
+        syncing: false,
+        syncResult: '',
+
+        /** Pulls delivery states now, without waiting on cron or the push. */
+        async syncAcks() {
+            this.syncing = true;
+            this.syncResult = '';
+
+            try {
+                const payload = await request('POST', '/api/whatsapp/sync-acks', {});
+
+                this.syncResult = payload?.data?.message ?? '';
+                await this.refresh();
+            } catch (error) {
+                this.syncResult = error.message;
+            } finally {
+                this.syncing = false;
+            }
+        },
+
         toggle(id) {
             this.expanded = this.expanded === id ? null : id;
         },
