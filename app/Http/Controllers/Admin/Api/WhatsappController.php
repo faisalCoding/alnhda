@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AcknowledgeWhatsappRequest;
 use App\Http\Requests\Admin\SendWhatsappRequest;
 use App\Http\Resources\Admin\WhatsappMessageResource;
 use App\Jobs\SendLeadWhatsappJob;
@@ -54,6 +55,30 @@ class WhatsappController extends Controller
                 ->limit(100)
                 ->get()
         );
+    }
+
+    /**
+     * Delivery acknowledgements pushed by the gateway as WhatsApp emits them.
+     * Unknown ids are ignored rather than rejected: the gateway also replays
+     * unconfirmed batches, and a message may belong to another installation.
+     */
+    public function ack(AcknowledgeWhatsappRequest $request): JsonResponse
+    {
+        $acks = collect($request->validated()['acks'])->keyBy('id');
+
+        $recipients = WhatsappMessageRecipient::query()
+            ->whereIn('provider_message_id', $acks->keys())
+            ->get();
+
+        $updated = 0;
+
+        foreach ($recipients as $recipient) {
+            if ($recipient->applyAcknowledgement((int) $acks[$recipient->provider_message_id]['ack'])) {
+                $updated++;
+            }
+        }
+
+        return response()->json(['data' => ['updated' => $updated, 'received' => $acks->count()]]);
     }
 
     public function log(WhatsappServiceProcess $process): JsonResponse

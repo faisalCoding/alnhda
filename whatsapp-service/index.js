@@ -165,6 +165,66 @@ function rememberAck(messageId, ack) {
     }
 
     acks.set(messageId, ack);
+    queueAckPush(messageId, ack);
+}
+
+// ── دفع التأكيدات إلى Laravel فور وصولها ──────────────────────────────────────
+const callbackUrl = process.env.WHATSAPP_CALLBACK_URL || laravelEnv('WHATSAPP_CALLBACK_URL');
+
+// تُجمّع التأكيدات لثانيتين قبل الإرسال: الرسالة الواحدة تُصدر عدة تأكيدات
+// متتابعة (أُرسلت ← وصلت ← قُرئت)، وإرسال طلب لكل واحد إهدار.
+const PUSH_DEBOUNCE_MS = 2000;
+const PUSH_RETRY_MS = 30000;
+const pendingPush = new Map();
+let pushTimer = null;
+
+function queueAckPush(messageId, ack) {
+    if (!callbackUrl) {
+        return;
+    }
+
+    pendingPush.set(messageId, ack);
+
+    if (pushTimer === null) {
+        pushTimer = setTimeout(flushAcks, PUSH_DEBOUNCE_MS);
+    }
+}
+
+async function flushAcks() {
+    pushTimer = null;
+
+    if (pendingPush.size === 0) {
+        return;
+    }
+
+    const batch = Array.from(pendingPush.entries()).map(([id, ack]) => ({ id, ack }));
+
+    try {
+        const response = await fetch(callbackUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-Api-Key': apiKey },
+            body: JSON.stringify({ acks: batch }),
+            signal: AbortSignal.timeout(10000),
+        });
+
+        if (!response.ok) {
+            throw new Error(`ردّ Laravel بحالة ${response.status}`);
+        }
+
+        // لا نحذف إلا ما نجح دفعه فعلاً، وما وصل أثناء الطلب يبقى للدفعة التالية.
+        for (const { id, ack } of batch) {
+            if (pendingPush.get(id) === ack) {
+                pendingPush.delete(id);
+            }
+        }
+    } catch (error) {
+        console.error('تعذر دفع تأكيدات الاستلام:', error.message);
+
+        // نُعيد المحاولة لاحقاً؛ وأمر whatsapp:sync-acks يبقى شبكة أمان.
+        if (pushTimer === null) {
+            pushTimer = setTimeout(flushAcks, PUSH_RETRY_MS);
+        }
+    }
 }
 
 /**

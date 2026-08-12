@@ -11,8 +11,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // The gateway callback is a server-to-server POST with no session or
+        // token to present; the shared key on the route authenticates it.
+        $middleware->validateCsrfTokens(except: [
+            'api/whatsapp/ack',
+        ]);
+
         $middleware->alias([
             'idempotency' => App\Http\Middleware\EnsureIdempotency::class,
+            'whatsapp.gateway' => App\Http\Middleware\EnsureWhatsappGatewayKey::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

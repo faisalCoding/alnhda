@@ -39,6 +39,12 @@ Route::middleware('auth:admin')->group(function () {
 Route::prefix('api')->name('panel.api.')->group(function () {
     Route::get('session', [SessionController::class, 'show'])->name('session');
 
+    // Pushed by the local Node gateway, not by a signed-in admin, so it is
+    // authenticated by the shared key instead of the admin session.
+    Route::post('whatsapp/ack', [WhatsappController::class, 'ack'])
+        ->middleware('whatsapp.gateway')
+        ->name('whatsapp.ack');
+
     Route::middleware('auth:admin')->group(function () {
         Route::get('dashboard/stats', [DashboardController::class, 'stats'])->name('dashboard.stats');
 

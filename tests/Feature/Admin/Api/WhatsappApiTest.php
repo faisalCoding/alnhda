@@ -390,6 +390,84 @@ it('leaves queued rows alone when syncing acknowledgements', function () {
     expect($queued->fresh()->status)->toBe(WhatsappMessageRecipient::STATUS_QUEUED);
 });
 
+it('accepts acknowledgements pushed by the gateway with the shared key', function () {
+    $first = WhatsappMessageRecipient::factory()->sent()->create();
+    $second = WhatsappMessageRecipient::factory()->sent()->create();
+
+    $this->withHeader('X-Api-Key', 'test-key')
+        ->postJson(panelUrl('/api/whatsapp/ack'), [
+            'acks' => [
+                ['id' => $first->provider_message_id, 'ack' => 2],
+                ['id' => $second->provider_message_id, 'ack' => 3],
+            ],
+        ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.updated', 2);
+
+    expect($first->fresh()->status)->toBe(WhatsappMessageRecipient::STATUS_DELIVERED)
+        ->and($second->fresh()->status)->toBe(WhatsappMessageRecipient::STATUS_READ);
+});
+
+it('rejects acknowledgements without the shared key', function (?string $key) {
+    $recipient = WhatsappMessageRecipient::factory()->sent()->create();
+
+    $request = $key === null ? $this : $this->withHeader('X-Api-Key', $key);
+
+    $request->postJson(panelUrl('/api/whatsapp/ack'), [
+        'acks' => [['id' => $recipient->provider_message_id, 'ack' => 3]],
+    ])->assertUnauthorized();
+
+    // The status must be untouched by an unauthenticated caller.
+    expect($recipient->fresh()->status)->toBe(WhatsappMessageRecipient::STATUS_SENT);
+})->with([
+    'no header' => [null],
+    'wrong key' => ['not-the-key'],
+    'empty key' => [''],
+]);
+
+it('rejects acknowledgements when no shared key is configured', function () {
+    config()->set('services.whatsapp.key', '');
+
+    $this->withHeader('X-Api-Key', '')
+        ->postJson(panelUrl('/api/whatsapp/ack'), [
+            'acks' => [['id' => 'x', 'ack' => 3]],
+        ])
+        ->assertUnauthorized();
+});
+
+it('exempts the gateway callback from csrf verification', function () {
+    // Laravel skips CSRF while testing, so a feature test cannot catch this:
+    // without the exemption every real callback answers 419 in production.
+    // bootstrap/app.php feeds these into the middleware's static exclusion list.
+    $neverVerify = (new ReflectionProperty(
+        Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class, 'neverVerify'
+    ))->getValue();
+
+    expect($neverVerify)->toContain('api/whatsapp/ack');
+});
+
+it('ignores acknowledgements for message ids it does not know', function () {
+    $this->withHeader('X-Api-Key', 'test-key')
+        ->postJson(panelUrl('/api/whatsapp/ack'), [
+            'acks' => [['id' => 'unknown-id', 'ack' => 3]],
+        ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.updated', 0)
+        ->assertJsonPath('data.received', 1);
+});
+
+it('validates the acknowledgement payload', function (array $payload, string $field) {
+    $this->withHeader('X-Api-Key', 'test-key')
+        ->postJson(panelUrl('/api/whatsapp/ack'), $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors($field);
+})->with([
+    'no acks' => [[], 'acks'],
+    'missing id' => [['acks' => [['ack' => 2]]], 'acks.0.id'],
+    'missing level' => [['acks' => [['id' => 'x']]], 'acks.0.ack'],
+    'non numeric level' => [['acks' => [['id' => 'x', 'ack' => 'yes']]], 'acks.0.ack'],
+]);
+
 it('lists message history with recipients and status counts', function () {
     $message = WhatsappMessage::factory()->create(['body' => 'مرحباً {الاسم}']);
     WhatsappMessageRecipient::factory()->for($message, 'message')->create(['name' => 'محمد']);
