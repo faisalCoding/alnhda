@@ -152,6 +152,35 @@ class WhatsappGateway
     }
 
     /**
+     * Posts a harmless acknowledgement to the configured callback URL. The
+     * endpoint ignores ids it does not know, so this proves DNS, TLS, routing,
+     * the CSRF exemption and the shared key in one call — the whole path the
+     * gateway uses, rather than merely that a URL was typed in.
+     *
+     * @return array{ok: bool, message: string}
+     */
+    public function probeCallback(): array
+    {
+        $url = (string) config('services.whatsapp.callback_url');
+
+        if ($url === '') {
+            return ['ok' => false, 'message' => 'غير معرّف'];
+        }
+
+        try {
+            $response = $this->client(10)
+                ->acceptJson()
+                ->post($url, ['acks' => [['id' => 'doctor-probe', 'ack' => 0]]]);
+
+            return $response->successful()
+                ? ['ok' => true, 'message' => 'يستجيب ('.$response->status().')']
+                : ['ok' => false, 'message' => 'ردّ بحالة '.$response->status()];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'message' => 'تعذر الوصول: '.$e->getMessage()];
+        }
+    }
+
+    /**
      * Current acknowledgement level for messages Laravel has not confirmed yet.
      * Returns null when the gateway could not be reached, which is a different
      * thing from it having nothing new to report.

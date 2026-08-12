@@ -153,12 +153,15 @@ class WhatsappDoctor extends Command
     private function checkAcknowledgements(WhatsappGateway $gateway, callable $check, int $tracked): void
     {
         $callback = (string) config('services.whatsapp.callback_url');
+        $probe = $gateway->probeCallback();
 
         $check(
             'رابط الاستدعاء',
-            $callback !== '',
-            $callback !== '' ? $callback : 'غير معرّف — التأكيد يعتمد على المزامنة المجدولة فقط',
-            'عرّف WHATSAPP_CALLBACK_URL في .env ثم: php artisan config:clear && php artisan whatsapp:restart'
+            $probe['ok'],
+            ($callback !== '' ? $callback.' — ' : '').$probe['message'],
+            $callback === ''
+                ? 'عرّف WHATSAPP_CALLBACK_URL في .env بنطاق لوحة التحكم'
+                : 'الرابط معرّف لكنه لا يعمل — تأكد أنه نطاق لوحة التحكم الحقيقي وأن الخادم يصل إليه'
         );
 
         // Rows sent before the gateway returned message ids have nothing to match

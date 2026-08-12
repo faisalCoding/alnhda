@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\WhatsappServiceProcess;
+use Illuminate\Http\Client\ConnectionException;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
@@ -188,6 +189,35 @@ it('surfaces rows that were sent without a message id', function () {
 
     $this->artisan('whatsapp:doctor')
         ->expectsOutputToContain('1 رسالة أُرسلت دون تسجيل معرّفها')
+        ->assertFailed();
+})->group('doctor');
+
+it('confirms a callback url that actually answers', function () {
+    config()->set('services.whatsapp.callback_url', 'https://panel.example.com/api/whatsapp/ack');
+
+    doctorWithGateway(['acks_tracked' => 0], []);
+    Illuminate\Support\Facades\Http::fake([
+        '*/health' => Illuminate\Support\Facades\Http::response(['contract' => 2]),
+        '*/acks' => Illuminate\Support\Facades\Http::response(['acks' => []]),
+        'panel.example.com/*' => Illuminate\Support\Facades\Http::response(['data' => ['updated' => 0]]),
+    ]);
+
+    $this->artisan('whatsapp:doctor')->expectsOutputToContain('يستجيب');
+})->group('doctor');
+
+it('flags a callback url that does not resolve', function () {
+    // Exactly the placeholder-left-in-place case: configured, but unreachable.
+    config()->set('services.whatsapp.callback_url', 'https://panel.placeholder.com/api/whatsapp/ack');
+
+    doctorWithGateway(['acks_tracked' => 0], []);
+    Illuminate\Support\Facades\Http::fake([
+        '*/health' => Illuminate\Support\Facades\Http::response(['contract' => 2]),
+        '*/acks' => Illuminate\Support\Facades\Http::response(['acks' => []]),
+        'panel.placeholder.com/*' => fn () => throw new ConnectionException('could not resolve host'),
+    ]);
+
+    $this->artisan('whatsapp:doctor')
+        ->expectsOutputToContain('تعذر الوصول')
         ->assertFailed();
 })->group('doctor');
 
