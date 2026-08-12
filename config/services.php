@@ -33,6 +33,7 @@ return [
         'key' => env('WHATSAPP_SERVICE_KEY', ''),
         'send_delay_min' => (int) env('WHATSAPP_SEND_DELAY_MIN', 6),
         'send_delay_max' => (int) env('WHATSAPP_SEND_DELAY_MAX', 14),
+        'callback_url' => env('WHATSAPP_CALLBACK_URL', ''),
     ],
 
     'slack' => [

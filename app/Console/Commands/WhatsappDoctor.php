@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\WhatsappMessageRecipient;
 use App\Services\WhatsappGateway;
 use App\Services\WhatsappServiceProcess;
 use Illuminate\Console\Command;
@@ -95,6 +96,8 @@ class WhatsappDoctor extends Command
                 $rows[] = ['•', 'جلسات نشطة', $active !== '' ? $active : 'لا شيء'];
                 $rows[] = ['•', 'جلسات محفوظة', $saved !== '' ? $saved : 'لا شيء'];
             }
+
+            $this->checkAcknowledgements($gateway, $check, (int) ($health['acks_tracked'] ?? 0));
         }
 
         $this->table(['', 'الفحص', 'النتيجة'], $rows);
@@ -125,6 +128,64 @@ class WhatsappDoctor extends Command
         $this->error("فشل {$failed} فحص — عالج الأول في القائمة ثم أعد التشغيل.");
 
         return self::FAILURE;
+    }
+
+    /**
+     * Why a message can sit at "sent" while the phone shows it delivered. Asking
+     * the gateway what it knows separates the two causes: if it holds the
+     * acknowledgement, nothing is carrying it to the database (callback URL or
+     * scheduler); if it does not, the gateway never saw it (restarted, or
+     * running a build without the ack listener).
+     *
+     * @param  callable(string, bool, string, string): bool  $check
+     */
+    private function checkAcknowledgements(WhatsappGateway $gateway, callable $check, int $tracked): void
+    {
+        $callback = (string) config('services.whatsapp.callback_url');
+
+        $check(
+            'رابط الاستدعاء',
+            $callback !== '',
+            $callback !== '' ? $callback : 'غير معرّف — التأكيد يعتمد على المزامنة المجدولة فقط',
+            'عرّف WHATSAPP_CALLBACK_URL في .env ثم: php artisan config:clear && php artisan whatsapp:restart'
+        );
+
+        $awaiting = WhatsappMessageRecipient::query()
+            ->whereNotNull('provider_message_id')
+            ->where('status', WhatsappMessageRecipient::STATUS_SENT)
+            ->latest('sent_at')
+            ->limit(200)
+            ->get();
+
+        if ($awaiting->isEmpty()) {
+            $check('تأكيدات معلّقة', true, 'لا توجد رسائل عالقة على "أُرسلت"', '');
+
+            return;
+        }
+
+        $known = $gateway->acknowledgements($awaiting->pluck('provider_message_id')->all());
+
+        if ($known === null) {
+            $check('تأكيدات معلّقة', false, $awaiting->count().' رسالة — وتعذر سؤال البوابة عنها', 'تأكد أن الخدمة تعمل');
+
+            return;
+        }
+
+        // Three distinct causes, and the totals tell them apart.
+        $hint = match (true) {
+            $known !== [] => 'التأكيدات موجودة ولم تصل لقاعدة البيانات — شغّل: php artisan whatsapp:sync-acks',
+            $tracked > 0 => 'البوابة تتبّعت '.$tracked.' تأكيدًا لكن بمعرفات لا تطابق المخزّنة — أبلغني بهذه النتيجة.',
+            default => 'البوابة لم تتلقَّ أي تأكيد إطلاقًا — أُعيد تشغيلها بعد الإرسال، أو تعمل بنسخة سابقة لتتبّع التأكيدات. جرّب: php artisan whatsapp:restart ثم أرسل رسالة اختبار.',
+        };
+
+        // Reported as a failure whatever the cause: messages stuck on "sent"
+        // are the symptom being diagnosed, and the hint names which cause it is.
+        $check(
+            'تأكيدات معلّقة',
+            false,
+            $awaiting->count().' رسالة عالقة، البوابة تعرف '.count($known).' منها (تتبّعت '.$tracked.' إجمالًا)',
+            $hint
+        );
     }
 
     /**

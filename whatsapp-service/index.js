@@ -297,6 +297,10 @@ app.get('/health', (req, res) => {
     res.json({
         ok: true,
         uptime_seconds: Math.round(process.uptime()),
+        // إجمالي ما تتبّعته من تأكيدات: يميّز "لم تصل أي تأكيدات" عن
+        // "وصلت لكن بمعرفات لا تطابق ما خزّنه Laravel".
+        acks_tracked: acks.size,
+        acks_pending_push: pendingPush.size,
         active_sessions: Array.from(sessions.entries()).map(([id, session]) => ({
             client_id: id,
             status: session.status,

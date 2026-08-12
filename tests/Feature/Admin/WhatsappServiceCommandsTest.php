@@ -2,6 +2,8 @@
 
 use App\Services\WhatsappServiceProcess;
 
+uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+
 it('starts the gateway in the background', function () {
     $this->mock(WhatsappServiceProcess::class, function ($mock) {
         $mock->shouldReceive('isInstalled')->andReturn(true);
@@ -112,6 +114,58 @@ it('tells the operator to restart when the running service predates /health', fu
         ->expectsOutputToContain('whatsapp:restart')
         ->assertFailed();
 });
+
+/**
+ * @param  array<string, mixed>  $health
+ */
+function doctorWithGateway(array $health, array $acks): void
+{
+    test()->mock(WhatsappServiceProcess::class, function ($mock) {
+        $mock->shouldReceive('nodeVersion')->andReturn('v22.0.0');
+        $mock->shouldReceive('isInstalled')->andReturn(true);
+        $mock->shouldReceive('browserCheck')->andReturn('ok: Chrome 146');
+        $mock->shouldReceive('isRunning')->andReturn(true);
+        $mock->shouldReceive('tailLog')->andReturn([]);
+    });
+
+    Illuminate\Support\Facades\Http::fake([
+        '*/health' => Illuminate\Support\Facades\Http::response($health),
+        '*/acks' => Illuminate\Support\Facades\Http::response(['acks' => $acks]),
+    ]);
+}
+
+it('points at the sync command when the gateway holds the missing acknowledgements', function () {
+    $recipient = App\Models\WhatsappMessageRecipient::factory()->sent()->create();
+
+    doctorWithGateway(['acks_tracked' => 3], [$recipient->provider_message_id => 2]);
+
+    $this->artisan('whatsapp:doctor')->expectsOutputToContain('whatsapp:sync-acks');
+})->group('doctor');
+
+it('flags an id mismatch when the gateway tracked acknowledgements it cannot match', function () {
+    App\Models\WhatsappMessageRecipient::factory()->sent()->create();
+
+    // The gateway saw acknowledgements, but under ids Laravel never stored —
+    // that is a bug in the pairing, not a configuration problem.
+    doctorWithGateway(['acks_tracked' => 7], []);
+
+    $this->artisan('whatsapp:doctor')->expectsOutputToContain('لا تطابق المخزّنة');
+})->group('doctor');
+
+it('blames a restart when the gateway never saw any acknowledgement', function () {
+    App\Models\WhatsappMessageRecipient::factory()->sent()->create();
+
+    doctorWithGateway(['acks_tracked' => 0], []);
+
+    $this->artisan('whatsapp:doctor')->expectsOutputToContain('whatsapp:restart');
+})->group('doctor');
+
+it('warns when no callback url is configured', function () {
+    config()->set('services.whatsapp.callback_url', '');
+    doctorWithGateway(['acks_tracked' => 0], []);
+
+    $this->artisan('whatsapp:doctor')->expectsOutputToContain('WHATSAPP_CALLBACK_URL');
+})->group('doctor');
 
 it('says so when the service is up but its pid cannot be resolved', function () {
     $this->mock(WhatsappServiceProcess::class)->shouldReceive('stop')->once()->andReturn('pid_unknown');
