@@ -80,6 +80,8 @@ Route::prefix('api')->name('panel.api.')->group(function () {
             Route::put('leads/{lead}', [LeadController::class, 'update'])->name('leads.update');
             Route::delete('leads/{lead}', [LeadController::class, 'destroy'])->name('leads.destroy');
 
+            Route::post('projects/reorder', [ProjectController::class, 'reorder'])->name('projects.reorder');
+
             Route::delete('property-images/{image}', [PropertyImageController::class, 'destroy'])->name('property-images.destroy');
         });
 

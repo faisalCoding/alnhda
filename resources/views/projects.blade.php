@@ -10,7 +10,7 @@
         <div class="container mx-auto px-4 w-full">
             <div dir="rtl" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 
-                @foreach (App\Models\Project::get() as $project)
+                @foreach (App\Models\Project::ordered()->get() as $project)
                     @if ($project->status !== 'تم البيع')
                         <a href="{{ route('project', $project) }}"
                             onclick="event.preventDefault(); navigateTo('{{ route('project', $project) }}');"

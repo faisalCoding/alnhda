@@ -48,9 +48,27 @@
                 <p class="mt-1 text-sm text-zinc-400">أنشئ أول مشروع — يعمل حتى دون اتصال بالإنترنت</p>
             </div>
 
+            <div x-show="projects.length > 1"
+                class="mb-3 flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
+                </svg>
+                <span x-show="canReorder">اسحب البطاقة أو استخدم الأسهم لترتيب ظهور المشاريع في الموقع.</span>
+                <span x-show="!canReorder && search.trim()" x-cloak>الترتيب غير متاح أثناء البحث — امسح البحث أولًا.</span>
+                <span x-show="!canReorder && !search.trim()" x-cloak>الترتيب يتطلب اتصالًا بالإنترنت.</span>
+                <span x-show="reordering" x-cloak class="font-bold text-primary-600 dark:text-primary-300">جارٍ الحفظ…</span>
+                <span x-show="reorderError" x-cloak class="font-bold text-red-500" x-text="reorderError"></span>
+            </div>
+
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                <template x-for="project in projects" :key="project.id">
-                    <article class="flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+                <template x-for="(project, index) in projects" :key="project.id">
+                    <article :draggable="canReorder && !isTemp(project.id)"
+                        @dragstart="startDrag(project)"
+                        @dragover.prevent="dragOver(project)"
+                        @dragend="endDrag()"
+                        @drop.prevent="endDrag()"
+                        :class="dragId === project.id && 'opacity-40'"
+                        class="flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-opacity dark:border-zinc-800 dark:bg-zinc-900">
                         <div class="relative h-40 bg-zinc-100 dark:bg-zinc-800">
                             <img x-show="project.image_full_url" :src="project.image_full_url" :alt="project.name"
                                 class="h-full w-full object-cover" loading="lazy">
@@ -61,6 +79,32 @@
                             <span class="absolute right-3 top-3">
                                 @include('admin.partials.sync-badge', ['record' => 'project'])
                             </span>
+
+                            {{-- Order controls: the arrows carry touch, where dragging does not work. --}}
+                            <div x-show="canReorder && !isTemp(project.id)" x-cloak
+                                class="absolute left-3 top-3 flex items-center gap-1 rounded-xl bg-white/90 p-1 shadow-sm backdrop-blur dark:bg-zinc-900/90">
+                                <span class="cursor-grab px-1 text-zinc-400 active:cursor-grabbing" title="اسحب لإعادة الترتيب">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
+                                    </svg>
+                                </span>
+                                <button type="button" @click="move(project, -1)" :disabled="index === 0 || reordering"
+                                    class="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 disabled:opacity-30 dark:hover:bg-zinc-800"
+                                    title="تقديم">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                                    </svg>
+                                </button>
+                                <button type="button" @click="move(project, 1)"
+                                    :disabled="index === projects.length - 1 || reordering"
+                                    class="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 disabled:opacity-30 dark:hover:bg-zinc-800"
+                                    title="تأخير">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                                    </svg>
+                                </button>
+                                <span class="px-1 text-xs font-bold text-zinc-400" x-text="index + 1"></span>
+                            </div>
                         </div>
 
                         <div class="flex flex-1 flex-col gap-2 p-4">

@@ -186,3 +186,80 @@ it('uploads a project pdf and deletes the previous one', function () {
     Storage::disk('public')->assertExists($newPath);
     Storage::disk('public')->assertMissing('presentations/old.pdf');
 });
+
+it('orders the dashboard list by the chosen order', function () {
+    $first = Project::factory()->create(['sort_order' => 3, 'name' => 'ثالث']);
+    $second = Project::factory()->create(['sort_order' => 1, 'name' => 'أول']);
+    $third = Project::factory()->create(['sort_order' => 2, 'name' => 'ثانٍ']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(panelUrl('/api/projects'))
+        ->assertSuccessful()
+        ->assertJsonPath('data.0.name', 'أول')
+        ->assertJsonPath('data.1.name', 'ثانٍ')
+        ->assertJsonPath('data.2.name', 'ثالث');
+
+    expect([$first->id, $second->id, $third->id])->toHaveCount(3);
+});
+
+it('persists a new order and renumbers positions from one', function () {
+    $a = Project::factory()->create(['sort_order' => 1]);
+    $b = Project::factory()->create(['sort_order' => 2]);
+    $c = Project::factory()->create(['sort_order' => 3]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelUrl('/api/projects/reorder'), ['ids' => [$c->id, $a->id, $b->id]])
+        ->assertSuccessful()
+        ->assertJsonPath('data.ordered', 3);
+
+    expect($c->fresh()->sort_order)->toBe(1)
+        ->and($a->fresh()->sort_order)->toBe(2)
+        ->and($b->fresh()->sort_order)->toBe(3);
+});
+
+it('validates the reorder payload', function (array $payload, string $field) {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelUrl('/api/projects/reorder'), $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors($field);
+})->with([
+    'no ids' => [[], 'ids'],
+    'unknown project' => [['ids' => [999999]], 'ids.0'],
+    'duplicate project' => [['ids' => [1, 1]], 'ids.0'],
+]);
+
+it('rejects guests from reordering', function () {
+    $project = Project::factory()->create(['sort_order' => 7]);
+
+    $this->postJson(panelUrl('/api/projects/reorder'), ['ids' => [$project->id]])->assertUnauthorized();
+
+    expect($project->fresh()->sort_order)->toBe(7);
+});
+
+it('shows projects in the chosen order on the projects page', function () {
+    Project::factory()->create(['sort_order' => 2, 'name' => 'المشروع الأخير']);
+    Project::factory()->create(['sort_order' => 1, 'name' => 'المشروع الأول']);
+
+    $html = $this->get(route('projects'))->assertSuccessful()->getContent();
+
+    expect(strpos($html, 'المشروع الأول'))->toBeLessThan(strpos($html, 'المشروع الأخير'));
+});
+
+it('shows projects in the chosen order on the home page', function () {
+    Project::factory()->create(['sort_order' => 2, 'name' => 'مشروع لاحق', 'status' => 'جديد']);
+    Project::factory()->create(['sort_order' => 1, 'name' => 'مشروع سابق', 'status' => 'جديد']);
+
+    $html = $this->get(route('welcome'))->assertSuccessful()->getContent();
+
+    expect(strpos($html, 'مشروع سابق'))->toBeLessThan(strpos($html, 'مشروع لاحق'));
+});
+
+it('places a newly created project at the top until it is ordered', function () {
+    Project::factory()->create(['sort_order' => 1, 'name' => 'قديم']);
+
+    $created = Project::query()->create([
+        'name' => 'جديد', 'description' => 'وصف كافٍ للاختبار', 'status' => 'جديد', 'project_type' => 'فيلا',
+    ]);
+
+    expect(Project::query()->ordered()->first()->id)->toBe($created->id);
+});

@@ -73,6 +73,83 @@ export default function projectsPage() {
             return term ? projects.filter((project) => (project.name ?? '').includes(term)) : projects;
         },
 
+        dragId: null,
+        reordering: false,
+        reorderError: '',
+
+        /**
+         * Reordering rewrites positions for the whole list, so it is only
+         * offered on the unfiltered list — dropping inside search results would
+         * place a project relative to rows that are not shown.
+         */
+        get canReorder() {
+            return !this.search.trim() && this.$store.sync.online && this.$store.data.projects.length > 1;
+        },
+
+        startDrag(project) {
+            if (this.canReorder && !isTemp(project.id)) {
+                this.dragId = project.id;
+            }
+        },
+
+        /** Moves the dragged project to sit where the hovered one is. */
+        dragOver(target) {
+            if (this.dragId === null || this.dragId === target.id) {
+                return;
+            }
+
+            const projects = this.$store.data.projects;
+            const from = projects.findIndex((project) => project.id === this.dragId);
+            const to = projects.findIndex((project) => project.id === target.id);
+
+            if (from === -1 || to === -1) {
+                return;
+            }
+
+            projects.splice(to, 0, ...projects.splice(from, 1));
+        },
+
+        /** Arrow controls: dragging is unavailable on touch, and this is precise. */
+        move(project, offset) {
+            const projects = this.$store.data.projects;
+            const from = projects.findIndex((candidate) => candidate.id === project.id);
+            const to = from + offset;
+
+            if (from === -1 || to < 0 || to >= projects.length) {
+                return;
+            }
+
+            projects.splice(to, 0, ...projects.splice(from, 1));
+            this.saveOrder();
+        },
+
+        async endDrag() {
+            if (this.dragId === null) {
+                return;
+            }
+
+            this.dragId = null;
+            await this.saveOrder();
+        },
+
+        async saveOrder() {
+            this.reordering = true;
+            this.reorderError = '';
+
+            const ids = this.$store.data.projects.filter((project) => !isTemp(project.id)).map((project) => project.id);
+
+            try {
+                await request('POST', '/api/projects/reorder', { ids });
+                this.$store.data.persist('projects');
+            } catch (error) {
+                this.reorderError = error.message;
+                // The server rejected the order, so stop showing one it does not have.
+                await this.$store.data.revalidate('projects');
+            } finally {
+                this.reordering = false;
+            }
+        },
+
         get properties() {
             const term = this.search.trim();
             const properties = this.$store.data.properties;

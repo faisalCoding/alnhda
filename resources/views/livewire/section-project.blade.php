@@ -1,4 +1,4 @@
-@php $projects = App\Models\Project::all(); @endphp
+@php $projects = App\Models\Project::ordered()->get(); @endphp
 
 <div id="projects" class="bg-[#f8f9fa] w-full flex text-center flex-col py-16 rtl overflow-hidden" dir="rtl"
     x-data="{

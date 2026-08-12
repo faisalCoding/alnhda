@@ -3,20 +3,39 @@
 namespace App\Http\Controllers\Admin\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ReorderProjectsRequest;
 use App\Http\Requests\Admin\StoreProjectRequest;
 use App\Http\Requests\Admin\UpdateProjectRequest;
 use App\Http\Resources\Admin\ProjectResource;
 use App\Models\Project;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 class ProjectController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
         return ProjectResource::collection(
-            Project::query()->withCount('properties')->latest()->get()
+            Project::query()->withCount('properties')->ordered()->get()
         );
+    }
+
+    /**
+     * Persists the order chosen by dragging. Positions are written in one
+     * transaction so a half-applied order can never reach the public pages.
+     */
+    public function reorder(ReorderProjectsRequest $request): JsonResponse
+    {
+        $ids = $request->validated()['ids'];
+
+        DB::transaction(function () use ($ids) {
+            foreach ($ids as $position => $id) {
+                Project::query()->whereKey($id)->update(['sort_order' => $position + 1]);
+            }
+        });
+
+        return response()->json(['data' => ['ordered' => count($ids)]]);
     }
 
     public function store(StoreProjectRequest $request): JsonResponse
