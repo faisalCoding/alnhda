@@ -104,6 +104,13 @@ function getOrCreateSession(clientId) {
     client.on('disconnected', (reason) => {
         console.log(`[${clientId}] قُطع الاتصال: ${reason}`);
 
+        // LOGOUT وحده يُبطل بيانات الاعتماد؛ تركها على القرص يعيد الحلقة.
+        if (String(reason).toUpperCase().includes('LOGOUT')) {
+            dropSession(clientId, sessionData).then(() => removeSessionFiles(clientId));
+
+            return;
+        }
+
         if (sessionData.status !== 'error') {
             sessionData.status = 'disconnected';
             sessionData.qrCode = null;
@@ -135,6 +142,27 @@ function getOrCreateSession(clientId) {
     return sessionData;
 }
 
+const AUTH_DIR = path.join(__dirname, '.wwebjs_auth');
+
+/**
+ * بعد LOGOUT تصبح بيانات الاعتماد المحفوظة غير صالحة، وإبقاؤها يجعل المحاولة
+ * التالية تُصادق ثم تُطرد فوراً — وهي حلقة «رمز QR ← ٩٩٪ ← فصل».
+ */
+function removeSessionFiles(clientId) {
+    const dir = path.join(AUTH_DIR, `session-${clientId}`);
+
+    if (!fs.existsSync(dir)) {
+        return;
+    }
+
+    try {
+        fs.rmSync(dir, { recursive: true, force: true });
+        console.log(`[${clientId}] حُذفت بيانات الجلسة المنتهية.`);
+    } catch (error) {
+        console.error(`[${clientId}] تعذر حذف بيانات الجلسة:`, error.message);
+    }
+}
+
 function failSession(session, message) {
     session.status = 'error';
     session.error = message;
@@ -149,12 +177,30 @@ function dropSession(clientId, session) {
     console.log(`[${clientId}] إسقاط الجلسة (الحالة: ${session.status}).`);
     sessions.delete(clientId);
 
-    try {
-        session.client?.destroy();
-    } catch (error) {
-        console.error(`[${clientId}] تعذر إغلاق الجلسة:`, error.message);
-    }
+    // destroy() وعدٌ يُرفض إن كانت الصفحة قيد الحقن، وهو ما كان يظهر كـ
+    // unhandledRejection: "Attempted to use detached Frame".
+    return Promise.resolve()
+        .then(() => session.client?.destroy())
+        .catch((error) => console.error(`[${clientId}] تعذر إغلاق الجلسة:`, error.message));
 }
+
+// ── GET /health ───────────────────────────────────────────────────────────────
+// فحص لا ينشئ جلسة: التشخيص يجب ألا يُقلع متصفحاً ولا يترك أثراً على القرص.
+app.get('/health', (req, res) => {
+    const saved = fs.existsSync(AUTH_DIR)
+        ? fs.readdirSync(AUTH_DIR).filter((name) => name.startsWith('session-')).map((name) => name.slice(8))
+        : [];
+
+    res.json({
+        ok: true,
+        uptime_seconds: Math.round(process.uptime()),
+        active_sessions: Array.from(sessions.entries()).map(([id, session]) => ({
+            client_id: id,
+            status: session.status,
+        })),
+        saved_sessions: saved,
+    });
+});
 
 // ── GET /status/:clientId ─────────────────────────────────────────────────────
 app.get('/status/:clientId', async (req, res) => {

@@ -73,6 +73,27 @@ class WhatsappGateway
         }
     }
 
+    /**
+     * Service-level health. Unlike status(), this never creates a session — the
+     * doctor must not spawn a browser or leave credentials on disk.
+     *
+     * @return array{ok: bool, active_sessions?: array<int, array{client_id: string, status: string}>, saved_sessions?: array<int, string>, message?: string}
+     */
+    public function health(): array
+    {
+        try {
+            $response = $this->client(3)->get($this->baseUrl().'/health');
+
+            if (! $response->successful()) {
+                return ['ok' => false, 'message' => 'الخدمة ردّت بحالة '.$response->status()];
+            }
+
+            return ['ok' => true] + ($response->json() ?? []);
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'message' => $e->getMessage()];
+        }
+    }
+
     public function isReady(string $clientId): bool
     {
         return $this->status($clientId)['status'] === 'ready';

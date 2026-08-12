@@ -192,6 +192,26 @@ it('reads the service port from the configured url', function () {
     expect(app(WhatsappServiceProcess::class)->port())->toBe(3000);
 });
 
+it('checks service health without creating a session', function () {
+    Http::fake([
+        '*/health' => Http::response(['uptime_seconds' => 12, 'active_sessions' => [], 'saved_sessions' => ['admin_1']]),
+    ]);
+
+    $health = app(WhatsappGateway::class)->health();
+
+    expect($health['ok'])->toBeTrue()
+        ->and($health['saved_sessions'])->toBe(['admin_1']);
+
+    // A status probe would boot a browser and persist credentials; health must not.
+    Http::assertNotSent(fn ($request) => str_contains($request->url(), '/status/'));
+});
+
+it('reports unhealthy when the gateway cannot be reached', function () {
+    Http::fake(fn () => throw new ConnectionException('refused'));
+
+    expect(app(WhatsappGateway::class)->health()['ok'])->toBeFalse();
+});
+
 it('returns the tail of the service log', function () {
     $this->mock(WhatsappServiceProcess::class, function ($mock) {
         $mock->shouldReceive('logPath')->andReturn('/tmp/node.log');

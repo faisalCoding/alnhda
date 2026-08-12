@@ -72,13 +72,27 @@ class WhatsappDoctor extends Command
         );
 
         if ($running) {
-            $status = $gateway->status('doctor_probe');
+            // health() deliberately, not status(): probing with a client id would
+            // boot a whole browser and persist a junk session on the server.
+            $health = $gateway->health();
+
             $check(
                 'استجابة البوابة',
-                $status['status'] !== 'error',
-                $status['status'].' — '.($status['message'] ?? ''),
+                $health['ok'],
+                $health['ok'] ? 'سليمة' : ($health['message'] ?? 'لا تستجيب'),
                 'راجع السجل أدناه'
             );
+
+            if ($health['ok']) {
+                $active = collect($health['active_sessions'] ?? [])
+                    ->map(fn (array $s) => $s['client_id'].' ('.$s['status'].')')
+                    ->implode('، ');
+
+                $saved = implode('، ', $health['saved_sessions'] ?? []);
+
+                $rows[] = ['•', 'جلسات نشطة', $active !== '' ? $active : 'لا شيء'];
+                $rows[] = ['•', 'جلسات محفوظة', $saved !== '' ? $saved : 'لا شيء'];
+            }
         }
 
         $this->table(['', 'الفحص', 'النتيجة'], $rows);
