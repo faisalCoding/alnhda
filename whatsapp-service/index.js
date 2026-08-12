@@ -39,6 +39,13 @@ app.use((req, res, next) => {
 // تخزين جميع الجلسات: Map من clientId -> بيانات الجلسة
 const sessions = new Map();
 
+// أقصى مدة نقبلها قبل وصول أول حدث من واتساب (QR أو مصادقة).
+const STARTUP_TIMEOUT_SECONDS = 90;
+
+// تبقى رسالة الخطأ ثابتة هذه المدة قبل السماح بمحاولة جديدة، حتى لا تتذبذب
+// الواجهة بين "جاري التهيئة" والخطأ في كل استطلاع.
+const ERROR_RETRY_SECONDS = 30;
+
 /**
  * إنشاء أو استرجاع جلسة واتساب لمستخدم معين
  */
@@ -52,6 +59,8 @@ function getOrCreateSession(clientId) {
         status: 'starting',
         qrCode: null,
         loadingPercent: 0,
+        error: null,
+        startedAt: Date.now(),
     };
 
     const client = new Client({
@@ -94,19 +103,57 @@ function getOrCreateSession(clientId) {
 
     client.on('disconnected', (reason) => {
         console.log(`[${clientId}] قُطع الاتصال: ${reason}`);
-        sessionData.status = 'disconnected';
-        sessionData.qrCode = null;
-        // إعادة التهيئة تلقائياً بعد 5 ثوانٍ
+
+        if (sessionData.status !== 'error') {
+            sessionData.status = 'disconnected';
+            sessionData.qrCode = null;
+        }
+
+        // إعادة التهيئة تلقائياً بعد 5 ثوانٍ — إلا إذا سُجّلت الجلسة كخطأ، فلها
+        // مؤقّتها الخاص، وإلا لتذبذبت الواجهة بين الخطأ وإعادة المحاولة.
         setTimeout(() => {
-            sessions.delete(clientId);
+            if (sessions.get(clientId) === sessionData && sessionData.status === 'disconnected') {
+                dropSession(clientId, sessionData);
+            }
         }, 5000);
     });
 
-    client.initialize();
+    client.on('auth_failure', (message) => {
+        console.error(`[${clientId}] فشلت المصادقة: ${message}`);
+        failSession(sessionData, `فشلت المصادقة: ${message}`);
+    });
+
+    // بدون هذا الالتقاط يفشل الإقلاع بصمت وتبقى الحالة "starting" إلى الأبد.
+    client.initialize().catch((error) => {
+        console.error(`[${clientId}] فشلت التهيئة:`, error.message);
+        failSession(sessionData, error.message);
+    });
+
     sessionData.client = client;
     sessions.set(clientId, sessionData);
 
     return sessionData;
+}
+
+function failSession(session, message) {
+    session.status = 'error';
+    session.error = message;
+    session.erroredAt = Date.now();
+    session.qrCode = null;
+}
+
+/**
+ * تُسقط جلسة عالقة حتى يبدأ الطلب التالي محاولة جديدة بدل الانتظار بلا نهاية.
+ */
+function dropSession(clientId, session) {
+    console.log(`[${clientId}] إسقاط الجلسة (الحالة: ${session.status}).`);
+    sessions.delete(clientId);
+
+    try {
+        session.client?.destroy();
+    } catch (error) {
+        console.error(`[${clientId}] تعذر إغلاق الجلسة:`, error.message);
+    }
 }
 
 // ── GET /status/:clientId ─────────────────────────────────────────────────────
@@ -138,7 +185,27 @@ app.get('/status/:clientId', async (req, res) => {
         return res.json({ status: 'disconnected', message: 'انقطع الاتصال. جاري إعادة التهيئة...' });
     }
 
-    return res.json({ status: 'starting', message: 'جاري تهيئة الواتساب...' });
+    const elapsed = Math.round((Date.now() - session.startedAt) / 1000);
+
+    // لا حدث وصل خلال المهلة: الجلسة معلّقة، نعلّمها كخطأ بدل الدوران بلا نهاية.
+    if (session.status === 'starting' && elapsed > STARTUP_TIMEOUT_SECONDS) {
+        console.error(`[${clientId}] لم يصل أي حدث خلال ${elapsed} ثانية.`);
+        failSession(session, `تعذر بدء الجلسة خلال ${STARTUP_TIMEOUT_SECONDS} ثانية — راجع node.log.`);
+    }
+
+    if (session.status === 'error') {
+        // بعد فترة التهدئة نُسقط الجلسة ليبدأ الاستطلاع التالي محاولة نظيفة.
+        if (Date.now() - session.erroredAt > ERROR_RETRY_SECONDS * 1000) {
+            dropSession(clientId, session);
+        }
+
+        return res.json({
+            status: 'error',
+            message: session.error ?? 'فشلت تهيئة الجلسة.',
+        });
+    }
+
+    return res.json({ status: 'starting', message: `جاري تهيئة الواتساب... (${elapsed} ثانية)` });
 });
 
 // ── POST /send ────────────────────────────────────────────────────────────────

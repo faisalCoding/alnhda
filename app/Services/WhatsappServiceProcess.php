@@ -79,7 +79,7 @@ class WhatsappServiceProcess
             ['file', $this->logPath(), 'a'],
         ];
 
-        $handle = @proc_open('nohup node index.js > /dev/null 2>&1 &', $descriptors, $pipes, $this->directory());
+        $handle = @proc_open('nohup node index.js >> node.log 2>&1 &', $descriptors, $pipes, $this->directory());
 
         if (! is_resource($handle)) {
             return 'unavailable';
