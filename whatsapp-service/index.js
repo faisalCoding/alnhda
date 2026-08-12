@@ -29,6 +29,10 @@ const host = process.env.WHATSAPP_BIND_HOST || '127.0.0.1';
 
 // مفتاح سري مشترك مع Laravel: إذا عُرّف تُرفض أي طلبات بدونه.
 const apiKey = process.env.WHATSAPP_API_KEY || laravelEnv('WHATSAPP_SERVICE_KEY');
+
+// نسخة واتساب ويب المثبّتة (اختيارية). القيم المتاحة في:
+// https://github.com/wppconnect-team/wa-version/tree/main/html
+const webVersion = process.env.WHATSAPP_WEB_VERSION || laravelEnv('WHATSAPP_WEB_VERSION');
 app.use((req, res, next) => {
     if (apiKey && req.get('x-api-key') !== apiKey) {
         return res.status(401).json({ success: false, message: 'غير مصرح.' });
@@ -65,6 +69,16 @@ function getOrCreateSession(clientId) {
 
     const client = new Client({
         authStrategy: new LocalAuth({ clientId }),
+        // واتساب ويب يُحدّث نفسه، وقد تصبح نسخته غير متوافقة مع المكتبة فتُنهي
+        // الجلسة بـ LOGOUT أثناء المزامنة. تثبيت نسخة معروفة يتجاوز ذلك.
+        ...(webVersion
+            ? {
+                webVersionCache: {
+                    type: 'remote',
+                    remotePath: `https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/${webVersion}.html`,
+                },
+            }
+            : {}),
         puppeteer: {
             headless: true,
             args: [
@@ -524,5 +538,6 @@ function restoreSavedSessions() {
 
 app.listen(port, host, () => {
     console.log(`خدمة الواتساب تعمل على http://${host}:${port}`);
+    console.log(`نسخة واتساب ويب: ${webVersion || 'تلقائية'} | دفع التأكيدات: ${callbackUrl ? 'مفعّل' : 'معطّل'}`);
     restoreSavedSessions();
 });
