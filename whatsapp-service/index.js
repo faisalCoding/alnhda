@@ -141,8 +141,11 @@ function getOrCreateSession(clientId) {
 
     // تتبّع تأكيد الاستلام: واتساب يُصدر ack لكل رسالة بعد إرسالها.
     client.on('message_ack', (message, ack) => {
-        if (message?.id?._serialized) {
-            rememberAck(message.id._serialized, ack);
+        // نفس دالة الاستخراج المستخدمة عند الإرسال، وإلا لن يتطابق الطرفان.
+        const messageId = extractMessageId(message);
+
+        if (messageId) {
+            rememberAck(messageId, ack);
         }
     });
 
@@ -178,6 +181,33 @@ const SERVICE_CONTRACT = 2;
  */
 const acks = new Map();
 const ACK_LIMIT = 5000;
+
+/**
+ * معرّف الرسالة كما تُصدره whatsapp-web.js. الشكل غير مضمون بين الإصدارات:
+ * قد يكون كائناً فيه _serialized، أو نصاً جاهزاً، أو أجزاءً تُركّب. نقبلها كلها
+ * بدل الاعتماد على شكل واحد ثم تسجيل رسائل بلا معرّف بصمت.
+ */
+function extractMessageId(message) {
+    const id = message?.id;
+
+    if (!id) {
+        return null;
+    }
+
+    if (typeof id === 'string') {
+        return id;
+    }
+
+    if (typeof id._serialized === 'string' && id._serialized !== '') {
+        return id._serialized;
+    }
+
+    if (typeof id.id === 'string' && id.id !== '') {
+        return [id.fromMe, id.remote, id.id].filter((part) => part !== undefined && part !== null).join('_');
+    }
+
+    return null;
+}
 
 function rememberAck(messageId, ack) {
     if (acks.size >= ACK_LIMIT) {
@@ -399,10 +429,22 @@ app.post('/send', async (req, res) => {
     try {
         const chatId = `${phone}@c.us`;
         const sent = await session.client.sendMessage(chatId, message);
-        const messageId = sent?.id?._serialized ?? null;
+
+        // sendMessage تُرجع undefined إذا لم تُنتج رسالة (محادثة غير موجودة مثلاً)،
+        // وهذا فشل وليس نجاحاً بلا معرّف.
+        if (!sent) {
+            console.error(`[${clientId}] لم تُرجع المكتبة رسالة — لم يتم الإرسال.`);
+
+            return res.status(500).json({ success: false, message: 'لم تُنتج المكتبة رسالة — تحقق من الرقم.' });
+        }
+
+        const messageId = extractMessageId(sent);
 
         if (messageId) {
-            rememberAck(messageId, sent?.ack ?? 0);
+            rememberAck(messageId, sent.ack ?? 0);
+        } else {
+            // نطبع الشكل الفعلي حتى يمكن إصلاح الاستخراج بدل التخمين.
+            console.error(`[${clientId}] تعذر استخراج معرّف الرسالة. شكل id:`, JSON.stringify(sent.id ?? null));
         }
 
         return res.json({ success: true, message: 'تم الإرسال بنجاح.', message_id: messageId });
