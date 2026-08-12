@@ -14,6 +14,12 @@ use Illuminate\Support\Facades\Http;
 class WhatsappGateway
 {
     /**
+     * Lowest gateway contract that returns message ids, without which delivery
+     * can never be confirmed. Keep in step with SERVICE_CONTRACT in index.js.
+     */
+    public const REQUIRED_CONTRACT = 2;
+
+    /**
      * Session id the Node service stores the linked device under.
      */
     public function clientIdFor(Admin $admin): string

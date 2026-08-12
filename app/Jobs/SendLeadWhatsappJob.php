@@ -56,6 +56,16 @@ class SendLeadWhatsappJob implements ShouldQueue
             return;
         }
 
+        // A send with no id is delivered but permanently unconfirmable, which
+        // used to look identical to one awaiting acknowledgement. Log it loudly:
+        // it means the gateway is running a build older than the panel expects.
+        if (blank($result['message_id'] ?? null)) {
+            Log::warning('WhatsApp send returned no message id; delivery cannot be confirmed', [
+                'recipient_id' => $recipient->id,
+                'hint' => 'run php artisan whatsapp:restart to load the current gateway',
+            ]);
+        }
+
         $recipient->update([
             'status' => WhatsappMessageRecipient::STATUS_SENT,
             'provider_message_id' => $result['message_id'] ?? null,

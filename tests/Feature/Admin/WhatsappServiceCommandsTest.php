@@ -129,7 +129,7 @@ function doctorWithGateway(array $health, array $acks): void
     });
 
     Illuminate\Support\Facades\Http::fake([
-        '*/health' => Illuminate\Support\Facades\Http::response($health),
+        '*/health' => Illuminate\Support\Facades\Http::response($health + ['contract' => 2]),
         '*/acks' => Illuminate\Support\Facades\Http::response(['acks' => $acks]),
     ]);
 }
@@ -158,6 +158,20 @@ it('blames a restart when the gateway never saw any acknowledgement', function (
     doctorWithGateway(['acks_tracked' => 0], []);
 
     $this->artisan('whatsapp:doctor')->expectsOutputToContain('whatsapp:restart');
+})->group('doctor');
+
+it('detects a gateway too old to return message ids', function () {
+    doctorWithGateway(['contract' => 1, 'acks_tracked' => 0], []);
+
+    $this->artisan('whatsapp:doctor')
+        ->expectsOutputToContain('لا تُرجع معرّفات الرسائل')
+        ->assertFailed();
+})->group('doctor');
+
+it('accepts a gateway on the current contract', function () {
+    doctorWithGateway(['contract' => 2, 'acks_tracked' => 0], []);
+
+    $this->artisan('whatsapp:doctor')->doesntExpectOutputToContain('لا تُرجع معرّفات الرسائل');
 })->group('doctor');
 
 it('surfaces rows that were sent without a message id', function () {

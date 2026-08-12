@@ -87,6 +87,17 @@ class WhatsappDoctor extends Command
             );
 
             if ($health['ok']) {
+                // A gateway older than this cannot return message ids, so every
+                // send it handles is unconfirmable — and it failed silently.
+                $contract = (int) ($health['contract'] ?? 1);
+
+                $check(
+                    'نسخة البوابة',
+                    $contract >= WhatsappGateway::REQUIRED_CONTRACT,
+                    'العقد '.$contract.' (المطلوب '.WhatsappGateway::REQUIRED_CONTRACT.')',
+                    'الخدمة تعمل بنسخة لا تُرجع معرّفات الرسائل، فلا يمكن تأكيد استلام أي رسالة ترسلها. شغّل: php artisan whatsapp:restart'
+                );
+
                 $active = collect($health['active_sessions'] ?? [])
                     ->map(fn (array $s) => $s['client_id'].' ('.$s['status'].')')
                     ->implode('، ');

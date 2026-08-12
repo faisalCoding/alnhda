@@ -166,6 +166,12 @@ function getOrCreateSession(clientId) {
 const AUTH_DIR = path.join(__dirname, '.wwebjs_auth');
 
 /**
+ * يُرفع عند تغيّر ما تتوقعه Laravel من هذه الخدمة، فتكتشف تشغيل نسخة قديمة
+ * بدل أن تفشل بصمت. 2 = يُرجع معرّف الرسالة ويتتبّع تأكيدات الاستلام.
+ */
+const SERVICE_CONTRACT = 2;
+
+/**
  * آخر حالة تأكيد لكل رسالة أُرسلت. تُحفظ في الذاكرة فقط — Laravel هو صاحب
  * السجل الدائم، وهذه مجرد نافذة يسحب منها التحديثات. محدودة الحجم حتى لا
  * تتضخم مع طول تشغيل الخدمة.
@@ -310,6 +316,7 @@ app.get('/health', (req, res) => {
 
     res.json({
         ok: true,
+        contract: SERVICE_CONTRACT,
         uptime_seconds: Math.round(process.uptime()),
         // إجمالي ما تتبّعته من تأكيدات: يميّز "لم تصل أي تأكيدات" عن
         // "وصلت لكن بمعرفات لا تطابق ما خزّنه Laravel".
