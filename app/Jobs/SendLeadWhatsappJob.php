@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\WhatsappMessageRecipient;
 use App\Services\WhatsappGateway;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -21,17 +22,61 @@ class SendLeadWhatsappJob implements ShouldQueue
 
     public function __construct(
         public string $clientId,
-        public string $phone,
-        public string $message,
+        public int $recipientId,
     ) {}
 
     public function handle(WhatsappGateway $whatsapp): void
     {
+        $recipient = WhatsappMessageRecipient::query()->with('message')->find($this->recipientId);
+
+        if ($recipient === null || $recipient->status !== WhatsappMessageRecipient::STATUS_QUEUED) {
+            return;
+        }
+
         $this->humanPause();
 
-        if (! $whatsapp->send($this->clientId, $this->phone, $this->message)) {
-            Log::error('WhatsApp send failed', ['phone' => $this->phone, 'client_id' => $this->clientId]);
+        // The template is stored once on the message; the name is filled in per
+        // recipient here so the history shows what was actually composed.
+        $body = str_replace('{الاسم}', $recipient->name, $recipient->message->body);
+
+        $result = $whatsapp->send($this->clientId, $recipient->phone, $body);
+
+        if (! $result['sent']) {
+            Log::error('WhatsApp send failed', [
+                'recipient_id' => $recipient->id,
+                'phone' => $recipient->phone,
+                'error' => $result['error'] ?? null,
+            ]);
+
+            $recipient->update([
+                'status' => WhatsappMessageRecipient::STATUS_FAILED,
+                'error' => $result['error'] ?? 'تعذر الإرسال.',
+            ]);
+
+            return;
         }
+
+        $recipient->update([
+            'status' => WhatsappMessageRecipient::STATUS_SENT,
+            'provider_message_id' => $result['message_id'] ?? null,
+            'sent_at' => now(),
+            'error' => null,
+        ]);
+    }
+
+    /**
+     * Marks the recipient failed when the job itself blows up, so a row never
+     * sits at "queued" forever with nothing explaining why.
+     */
+    public function failed(?\Throwable $exception): void
+    {
+        WhatsappMessageRecipient::query()
+            ->where('id', $this->recipientId)
+            ->where('status', WhatsappMessageRecipient::STATUS_QUEUED)
+            ->update([
+                'status' => WhatsappMessageRecipient::STATUS_FAILED,
+                'error' => $exception?->getMessage() ?? 'فشلت مهمة الإرسال.',
+            ]);
     }
 
     /**

@@ -116,27 +116,53 @@ class WhatsappGateway
     }
 
     /**
-     * Hand one message to the Node service. Returns false on any transport or
-     * gateway error so callers can log and move on.
+     * Hand one message to the Node service.
+     *
+     * @return array{sent: bool, message_id?: string|null, error?: string}
      */
-    public function send(string $clientId, string $phone, string $message): bool
+    public function send(string $clientId, string $phone, string $message): array
     {
         $normalized = $this->normalizePhone($phone);
 
         if ($normalized === '') {
-            return false;
+            return ['sent' => false, 'error' => 'رقم هاتف غير صالح.'];
         }
 
         try {
-            return $this->client(15)
-                ->post("{$this->baseUrl()}/send", [
-                    'clientId' => $clientId,
-                    'phone' => $normalized,
-                    'message' => $message,
-                ])
-                ->successful();
+            $response = $this->client(15)->post("{$this->baseUrl()}/send", [
+                'clientId' => $clientId,
+                'phone' => $normalized,
+                'message' => $message,
+            ]);
+
+            if (! $response->successful()) {
+                return ['sent' => false, 'error' => (string) ($response->json('message') ?? 'رفضت البوابة الإرسال.')];
+            }
+
+            return ['sent' => true, 'message_id' => $response->json('message_id')];
+        } catch (\Throwable $e) {
+            return ['sent' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Current acknowledgement level for messages Laravel has not confirmed yet.
+     *
+     * @param  array<int, string>  $messageIds
+     * @return array<string, int>
+     */
+    public function acknowledgements(array $messageIds): array
+    {
+        if ($messageIds === []) {
+            return [];
+        }
+
+        try {
+            $response = $this->client(10)->post($this->baseUrl().'/acks', ['ids' => array_values($messageIds)]);
+
+            return $response->successful() ? (array) $response->json('acks', []) : [];
         } catch (\Throwable) {
-            return false;
+            return [];
         }
     }
 

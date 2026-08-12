@@ -3,6 +3,7 @@ import leadsPage from './leads';
 import overviewPage from './overview';
 import projectsPage from './projects';
 import visitorsPage from './visitors';
+import whatsappMessagesPage from './whatsappMessages';
 import whatsappPage from './whatsapp';
 
 export default function registerComponents(Alpine) {
@@ -12,4 +13,5 @@ export default function registerComponents(Alpine) {
     Alpine.data('visitorsPage', visitorsPage);
     Alpine.data('leadsPage', leadsPage);
     Alpine.data('whatsappPage', whatsappPage);
+    Alpine.data('whatsappMessagesPage', whatsappMessagesPage);
 }

@@ -4,11 +4,15 @@ namespace App\Http\Controllers\Admin\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SendWhatsappRequest;
+use App\Http\Resources\Admin\WhatsappMessageResource;
 use App\Jobs\SendLeadWhatsappJob;
 use App\Models\Lead;
+use App\Models\WhatsappMessage;
+use App\Models\WhatsappMessageRecipient;
 use App\Services\WhatsappGateway;
 use App\Services\WhatsappServiceProcess;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class WhatsappController extends Controller
 {
@@ -35,6 +39,21 @@ class WhatsappController extends Controller
         $this->whatsapp->reset($this->clientId());
 
         return response()->json(['data' => ['status' => 'starting', 'message' => 'جاري إعادة التهيئة بالكامل...']]);
+    }
+
+    /**
+     * Message history, each with its recipients and their delivery state.
+     */
+    public function messages(): AnonymousResourceCollection
+    {
+        return WhatsappMessageResource::collection(
+            WhatsappMessage::query()
+                // Ordered so the list does not reshuffle between refreshes.
+                ->with(['admin', 'recipients' => fn ($query) => $query->orderBy('id')])
+                ->latest()
+                ->limit(100)
+                ->get()
+        );
     }
 
     public function log(WhatsappServiceProcess $process): JsonResponse
@@ -85,30 +104,35 @@ class WhatsappController extends Controller
         $validated = $request->validated();
 
         $leads = Lead::query()->whereIn('id', $validated['lead_ids'])->get();
-        $queued = 0;
-        $skipped = 0;
 
-        foreach ($leads as $lead) {
-            if ($this->whatsapp->normalizePhone((string) $lead->phone) === '') {
-                $skipped++;
+        [$deliverable, $skipped] = $leads->partition(
+            fn (Lead $lead) => $this->whatsapp->normalizePhone((string) $lead->phone) !== ''
+        );
 
-                continue;
-            }
+        $message = WhatsappMessage::query()->create([
+            'admin_id' => auth('admin')->id(),
+            'body' => $validated['message'],
+            'recipients_count' => $deliverable->count(),
+            'skipped_count' => $skipped->count(),
+        ]);
 
-            SendLeadWhatsappJob::dispatch(
-                $clientId,
-                (string) $lead->phone,
-                str_replace('{الاسم}', (string) $lead->name, $validated['message']),
-            );
+        foreach ($deliverable as $lead) {
+            $recipient = $message->recipients()->create([
+                'lead_id' => $lead->id,
+                'name' => (string) $lead->name,
+                'phone' => (string) $lead->phone,
+                'status' => WhatsappMessageRecipient::STATUS_QUEUED,
+            ]);
 
-            $queued++;
+            SendLeadWhatsappJob::dispatch($clientId, $recipient->id);
         }
 
         return response()->json([
             'data' => [
-                'queued' => $queued,
-                'skipped' => $skipped,
-                'message' => "تمت جدولة {$queued} رسالة للإرسال.",
+                'message_id' => $message->id,
+                'queued' => $deliverable->count(),
+                'skipped' => $skipped->count(),
+                'message' => 'تمت جدولة '.$deliverable->count().' رسالة للإرسال.',
             ],
         ]);
     }

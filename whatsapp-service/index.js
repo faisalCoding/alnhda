@@ -125,6 +125,13 @@ function getOrCreateSession(clientId) {
         }, 5000);
     });
 
+    // تتبّع تأكيد الاستلام: واتساب يُصدر ack لكل رسالة بعد إرسالها.
+    client.on('message_ack', (message, ack) => {
+        if (message?.id?._serialized) {
+            rememberAck(message.id._serialized, ack);
+        }
+    });
+
     client.on('auth_failure', (message) => {
         console.error(`[${clientId}] فشلت المصادقة: ${message}`);
         failSession(sessionData, `فشلت المصادقة: ${message}`);
@@ -143,6 +150,22 @@ function getOrCreateSession(clientId) {
 }
 
 const AUTH_DIR = path.join(__dirname, '.wwebjs_auth');
+
+/**
+ * آخر حالة تأكيد لكل رسالة أُرسلت. تُحفظ في الذاكرة فقط — Laravel هو صاحب
+ * السجل الدائم، وهذه مجرد نافذة يسحب منها التحديثات. محدودة الحجم حتى لا
+ * تتضخم مع طول تشغيل الخدمة.
+ */
+const acks = new Map();
+const ACK_LIMIT = 5000;
+
+function rememberAck(messageId, ack) {
+    if (acks.size >= ACK_LIMIT) {
+        acks.delete(acks.keys().next().value);
+    }
+
+    acks.set(messageId, ack);
+}
 
 /**
  * بعد LOGOUT تصبح بيانات الاعتماد المحفوظة غير صالحة، وإبقاؤها يجعل المحاولة
@@ -290,12 +313,38 @@ app.post('/send', async (req, res) => {
 
     try {
         const chatId = `${phone}@c.us`;
-        await session.client.sendMessage(chatId, message);
-        return res.json({ success: true, message: 'تم الإرسال بنجاح.' });
+        const sent = await session.client.sendMessage(chatId, message);
+        const messageId = sent?.id?._serialized ?? null;
+
+        if (messageId) {
+            rememberAck(messageId, sent?.ack ?? 0);
+        }
+
+        return res.json({ success: true, message: 'تم الإرسال بنجاح.', message_id: messageId });
     } catch (error) {
         console.error(`[${clientId}] خطأ في الإرسال:`, error.message);
         return res.status(500).json({ success: false, message: 'حدث خطأ أثناء الإرسال.', error: error.message });
     }
+});
+
+// ── POST /acks ────────────────────────────────────────────────────────────────
+// يستعلم Laravel عن حالة تأكيد الرسائل التي ما زالت غير مؤكدة عنده.
+app.post('/acks', (req, res) => {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+
+    if (ids.length === 0) {
+        return res.status(400).json({ success: false, message: 'يرجى توفير قائمة المعرفات.' });
+    }
+
+    const found = {};
+
+    for (const id of ids) {
+        if (acks.has(id)) {
+            found[id] = acks.get(id);
+        }
+    }
+
+    return res.json({ success: true, acks: found });
 });
 
 // ── POST /disconnect/:clientId ────────────────────────────────────────────────

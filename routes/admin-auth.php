@@ -33,6 +33,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::view('visitors-dashboard', 'admin.visitors')->name('visitors-dashboard');
     Route::view('leads-dashboard', 'admin.leads')->name('leads-dashboard');
     Route::view('whatsapp-dashboard', 'admin.whatsapp')->name('whatsapp-dashboard');
+    Route::view('whatsapp-messages', 'admin.whatsapp-messages')->name('whatsapp-messages');
 });
 
 Route::prefix('api')->name('panel.api.')->group(function () {
@@ -52,6 +53,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::post('whatsapp/reset', [WhatsappController::class, 'reset'])->name('whatsapp.reset');
         Route::post('whatsapp/start', [WhatsappController::class, 'start'])->name('whatsapp.start');
         Route::get('whatsapp/log', [WhatsappController::class, 'log'])->name('whatsapp.log');
+        Route::get('whatsapp/messages', [WhatsappController::class, 'messages'])->name('whatsapp.messages');
         Route::post('whatsapp/send', [WhatsappController::class, 'send'])->name('whatsapp.send');
 
         Route::middleware('idempotency')->group(function () {
