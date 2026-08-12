@@ -12,10 +12,12 @@ class SendLeadWhatsappJob implements ShouldQueue
     use Queueable;
 
     /**
-     * Sending waits a random human-like pause first, so the job needs more than
-     * the default 60s before the worker considers it stuck.
+     * Must stay below the queue's retry_after (90s by default), or the job is
+     * released for retry while still running and the lead gets the message
+     * twice. The real ceiling is well under this: at most a 14s pause plus the
+     * gateway's 15s HTTP timeout.
      */
-    public int $timeout = 180;
+    public int $timeout = 60;
 
     public function __construct(
         public string $clientId,

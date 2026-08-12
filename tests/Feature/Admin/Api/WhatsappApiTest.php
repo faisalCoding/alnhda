@@ -262,6 +262,20 @@ it('renders the log panel on the whatsapp page', function () {
         ->assertSee('toggleLog()', false);
 });
 
+it('keeps the send job timeout below the queue retry window', function () {
+    $job = new SendLeadWhatsappJob('admin_1', '0555555555', 'مرحباً');
+    $retryAfter = (int) config('queue.connections.'.config('queue.default').'.retry_after', 90);
+
+    // A job that outlives retry_after is released while still running, and the
+    // lead receives the same WhatsApp message twice.
+    expect($job->timeout)->toBeLessThan($retryAfter);
+
+    // It must still comfortably cover the human pause plus the gateway timeout.
+    expect($job->timeout)->toBeGreaterThan(
+        (int) config('services.whatsapp.send_delay_max') + 15
+    );
+});
+
 it('renders the whatsapp dashboard page for an authenticated admin', function () {
     $this->actingAs($this->admin, 'admin')
         ->get(panelUrl('/whatsapp-dashboard'))
