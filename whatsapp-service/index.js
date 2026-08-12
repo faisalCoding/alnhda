@@ -209,6 +209,38 @@ function extractMessageId(message) {
     return null;
 }
 
+/**
+ * يبحث عن الرسالة التي أُرسلت للتو في سجل المحادثة. يُستخدم فقط حين تعجز
+ * sendMessage عن إرجاع نموذجها، فبدونه تفقد الرسالة تتبّع الاستلام نهائياً.
+ * الرسالة قد تحتاج لحظة لتظهر، لذا نحاول أكثر من مرة.
+ */
+async function recoverMessageId(client, chatId, body, attempts = 3) {
+    for (let attempt = 0; attempt < attempts; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
+        try {
+            const chat = await client.getChatById(chatId);
+            const recent = await chat.fetchMessages({ limit: 10 });
+
+            const match = recent
+                .filter((candidate) => candidate.fromMe && candidate.body === body)
+                .sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0))[0];
+
+            const id = extractMessageId(match);
+
+            if (id) {
+                console.log(`[${chatId}] استُعيد معرّف الرسالة من المحادثة.`);
+
+                return id;
+            }
+        } catch (error) {
+            console.error(`[${chatId}] فشلت محاولة استعادة المعرّف:`, error.message);
+        }
+    }
+
+    return null;
+}
+
 function rememberAck(messageId, ack) {
     if (acks.size >= ACK_LIMIT) {
         acks.delete(acks.keys().next().value);
@@ -430,21 +462,23 @@ app.post('/send', async (req, res) => {
         const chatId = `${phone}@c.us`;
         const sent = await session.client.sendMessage(chatId, message);
 
-        // sendMessage تُرجع undefined إذا لم تُنتج رسالة (محادثة غير موجودة مثلاً)،
-        // وهذا فشل وليس نجاحاً بلا معرّف.
-        if (!sent) {
-            console.error(`[${clientId}] لم تُرجع المكتبة رسالة — لم يتم الإرسال.`);
+        // sendMessage قد تُرجع undefined رغم وصول الرسالة: نموذج الرسالة يُسلسل
+        // عبر puppeteer وقد يسقط في الطريق. اعتبارها فشلاً يكذب على المستخدم،
+        // فنكتفي بفقدان التتبّع ونحاول استعادة المعرّف من المحادثة.
+        let messageId = extractMessageId(sent);
 
-            return res.status(500).json({ success: false, message: 'لم تُنتج المكتبة رسالة — تحقق من الرقم.' });
+        if (!messageId) {
+            console.error(
+                `[${clientId}] لم يصل معرّف من sendMessage (شكل id: ${JSON.stringify(sent?.id ?? null)}) — محاولة استعادته من المحادثة.`
+            );
+
+            messageId = await recoverMessageId(session.client, chatId, message);
         }
 
-        const messageId = extractMessageId(sent);
-
         if (messageId) {
-            rememberAck(messageId, sent.ack ?? 0);
+            rememberAck(messageId, sent?.ack ?? 0);
         } else {
-            // نطبع الشكل الفعلي حتى يمكن إصلاح الاستخراج بدل التخمين.
-            console.error(`[${clientId}] تعذر استخراج معرّف الرسالة. شكل id:`, JSON.stringify(sent.id ?? null));
+            console.error(`[${clientId}] تعذر تحديد معرّف الرسالة — لن يمكن تأكيد استلامها.`);
         }
 
         return res.json({ success: true, message: 'تم الإرسال بنجاح.', message_id: messageId });
