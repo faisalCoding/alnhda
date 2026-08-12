@@ -74,6 +74,59 @@ it('reports a running gateway with its pid', function () {
         ->assertSuccessful();
 });
 
+it('says so when the service is up but its pid cannot be resolved', function () {
+    $this->mock(WhatsappServiceProcess::class)->shouldReceive('stop')->once()->andReturn('pid_unknown');
+
+    $this->artisan('whatsapp:stop')
+        ->expectsOutputToContain('تعذر تحديد رقم عمليتها')
+        ->assertFailed();
+});
+
+it('detects a running service without shelling out', function () {
+    // fsockopen against a socket we control proves isRunning() needs no lsof.
+    $server = stream_socket_server('tcp://127.0.0.1:0', $errno, $error);
+    $port = (int) explode(':', stream_socket_get_name($server, false))[1];
+    config()->set('services.whatsapp.url', 'http://127.0.0.1:'.$port);
+
+    expect(app(WhatsappServiceProcess::class)->isRunning())->toBeTrue();
+
+    fclose($server);
+
+    expect(app(WhatsappServiceProcess::class)->isRunning())->toBeFalse();
+});
+
+it('reports a healthy setup', function () {
+    $this->mock(WhatsappServiceProcess::class, function ($mock) {
+        $mock->shouldReceive('nodeVersion')->andReturn('v22.0.0');
+        $mock->shouldReceive('isInstalled')->andReturn(true);
+        $mock->shouldReceive('browserCheck')->andReturn('ok: Chrome for Testing 146');
+        $mock->shouldReceive('isRunning')->andReturn(false);
+        $mock->shouldReceive('tailLog')->andReturn([]);
+    });
+
+    config()->set('services.whatsapp.key', 'a-key');
+
+    // The service is not listening, so one check fails and the command exits non-zero.
+    $this->artisan('whatsapp:doctor')
+        ->expectsOutputToContain('whatsapp:start')
+        ->assertFailed();
+});
+
+it('points at the missing chromium libraries when the browser will not run', function () {
+    $this->mock(WhatsappServiceProcess::class, function ($mock) {
+        $mock->shouldReceive('nodeVersion')->andReturn('v22.0.0');
+        $mock->shouldReceive('isInstalled')->andReturn(true);
+        $mock->shouldReceive('browserCheck')
+            ->andReturn('فشل تشغيل المتصفح: error while loading shared libraries: libnss3.so');
+        $mock->shouldReceive('isRunning')->andReturn(false);
+        $mock->shouldReceive('tailLog')->andReturn([]);
+    });
+
+    $this->artisan('whatsapp:doctor')
+        ->expectsOutputToContain('libnss3')
+        ->assertFailed();
+});
+
 it('exits non-zero from status when the gateway is down', function () {
     $this->mock(WhatsappServiceProcess::class)->shouldReceive('runningPid')->once()->andReturn(null);
 

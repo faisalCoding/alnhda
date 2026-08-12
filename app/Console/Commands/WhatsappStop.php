@@ -29,7 +29,8 @@ class WhatsappStop extends Command
         return match ($process->stop()) {
             'stopped' => $this->done('تم إيقاف الخدمة.'),
             'not_running' => $this->done('الخدمة متوقفة أصلًا.'),
-            default => $this->cannot(),
+            'pid_unknown' => $this->cannot('الخدمة تعمل لكن تعذر تحديد رقم عمليتها (lsof/ss/fuser غير متوفرة). أوقفها يدويًا.'),
+            default => $this->cannot('تعذر إيقاف الخدمة — shell_exec معطّل على هذا الخادم.'),
         };
     }
 
@@ -40,9 +41,9 @@ class WhatsappStop extends Command
         return self::SUCCESS;
     }
 
-    private function cannot(): int
+    private function cannot(string $message): int
     {
-        $this->error('تعذر إيقاف الخدمة — shell_exec معطّل على هذا الخادم.');
+        $this->error($message);
 
         return self::FAILURE;
     }

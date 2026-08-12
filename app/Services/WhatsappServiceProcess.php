@@ -28,28 +28,49 @@ class WhatsappServiceProcess
     }
 
     /**
+     * Whether something is serving the gateway port. Deliberately a plain TCP
+     * connect rather than a shell probe: minimal servers ship without lsof and
+     * shared hosts disable shell_exec, and either would make the panel report a
+     * healthy service as down.
+     */
+    public function isRunning(): bool
+    {
+        $host = parse_url((string) config('services.whatsapp.url'), PHP_URL_HOST) ?: '127.0.0.1';
+        $socket = @fsockopen($host, $this->port(), $errno, $error, 1.0);
+
+        if ($socket === false) {
+            return false;
+        }
+
+        fclose($socket);
+
+        return true;
+    }
+
+    /**
      * The pid is read back from whoever holds the port rather than a pid file,
      * so the service is found no matter how it was started (artisan, the panel
-     * button, systemd, or by hand).
+     * button, systemd, or by hand). Only stopping needs it, and each probe is
+     * tried in turn because no single one ships everywhere.
      */
     public function runningPid(): ?int
     {
-        // -a ANDs the filters; without it lsof ORs them and matches every node process.
-        $output = $this->run('lsof -nP -a -t -c node -i :'.$this->port().' 2>/dev/null');
-        $pid = trim((string) $output);
+        $probes = [
+            // -a ANDs the filters; without it lsof ORs them and matches every node process.
+            'lsof -nP -a -t -c node -i :'.$this->port().' 2>/dev/null',
+            'ss -lptnH "sport = :'.$this->port().'" 2>/dev/null | grep -o "pid=[0-9]*" | head -1 | cut -d= -f2',
+            'fuser '.$this->port().'/tcp 2>/dev/null',
+        ];
 
-        if ($pid === '') {
-            return null;
+        foreach ($probes as $probe) {
+            $pid = trim((string) strtok(trim((string) $this->run($probe)), "\n "));
+
+            if (ctype_digit($pid)) {
+                return (int) $pid;
+            }
         }
 
-        $first = strtok($pid, "\n");
-
-        return ctype_digit((string) $first) ? (int) $first : null;
-    }
-
-    public function isRunning(): bool
-    {
-        return $this->runningPid() !== null;
+        return null;
     }
 
     /**
@@ -107,7 +128,7 @@ class WhatsappServiceProcess
     }
 
     /**
-     * @return 'stopped'|'not_running'|'unavailable'
+     * @return 'stopped'|'not_running'|'pid_unknown'|'unavailable'
      */
     public function stop(): string
     {
@@ -118,12 +139,55 @@ class WhatsappServiceProcess
         $pid = $this->runningPid();
 
         if ($pid === null) {
-            return 'not_running';
+            // Serving the port but no probe could name the owner: say so rather
+            // than claiming it is stopped.
+            return $this->isRunning() ? 'pid_unknown' : 'not_running';
         }
 
         $this->run('kill '.$pid.' 2>/dev/null');
 
         return 'stopped';
+    }
+
+    /**
+     * Path of the Chromium puppeteer resolves to, or null when it cannot be
+     * resolved (packages not installed, or the browser was never downloaded).
+     */
+    public function browserPath(): ?string
+    {
+        $script = escapeshellarg('try{console.log(require("puppeteer").executablePath())}catch(e){}');
+        $path = trim((string) $this->run('cd '.escapeshellarg($this->directory()).' && node -e '.$script.' 2>/dev/null'));
+
+        return $path === '' ? null : $path;
+    }
+
+    /**
+     * Runs the browser binary directly. On a bare Linux server this is what
+     * surfaces "error while loading shared libraries", the usual reason the QR
+     * never appears there while everything works locally.
+     */
+    public function browserCheck(): string
+    {
+        $path = $this->browserPath();
+
+        if ($path === null) {
+            return 'المتصفح غير مثبت — شغّل: npx puppeteer browsers install chrome';
+        }
+
+        if (! is_file($path)) {
+            return 'مسار المتصفح غير موجود: '.$path;
+        }
+
+        $output = trim((string) $this->run(escapeshellarg($path).' --version 2>&1'));
+
+        return str_contains($output, 'Chrome') ? 'ok: '.$output : 'فشل تشغيل المتصفح: '.$output;
+    }
+
+    public function nodeVersion(): ?string
+    {
+        $version = trim((string) $this->run('node -v 2>/dev/null'));
+
+        return $version === '' ? null : $version;
     }
 
     public function isInstalled(): bool
