@@ -475,6 +475,21 @@ it('ignores acknowledgements for message ids it does not know', function () {
         ->assertJsonPath('data.received', 1);
 });
 
+it('caps how many acknowledgements one push may carry', function () {
+    // The gateway chunks to 200 against this cap. If it is ever lowered below
+    // that, every push from a backlog is rejected and never recovers.
+    $acks = collect(range(1, 500))->map(fn (int $i) => ['id' => 'id-'.$i, 'ack' => 2])->all();
+
+    $this->withHeader('X-Api-Key', 'test-key')
+        ->postJson(panelUrl('/api/whatsapp/ack'), ['acks' => $acks])
+        ->assertSuccessful();
+
+    $this->withHeader('X-Api-Key', 'test-key')
+        ->postJson(panelUrl('/api/whatsapp/ack'), ['acks' => [...$acks, ['id' => 'over', 'ack' => 2]]])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('acks');
+});
+
 it('validates the acknowledgement payload', function (array $payload, string $field) {
     $this->withHeader('X-Api-Key', 'test-key')
         ->postJson(panelUrl('/api/whatsapp/ack'), $payload)

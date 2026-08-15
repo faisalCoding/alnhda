@@ -257,6 +257,14 @@ const callbackUrl = process.env.WHATSAPP_CALLBACK_URL || laravelEnv('WHATSAPP_CA
 // متتابعة (أُرسلت ← وصلت ← قُرئت)، وإرسال طلب لكل واحد إهدار.
 const PUSH_DEBOUNCE_MS = 2000;
 const PUSH_RETRY_MS = 30000;
+
+// أقل من حد Laravel (500) بهامش. بدون التقطيع تتراكم التأكيدات أثناء أي انقطاع
+// حتى تتجاوز الحد، فتُرفض كل دفعة بـ 422 إلى الأبد ولا تتعافى أبدًا.
+const PUSH_BATCH_SIZE = 200;
+
+// سقف للطابور نفسه حتى لا تتضخم الذاكرة إن ظل Laravel غير متاح طويلاً.
+const PUSH_QUEUE_LIMIT = 2000;
+
 const pendingPush = new Map();
 let pushTimer = null;
 
@@ -265,10 +273,21 @@ function queueAckPush(messageId, ack) {
         return;
     }
 
-    pendingPush.set(messageId, ack);
+    if (pendingPush.size >= PUSH_QUEUE_LIMIT) {
+        pendingPush.delete(pendingPush.keys().next().value);
+    }
+
+    // القيمة قد تصل غير رقمية من المكتبة، وJSON يُسقط undefined فيفشل التحقق.
+    pendingPush.set(messageId, Number.isFinite(ack) ? Math.trunc(ack) : 0);
 
     if (pushTimer === null) {
         pushTimer = setTimeout(flushAcks, PUSH_DEBOUNCE_MS);
+    }
+}
+
+function scheduleRetry() {
+    if (pushTimer === null) {
+        pushTimer = setTimeout(flushAcks, PUSH_RETRY_MS);
     }
 }
 
@@ -279,7 +298,9 @@ async function flushAcks() {
         return;
     }
 
-    const batch = Array.from(pendingPush.entries()).map(([id, ack]) => ({ id, ack }));
+    const batch = Array.from(pendingPush.entries())
+        .slice(0, PUSH_BATCH_SIZE)
+        .map(([id, ack]) => ({ id, ack }));
 
     try {
         const response = await fetch(callbackUrl, {
@@ -290,7 +311,10 @@ async function flushAcks() {
         });
 
         if (!response.ok) {
-            throw new Error(`ردّ Laravel بحالة ${response.status}`);
+            // نطبع جسم الرد: حالة 422 وحدها لا تقول أي حقل رُفض.
+            const detail = await response.text().catch(() => '');
+
+            throw new Error(`ردّ Laravel بحالة ${response.status} — ${detail.slice(0, 300)}`);
         }
 
         // لا نحذف إلا ما نجح دفعه فعلاً، وما وصل أثناء الطلب يبقى للدفعة التالية.
@@ -299,13 +323,14 @@ async function flushAcks() {
                 pendingPush.delete(id);
             }
         }
+
+        // بقيت دفعات: تابع فورًا بدل انتظار تأكيد جديد.
+        if (pendingPush.size > 0) {
+            pushTimer = setTimeout(flushAcks, 100);
+        }
     } catch (error) {
         console.error('تعذر دفع تأكيدات الاستلام:', error.message);
-
-        // نُعيد المحاولة لاحقاً؛ وأمر whatsapp:sync-acks يبقى شبكة أمان.
-        if (pushTimer === null) {
-            pushTimer = setTimeout(flushAcks, PUSH_RETRY_MS);
-        }
+        scheduleRetry();
     }
 }
 
