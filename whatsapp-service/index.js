@@ -50,6 +50,17 @@ const STARTUP_TIMEOUT_SECONDS = 90;
 // الواجهة بين "جاري التهيئة" والخطأ في كل استطلاع.
 const ERROR_RETRY_SECONDS = 30;
 
+// بعد المصادقة تحقن المكتبة دوالها في صفحة واتساب ثم تُطلق حدث الجاهزية. إذا
+// فشل الحقن — وهو ما يحدث حين يُحدّث واتساب واجهته — يُرمى الخطأ داخل دالة
+// مكشوفة لـ puppeteer فينتهي كـ unhandledRejection مسجَّلاً فقط: لا حدث جاهزية
+// ولا انقطاع ولا فشل مصادقة. بلا مراقبة تبقى الجلسة "loading" إلى الأبد،
+// وتظل الواجهة تعرض "جاري مزامنة المحادثات" بلا نهاية ولا سبب.
+const LOADING_STALL_SECONDS = 150;
+const LOADING_PROBE_INTERVAL_MS = 10000;
+
+// الفحص يمر عبر صفحة قد تكون ميتة، فلا ننتظر رده إلى ما لا نهاية.
+const PROBE_TIMEOUT_MS = 15000;
+
 /**
  * إنشاء أو استرجاع جلسة واتساب لمستخدم معين
  */
@@ -63,6 +74,8 @@ function getOrCreateSession(clientId) {
         status: 'starting',
         qrCode: null,
         loadingPercent: 0,
+        loadingSince: 0,
+        probing: false,
         error: null,
         startedAt: Date.now(),
     };
@@ -99,14 +112,12 @@ function getOrCreateSession(clientId) {
     });
 
     client.on('loading_screen', (percent) => {
-        sessionData.loadingPercent = percent;
-        sessionData.status = 'loading';
+        enterLoading(sessionData, percent);
     });
 
     client.on('authenticated', () => {
         console.log(`[${clientId}] تمت المصادقة.`);
-        sessionData.status = 'loading';
-        sessionData.qrCode = null;
+        enterLoading(sessionData);
     });
 
     client.on('ready', () => {
@@ -361,6 +372,99 @@ function failSession(session, message) {
 }
 
 /**
+ * دخول طور التهيئة، مع ضبط اللحظة التي تُقاس منها مدة التوقف. حدث المصادقة
+ * يتكرر مع كل إعادة تحميل لصفحة واتساب، ولو صفّر كل تكرار المؤقّت لأجّل
+ * المراقبة إلى ما لا نهاية — فلا نُصفّره إلا عند دخول الطور أو تقدّم فعلي.
+ */
+function enterLoading(session, percent = null, now = Date.now()) {
+    if (session.status !== 'loading' || (percent !== null && percent !== session.loadingPercent)) {
+        session.loadingSince = now;
+    }
+
+    if (percent !== null) {
+        session.loadingPercent = percent;
+    }
+
+    session.status = 'loading';
+    session.qrCode = null;
+}
+
+function isLoadingStalled(session, now = Date.now()) {
+    return session.status === 'loading'
+        && ! session.probing
+        && now - session.loadingSince >= LOADING_STALL_SECONDS * 1000;
+}
+
+/**
+ * ما تحتاجه الجلسة فعلاً كي تُرسل: قناة متصلة بواتساب، ودوال المكتبة محقونة
+ * في الصفحة. الأولى وحدها لا تكفي — حالة الاتصال تُقرأ من وحدة واتساب مباشرة
+ * ولا علاقة لها بنجاح الحقن.
+ */
+async function probeSession(client) {
+    const [state, injected] = await Promise.all([
+        client.getState(),
+        client.pupPage.evaluate(() => typeof window.WWebJS !== 'undefined'),
+    ]);
+
+    return { state, injected };
+}
+
+function withTimeout(promise, ms) {
+    let timer = null;
+
+    // المؤقّت يُلغى دائماً: تركه معلقاً بعد رد سريع يُبقي حدث الخروج مشغولاً
+    // ويؤخّر إغلاق العملية بلا داعٍ.
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error(`انتهت مهلة الفحص (${ms} مللي ثانية).`)), ms);
+        }),
+    ]).finally(() => clearTimeout(timer));
+}
+
+/**
+ * يحسم مصير جلسة توقفت في طور التهيئة: إما أنها جاهزة فعلاً وسقط حدث الجاهزية
+ * وحده، فنعتمدها؛ أو أن الحقن فشل فلا سبيل للإرسال، فنُسجّلها خطأً برسالة
+ * تقول ما العمل. الحالتان أفضل من دوران الواجهة على رسالة لا تتغير.
+ */
+async function resolveStalledSession(clientId, session) {
+    session.probing = true;
+
+    try {
+        const { state, injected } = await withTimeout(probeSession(session.client), PROBE_TIMEOUT_MS);
+
+        if (state === 'CONNECTED' && injected) {
+            // الإرسال يعمل، لكن attachEventListeners لم يُستدعَ على الأرجح، فقد
+            // لا تصل تأكيدات الاستلام. نُسجّلها بوضوح حتى لا تُلتمس في مكان آخر.
+            console.log(`[${clientId}] لم يصل حدث الجاهزية رغم اكتمال الاتصال والحقن — اعتُمدت الجلسة جاهزة (قد تتأخر تأكيدات الاستلام).`);
+            session.status = 'ready';
+            session.qrCode = null;
+
+            return;
+        }
+
+        console.error(`[${clientId}] توقفت التهيئة عند ${session.loadingPercent}% (الاتصال: ${state ?? 'مجهول'}، الحقن: ${injected ? 'تم' : 'فشل'}).`);
+
+        failSession(session, injected
+            ? `توقفت التهيئة عند ${session.loadingPercent}% وحالة الاتصال ${state ?? 'مجهولة'}.`
+            : 'تمت المصادقة لكن فشل تحميل واجهة واتساب ويب — غالبًا لأن واتساب حدّث موقعه. ثبّت نسخة معروفة عبر WHATSAPP_WEB_VERSION في ملف .env ثم أعد تشغيل الخدمة.');
+    } catch (error) {
+        console.error(`[${clientId}] تعذر فحص الجلسة المتوقفة:`, error.message);
+        failSession(session, `توقفت التهيئة ولم تستجب الجلسة للفحص: ${error.message}`);
+    } finally {
+        session.probing = false;
+    }
+}
+
+function sweepStalledSessions(now = Date.now()) {
+    for (const [clientId, session] of sessions) {
+        if (isLoadingStalled(session, now)) {
+            resolveStalledSession(clientId, session);
+        }
+    }
+}
+
+/**
  * تُسقط جلسة عالقة حتى يبدأ الطلب التالي محاولة جديدة بدل الانتظار بلا نهاية.
  */
 /**
@@ -427,9 +531,11 @@ app.get('/status/:clientId', async (req, res) => {
     }
 
     if (session.status === 'loading') {
+        const waiting = Math.round((Date.now() - session.loadingSince) / 1000);
+
         return res.json({
             status: 'loading',
-            message: `تمت المصادقة. جاري التهيئة... (${session.loadingPercent}%)`,
+            message: `تمت المصادقة. جاري التهيئة... (${session.loadingPercent}%، منذ ${waiting} ثانية)`,
         });
     }
 
@@ -644,8 +750,25 @@ function restoreSavedSessions() {
     }
 }
 
-app.listen(port, host, () => {
-    console.log(`خدمة الواتساب تعمل على http://${host}:${port}`);
-    console.log(`نسخة واتساب ويب: ${webVersion || 'تلقائية'} | دفع التأكيدات: ${callbackUrl ? 'مفعّل' : 'معطّل'}`);
-    restoreSavedSessions();
-});
+// الاستيراد من الاختبارات يجب ألا يحجز منفذاً ولا يُقلع متصفحاً.
+if (require.main === module) {
+    app.listen(port, host, () => {
+        console.log(`خدمة الواتساب تعمل على http://${host}:${port}`);
+        console.log(`نسخة واتساب ويب: ${webVersion || 'تلقائية'} | دفع التأكيدات: ${callbackUrl ? 'مفعّل' : 'معطّل'}`);
+        restoreSavedSessions();
+
+        // المراقبة دورية وليست عند الاستطلاع فقط: الجلسات المستعادة تلقائياً لا
+        // يستطلعها أحد، وتوقفها يعني توقف الإرسال بلا أثر في أي مكان.
+        setInterval(sweepStalledSessions, LOADING_PROBE_INTERVAL_MS);
+    });
+}
+
+module.exports = {
+    sessions,
+    enterLoading,
+    isLoadingStalled,
+    resolveStalledSession,
+    sweepStalledSessions,
+    extractMessageId,
+    LOADING_STALL_SECONDS,
+};
