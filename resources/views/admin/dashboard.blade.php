@@ -57,6 +57,9 @@
                                 <span class="text-zinc-500 dark:text-zinc-400" x-text="opName(op)"></span>
                             </p>
                             <p class="mt-0.5 text-xs text-red-500" x-show="opError(op)" x-text="opError(op)"></p>
+                            <p class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400" x-show="needsEdit(op)">
+                                عدّل السجل وصحّح هذا الحقل — سيُعاد إرساله تلقائيًا بعد الحفظ.
+                            </p>
                             <p class="mt-0.5 text-xs text-zinc-400" x-show="op.attempts > 0 && !opError(op)"
                                 x-text="'المحاولات: ' + op.attempts"></p>
                         </div>
@@ -77,7 +80,7 @@
                         </span>
 
                         <div class="flex items-center gap-1.5">
-                            <button type="button" x-show="op.status === 'failed'" @click="retry(op)"
+                            <button type="button" x-show="op.status === 'failed' && !needsEdit(op)" @click="retry(op)"
                                 class="rounded-lg bg-primary-500/10 px-3 py-1.5 text-xs font-bold text-primary-600 hover:bg-primary-500/20 dark:text-primary-300">
                                 إعادة المحاولة
                             </button>

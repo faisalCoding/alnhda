@@ -71,6 +71,15 @@ export default function overviewPage() {
             return messages[0] ?? op.lastError.message;
         },
 
+        /**
+         * رفض الخادم للحمولة (422) حكم ثابت لا عابر: إعادة إرسال الحمولة نفسها
+         * ترجع بالخطأ نفسه إلى الأبد. المخرج الوحيد تعديل السجل — وعندها تُدمج
+         * القيم المصححة في الإجراء العالق ويُعاد إرساله تلقائيًا.
+         */
+        needsEdit(op) {
+            return op.status === 'failed' && op.lastError?.status === 422;
+        },
+
         retry(op) {
             retryOp(op.id);
         },

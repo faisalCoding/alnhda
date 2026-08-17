@@ -1,6 +1,7 @@
 import { request } from '../api';
 import { isTemp } from '../ids';
 import * as storage from '../storage';
+import { isAbsoluteUrl } from '../validation';
 
 const PROJECT_DEFAULTS = () => ({
     name: '',
@@ -219,14 +220,20 @@ export default function projectsPage() {
                 this.errors.description = 'وصف المشروع يجب أن يكون 10 أحرف على الأقل.';
             }
 
+            const mapUrl = (this.form.map_url ?? '').trim();
+
+            if (mapUrl !== '' && !isAbsoluteUrl(mapUrl)) {
+                this.errors.map_url = 'رابط الخريطة يجب أن يبدأ بـ https:// — انسخه كاملًا من خرائط جوجل، أو اتركه فارغًا.';
+            }
+
             if (Object.keys(this.errors).length) {
                 return;
             }
 
             const attributes = {
                 ...this.form,
-                map_url: this.form.map_url || null,
-                location: this.form.location || null,
+                map_url: mapUrl || null,
+                location: (this.form.location ?? '').trim() || null,
                 guarantees: this.guarantees.map((guarantee) => guarantee.trim()).filter(Boolean),
             };
 

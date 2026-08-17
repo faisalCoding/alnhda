@@ -231,6 +231,7 @@
                                 <div>
                                     <label class="{{ $label }}">رابط الخريطة</label>
                                     <input type="url" x-model="form.map_url" class="{{ $input }}" dir="ltr" placeholder="https://maps.google.com/…">
+                                    <p class="{{ $error }}" x-show="errors.map_url" x-text="errors.map_url"></p>
                                 </div>
                                 <div>
                                     <label class="{{ $label }}">الحالة</label>

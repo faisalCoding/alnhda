@@ -3,7 +3,8 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "test": "node --test \"resources/js/**/*.test.js\""
     },
     "dependencies": {
         "@alpinejs/focus": "^3.15.12",
