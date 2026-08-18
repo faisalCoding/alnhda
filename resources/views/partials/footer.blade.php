@@ -133,16 +133,17 @@
         {{-- Bottom Bar --}}
         <div class="mt-12 pt-8 border-t border-zinc-200 space-y-8">
 
-            {{-- Ministry of Commerce credential. The logo artwork is white, so it
-                 needs a dark plate to stay legible on this light footer. --}}
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-                <div class="rounded-xl bg-zinc-800 px-5 py-3">
+            {{-- Ministry of Commerce credential. The logo artwork is white, so the
+                 whole badge sits on a dark plate to stay legible on this light footer. --}}
+            <div class="flex justify-center">
+                <div class="inline-flex items-center gap-3 rounded-xl bg-zinc-800 px-4 py-3 sm:gap-5 sm:px-5">
                     <img src="{{ asset('img/ministry-of-commerce.svg') }}" alt="شعار وزارة التجارة"
-                        class="h-9 w-auto" width="188" height="65" loading="lazy">
-                </div>
-                <div class="text-center sm:text-right">
-                    <p class="text-xs text-zinc-500">الرقم الموحد للشركة</p>
-                    <p class="text-lg font-bold tracking-widest text-zinc-900" dir="ltr">7025720975</p>
+                        class="h-8 w-auto sm:h-9" width="188" height="65" loading="lazy">
+                    <span class="w-px self-stretch bg-white/15"></span>
+                    <div class="text-right">
+                        <p class="text-xs text-zinc-400">الرقم الموحد للشركة</p>
+                        <p class="text-base font-bold tracking-widest text-white sm:text-lg" dir="ltr">7025720975</p>
+                    </div>
                 </div>
             </div>
 
