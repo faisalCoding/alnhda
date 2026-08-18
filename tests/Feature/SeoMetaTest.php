@@ -222,6 +222,22 @@ it('renders article json-ld with publish dates', function () {
  *
  * @return array<int, array<string, mixed>>
  */
+it('gives every static page a meta description of its own', function () {
+    $descriptions = collect(['welcome', 'about-us', 'contact-us', 'privacy-policy', 'terms-of-use'])
+        ->mapWithKeys(function (string $name): array {
+            $html = $this->get(route($name))->assertOk()->getContent();
+            preg_match('/<meta name="description" content="(.*?)">/s', $html, $matches);
+
+            return [$name => $matches[1] ?? null];
+        });
+
+    $layoutFallback = 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية. اكتشف مشاريعنا الآن!';
+
+    expect($descriptions->filter())->toHaveCount(5)
+        ->and($descriptions->unique())->toHaveCount(5)
+        ->and($descriptions->filter(fn (?string $description): bool => $description === $layoutFallback))->toBeEmpty();
+});
+
 it('publishes the company unified number in the organization json-ld', function () {
     $html = $this->get(route('welcome'))->assertOk()->getContent();
 

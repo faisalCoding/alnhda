@@ -1,6 +1,7 @@
 @extends('layouts.guest')
 
 @section('title', 'سياسة الخصوصية')
+@section('description', 'سياسة الخصوصية في كيان النهضة العقارية: ما المعلومات التي نجمعها عند تصفح الموقع أو التواصل معنا، وكيف نستخدمها ونحميها، ومتى تُشارك مع أطراف أخرى.')
 
 @section('main')
     <div class="bg-gray-50 min-h-screen rtl" dir="rtl">
