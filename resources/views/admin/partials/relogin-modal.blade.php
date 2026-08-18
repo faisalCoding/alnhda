@@ -18,7 +18,7 @@
         </p>
 
         <div class="flex items-center gap-3">
-            <a href="{{ route('login') }}" target="_blank" rel="noopener"
+            <a href="{{ route('admin.login') }}" target="_blank" rel="noopener"
                 class="flex-1 rounded-xl bg-primary-500 px-4 py-2.5 text-center text-sm font-bold text-white hover:bg-primary-600">
                 تسجيل الدخول
             </a>

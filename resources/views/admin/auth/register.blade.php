@@ -53,6 +53,6 @@
 
     <p class="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
         لديك حساب بالفعل؟
-        <a href="{{ route('login') }}" class="font-bold text-primary-600 hover:underline dark:text-primary-300">تسجيل الدخول</a>
+        <a href="{{ route('admin.login') }}" class="font-bold text-primary-600 hover:underline dark:text-primary-300">تسجيل الدخول</a>
     </p>
 @endsection

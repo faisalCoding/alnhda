@@ -9,7 +9,7 @@ beforeEach(function () {
 });
 
 test('guests are redirected to the admin login page', function () {
-    $this->get(panelUrl('/dashboard'))->assertRedirect(route('login'));
+    $this->get(panelUrl('/dashboard'))->assertRedirect(route('admin.login'));
 });
 
 test('an authenticated admin can visit every dashboard page', function (string $path) {

@@ -31,6 +31,25 @@ it('derives the application domain from app url with any scheme stripped', funct
     'localhost' => ['localhost', 'localhost'],
 ]);
 
+it('has no duplicate route names so the routes can be cached', function () {
+    $duplicates = collect(Route::getRoutes()->getRoutes())
+        ->map(fn ($route) => $route->getName())
+        ->filter()
+        ->countBy()
+        ->filter(fn (int $count) => $count > 1)
+        ->all();
+
+    expect($duplicates)->toBeEmpty();
+});
+
+it('sends guests on the panel subdomain to the admin login', function () {
+    $this->get(panelUrl('/dashboard'))->assertRedirect(route('admin.login'));
+});
+
+it('sends guests on the public site to the user login', function () {
+    $this->get(route('settings.profile'))->assertRedirect(route('login'));
+});
+
 it('never calls env() outside of config files', function () {
     $offenders = collect(Finder::create()
         ->files()
