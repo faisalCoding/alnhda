@@ -74,6 +74,16 @@ Route::domain(config('app.domain'))->group(function () {
         ])->header('Content-Type', 'text/xml');
     })->name('sitemap');
 
+    Route::get('/llms.txt', function () {
+        return response()
+            ->view('llms', [
+                'projects' => Project::ordered()->get(),
+                'properties' => \App\Models\Properties::all(),
+                'articles' => Article::latest()->get(),
+            ])
+            ->header('Content-Type', 'text/plain; charset=utf-8');
+    })->name('llms');
+
     require __DIR__.'/auth.php';
 });
 
