@@ -31,6 +31,13 @@
                         </svg>
                     </a>
                 </div>
+
+                {{-- Ministry of Commerce unified number --}}
+                <div
+                    class="inline-flex items-center gap-3 rounded-full border border-zinc-200 bg-zinc-50 px-5 py-2.5">
+                    <span class="text-sm text-gray-500">الرقم الموحد للشركة</span>
+                    <span class="text-sm font-bold tracking-widest text-[#498E49]" dir="ltr">7025720975</span>
+                </div>
             </div>
 
             {{-- Image Content --}}

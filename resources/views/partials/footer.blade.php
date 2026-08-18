@@ -131,16 +131,32 @@
         </div>
 
         {{-- Bottom Bar --}}
-        <div
-            class="mt-12 pt-8 border-t border-zinc-200 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-right">
-            <div class="flex gap-6 text-sm text-zinc-500">
-                <a href="{{ route('privacy-policy') }}" class="hover:text-[#498E49] transition-colors">سياسة
-                    الخصوصية</a>
-                <a href="{{ route('terms-of-use') }}" class="hover:text-[#498E49] transition-colors">شروط الاستخدام</a>
+        <div class="mt-12 pt-8 border-t border-zinc-200 space-y-8">
+
+            {{-- Ministry of Commerce credential. The logo artwork is white, so it
+                 needs a dark plate to stay legible on this light footer. --}}
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+                <div class="rounded-xl bg-zinc-800 px-5 py-3">
+                    <img src="{{ asset('img/ministry-of-commerce.svg') }}" alt="شعار وزارة التجارة"
+                        class="h-9 w-auto" width="188" height="65" loading="lazy">
+                </div>
+                <div class="text-center sm:text-right">
+                    <p class="text-xs text-zinc-500">الرقم الموحد للشركة</p>
+                    <p class="text-lg font-bold tracking-widest text-zinc-900" dir="ltr">7025720975</p>
+                </div>
             </div>
-            <p class="text-zinc-500 text-sm">
-                جميع الحقوق محفوظة للنهضة العقارية © {{ date('Y') }}
-            </p>
+
+            <div
+                class="flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-right">
+                <div class="flex gap-6 text-sm text-zinc-500">
+                    <a href="{{ route('privacy-policy') }}" class="hover:text-[#498E49] transition-colors">سياسة
+                        الخصوصية</a>
+                    <a href="{{ route('terms-of-use') }}" class="hover:text-[#498E49] transition-colors">شروط الاستخدام</a>
+                </div>
+                <p class="text-zinc-500 text-sm">
+                    جميع الحقوق محفوظة للنهضة العقارية © {{ date('Y') }}
+                </p>
+            </div>
         </div>
     </div>
 </footer>
