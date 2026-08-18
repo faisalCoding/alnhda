@@ -6,7 +6,7 @@ use App\Models\Project;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
-Route::domain(env('APP_URL'))->group(function () {
+Route::domain(config('app.domain'))->group(function () {
 
     Route::get('/', function () {
         return view('welcome');
@@ -77,6 +77,6 @@ Route::domain(env('APP_URL'))->group(function () {
     require __DIR__.'/auth.php';
 });
 
-Route::domain('panel.'.env('APP_URL'))->group(function () {
+Route::domain('panel.'.config('app.domain'))->group(function () {
     require __DIR__.'/admin-auth.php';
 });

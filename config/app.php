@@ -56,6 +56,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Domain
+    |--------------------------------------------------------------------------
+    |
+    | The bare host that routes are bound to, derived from APP_URL with any
+    | scheme stripped. Route files must read this instead of calling env()
+    | directly: once the config is cached Laravel stops loading .env, so an
+    | env() call there resolves to null and every route silently loses its
+    | domain constraint.
+    |
+    */
+
+    'domain' => rtrim(str_replace(['https://', 'http://'], '', (string) env('APP_URL', 'localhost')), '/'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Admin Registration
     |--------------------------------------------------------------------------
     |
