@@ -136,22 +136,28 @@
             {{-- Ministry of Commerce credential. The logo artwork is white, so the
                  whole badge sits on a dark plate to stay legible on this light footer. --}}
             <div class="flex flex-wrap items-stretch justify-center gap-4">
-                <div class="inline-flex items-center gap-3 rounded-xl bg-zinc-800 px-4 py-3 sm:gap-5 sm:px-5">
+                <div
+                    class="inline-flex flex-col items-center gap-2 rounded-xl bg-zinc-800 px-4 py-3 sm:flex-row sm:gap-5 sm:px-5">
                     <img src="{{ asset('img/ministry-of-commerce.svg') }}" alt="شعار وزارة التجارة"
                         class="h-8 w-auto sm:h-9" width="188" height="65" loading="lazy">
-                    <span class="w-px self-stretch bg-white/15"></span>
-                    <div class="text-right">
+                    <span class="hidden w-px self-stretch bg-white/15 sm:block"></span>
+                    <div class="text-center sm:text-right">
                         <p class="text-xs text-zinc-400">الرقم الموحد للشركة</p>
                         <p class="text-base font-bold tracking-widest text-white sm:text-lg" dir="ltr">7025720975</p>
                     </div>
                 </div>
 
-                {{-- The FAL licence is issued by REGA, not the Ministry of Commerce,
-                     so it carries its own plate rather than sharing the one above. --}}
-                <div class="inline-flex items-center gap-3 rounded-xl bg-zinc-800 px-4 py-3 sm:gap-5 sm:px-5">
-                    <div class="text-right">
-                        <p class="text-xs text-zinc-400">رخصة فال — الهيئة العامة للعقار</p>
-                        <p class="text-base font-bold tracking-widest text-white sm:text-lg" dir="ltr">1200019224</p>
+                {{-- The FAL licence is issued by REGA, not the Ministry of Commerce, so it
+                     carries its own plate. That plate is white because this artwork is
+                     coloured on a solid white ground, the inverse of the ministry's. --}}
+                <div
+                    class="inline-flex flex-col items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 sm:flex-row sm:gap-5 sm:px-5">
+                    <img src="{{ asset('img/fal.webp') }}" alt="شعار رخصة فال من الهيئة العامة للعقار"
+                        class="h-6 w-auto sm:h-7" width="714" height="136" loading="lazy">
+                    <span class="hidden w-px self-stretch bg-zinc-200 sm:block"></span>
+                    <div class="text-center sm:text-right">
+                        <p class="text-xs text-zinc-600">رقم رخصة فال</p>
+                        <p class="text-base font-bold tracking-widest text-zinc-900 sm:text-lg" dir="ltr">1200019224</p>
                     </div>
                 </div>
             </div>

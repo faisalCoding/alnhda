@@ -29,6 +29,7 @@ it('shows the fal licence with its issuing authority in the footer', function (s
 
     expect($html)
         ->toContain('1200019224')
+        ->toContain('img/fal.webp')
         ->toContain('الهيئة العامة للعقار');
 })->with(['welcome', 'about-us', 'projects', 'contact-us']);
 
