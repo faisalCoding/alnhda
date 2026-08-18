@@ -222,6 +222,19 @@ it('renders article json-ld with publish dates', function () {
  *
  * @return array<int, array<string, mixed>>
  */
+it('publishes the company unified number in the organization json-ld', function () {
+    $html = $this->get(route('welcome'))->assertOk()->getContent();
+
+    $schema = collect(extractJsonLd($html))->firstWhere('@type', 'RealEstateAgent');
+
+    expect($schema)->not->toBeNull()
+        ->and($schema['identifier'])->toMatchArray([
+            '@type' => 'PropertyValue',
+            'name' => 'الرقم الموحد للمنشأة',
+            'value' => '7025720975',
+        ]);
+});
+
 function extractJsonLd(string $html): array
 {
     preg_match_all('/<script type="application\/ld\+json">(.*?)<\/script>/s', $html, $matches);

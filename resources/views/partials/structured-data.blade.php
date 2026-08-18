@@ -8,6 +8,11 @@
         'image' => asset('img/KNicon.png'),
         'telephone' => '+966564364261',
         'email' => 'info@kayanalnhda.com',
+        'identifier' => [
+            '@type' => 'PropertyValue',
+            'name' => 'الرقم الموحد للمنشأة',
+            'value' => '7025720975',
+        ],
         'address' => [
             '@type' => 'PostalAddress',
             'addressLocality' => 'جدة',
