@@ -24,6 +24,14 @@ it('shows the ministry logo and the unified number in the footer of every public
         ->toContain('7025720975');
 })->with(['welcome', 'about-us', 'projects', 'contact-us']);
 
+it('shows the fal licence with its issuing authority in the footer', function (string $routeName) {
+    $html = $this->get(route($routeName))->assertOk()->getContent();
+
+    expect($html)
+        ->toContain('1200019224')
+        ->toContain('الهيئة العامة للعقار');
+})->with(['welcome', 'about-us', 'projects', 'contact-us']);
+
 it('serves the ministry logo from a path that needs no url encoding', function () {
     $path = public_path('img/ministry-of-commerce.svg');
 

@@ -135,7 +135,7 @@
 
             {{-- Ministry of Commerce credential. The logo artwork is white, so the
                  whole badge sits on a dark plate to stay legible on this light footer. --}}
-            <div class="flex justify-center">
+            <div class="flex flex-wrap items-stretch justify-center gap-4">
                 <div class="inline-flex items-center gap-3 rounded-xl bg-zinc-800 px-4 py-3 sm:gap-5 sm:px-5">
                     <img src="{{ asset('img/ministry-of-commerce.svg') }}" alt="شعار وزارة التجارة"
                         class="h-8 w-auto sm:h-9" width="188" height="65" loading="lazy">
@@ -143,6 +143,15 @@
                     <div class="text-right">
                         <p class="text-xs text-zinc-400">الرقم الموحد للشركة</p>
                         <p class="text-base font-bold tracking-widest text-white sm:text-lg" dir="ltr">7025720975</p>
+                    </div>
+                </div>
+
+                {{-- The FAL licence is issued by REGA, not the Ministry of Commerce,
+                     so it carries its own plate rather than sharing the one above. --}}
+                <div class="inline-flex items-center gap-3 rounded-xl bg-zinc-800 px-4 py-3 sm:gap-5 sm:px-5">
+                    <div class="text-right">
+                        <p class="text-xs text-zinc-400">رخصة فال — الهيئة العامة للعقار</p>
+                        <p class="text-base font-bold tracking-widest text-white sm:text-lg" dir="ltr">1200019224</p>
                     </div>
                 </div>
             </div>

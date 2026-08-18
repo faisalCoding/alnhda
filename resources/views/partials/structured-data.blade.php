@@ -9,9 +9,16 @@
         'telephone' => '+966564364261',
         'email' => 'info@kayanalnhda.com',
         'identifier' => [
-            '@type' => 'PropertyValue',
-            'name' => 'الرقم الموحد للمنشأة',
-            'value' => '7025720975',
+            [
+                '@type' => 'PropertyValue',
+                'name' => 'الرقم الموحد للمنشأة',
+                'value' => '7025720975',
+            ],
+            [
+                '@type' => 'PropertyValue',
+                'name' => 'رخصة فال من الهيئة العامة للعقار',
+                'value' => '1200019224',
+            ],
         ],
         'address' => [
             '@type' => 'PostalAddress',

@@ -26,6 +26,8 @@ it('states the company credentials', function () {
     expect($content)
         ->toContain('7025720975')
         ->toContain('وزارة التجارة')
+        ->toContain('1200019224')
+        ->toContain('الهيئة العامة للعقار')
         ->toContain('+966564364261')
         ->toContain('جدة');
 });

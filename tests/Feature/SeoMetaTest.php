@@ -238,17 +238,16 @@ it('gives every static page a meta description of its own', function () {
         ->and($descriptions->filter(fn (?string $description): bool => $description === $layoutFallback))->toBeEmpty();
 });
 
-it('publishes the company unified number in the organization json-ld', function () {
+it('publishes both company registration numbers in the organization json-ld', function () {
     $html = $this->get(route('welcome'))->assertOk()->getContent();
 
     $schema = collect(extractJsonLd($html))->firstWhere('@type', 'RealEstateAgent');
+    $identifiers = collect($schema['identifier'] ?? []);
 
     expect($schema)->not->toBeNull()
-        ->and($schema['identifier'])->toMatchArray([
-            '@type' => 'PropertyValue',
-            'name' => 'الرقم الموحد للمنشأة',
-            'value' => '7025720975',
-        ]);
+        ->and($identifiers->pluck('value')->all())->toBe(['7025720975', '1200019224'])
+        ->and($identifiers->pluck('@type')->unique()->all())->toBe(['PropertyValue'])
+        ->and($identifiers->pluck('name')->filter()->all())->toHaveCount(2);
 });
 
 function extractJsonLd(string $html): array
