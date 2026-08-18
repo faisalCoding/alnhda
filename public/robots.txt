@@ -8,4 +8,4 @@ Disallow: /confirm-password
 Disallow: /settings
 Disallow: /control-board
 
-Sitemap: https://kayanalnhda.com/sitemap.xml
+Sitemap: https://kayanalnhda.sa/sitemap.xml
