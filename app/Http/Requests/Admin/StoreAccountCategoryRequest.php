@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\AccountCategory;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class StoreSocialPlatformRequest extends FormRequest
+class StoreAccountCategoryRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -18,9 +20,8 @@ class StoreSocialPlatformRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'identifier' => 'required|string|max:255',
-            'password' => 'nullable|string|max:500',
-            'apply_templates' => 'sometimes|boolean',
+            'color' => ['required', Rule::in(AccountCategory::COLORS)],
+            'sort_order' => 'sometimes|integer|min:0',
         ];
     }
 
@@ -30,8 +31,8 @@ class StoreSocialPlatformRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'اسم المنصة مطلوب.',
-            'identifier.required' => 'اسم المستخدم أو البريد أو رقم الهاتف مطلوب.',
+            'name.required' => 'اسم التصنيف مطلوب.',
+            'color.in' => 'اللون المختار غير متاح.',
         ];
     }
 }

@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RevealPasswordRequest;
 use App\Http\Requests\Admin\SetRevealPinRequest;
+use App\Models\Account;
 use App\Models\Admin;
-use App\Models\SocialPlatform;
 use App\Models\Subscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -42,9 +42,9 @@ class RevealPinController extends Controller
         return response()->json(['data' => ['is_set' => true]]);
     }
 
-    public function reveal(RevealPasswordRequest $request, SocialPlatform $socialPlatform): JsonResponse
+    public function reveal(RevealPasswordRequest $request, Account $account): JsonResponse
     {
-        return $this->guarded($request, 'social_platform', $socialPlatform->id, fn (): ?string => $socialPlatform->password);
+        return $this->guarded($request, 'social_platform', $account->id, fn (): ?string => $account->password);
     }
 
     public function revealPaymentAccount(RevealPasswordRequest $request, Subscription $subscription): JsonResponse

@@ -6,13 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SocialPlatformTask extends Model
+class AccountTask extends Model
 {
-    /** @use HasFactory<\Database\Factories\SocialPlatformTaskFactory> */
+    /** @use HasFactory<\Database\Factories\AccountTaskFactory> */
     use HasFactory;
 
     protected $fillable = [
-        'social_platform_id',
+        'account_id',
         'title',
         'is_done',
         'completed_at',
@@ -32,10 +32,10 @@ class SocialPlatformTask extends Model
     }
 
     /**
-     * @return BelongsTo<SocialPlatform, $this>
+     * @return BelongsTo<Account, $this>
      */
     public function platform(): BelongsTo
     {
-        return $this->belongsTo(SocialPlatform::class, 'social_platform_id');
+        return $this->belongsTo(Account::class, 'account_id');
     }
 }

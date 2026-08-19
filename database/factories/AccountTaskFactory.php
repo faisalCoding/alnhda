@@ -2,13 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\SocialPlatform;
+use App\Models\Account;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\SocialPlatformTask>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\AccountTask>
  */
-class SocialPlatformTaskFactory extends Factory
+class AccountTaskFactory extends Factory
 {
     /**
      * @return array<string, mixed>
@@ -16,7 +16,7 @@ class SocialPlatformTaskFactory extends Factory
     public function definition(): array
     {
         return [
-            'social_platform_id' => SocialPlatform::factory(),
+            'account_id' => Account::factory(),
             'title' => fake()->sentence(4),
             'is_done' => false,
             'sort_order' => 0,

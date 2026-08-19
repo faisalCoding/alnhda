@@ -4,7 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreSocialPlatformTaskRequest extends FormRequest
+class UpdateAccountRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -17,7 +17,10 @@ class StoreSocialPlatformTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'required|string|max:255',
+            'account_category_id' => 'sometimes|nullable|integer|exists:account_categories,id',
+            'name' => 'sometimes|required|string|max:255',
+            'identifier' => 'sometimes|required|string|max:255',
+            'password' => 'sometimes|nullable|string|max:500',
             'sort_order' => 'sometimes|integer|min:0',
         ];
     }
@@ -28,7 +31,8 @@ class StoreSocialPlatformTaskRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'title.required' => 'نص المهمة مطلوب.',
+            'name.required' => 'اسم المنصة مطلوب.',
+            'identifier.required' => 'اسم المستخدم أو البريد أو رقم الهاتف مطلوب.',
         ];
     }
 }

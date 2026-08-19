@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\AccountCategory;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class UpdateSocialPlatformRequest extends FormRequest
+class UpdateAccountCategoryRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -18,8 +20,7 @@ class UpdateSocialPlatformRequest extends FormRequest
     {
         return [
             'name' => 'sometimes|required|string|max:255',
-            'identifier' => 'sometimes|required|string|max:255',
-            'password' => 'sometimes|nullable|string|max:500',
+            'color' => ['sometimes|required', Rule::in(AccountCategory::COLORS)],
             'sort_order' => 'sometimes|integer|min:0',
         ];
     }
@@ -30,8 +31,8 @@ class UpdateSocialPlatformRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'اسم المنصة مطلوب.',
-            'identifier.required' => 'اسم المستخدم أو البريد أو رقم الهاتف مطلوب.',
+            'name.required' => 'اسم التصنيف مطلوب.',
+            'color.in' => 'اللون المختار غير متاح.',
         ];
     }
 }

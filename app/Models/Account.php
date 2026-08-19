@@ -4,14 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class SocialPlatform extends Model
+class Account extends Model
 {
-    /** @use HasFactory<\Database\Factories\SocialPlatformFactory> */
+    /** @use HasFactory<\Database\Factories\AccountFactory> */
     use HasFactory;
 
     protected $fillable = [
+        'account_category_id',
         'name',
         'identifier',
         'password',
@@ -41,11 +43,19 @@ class SocialPlatform extends Model
     }
 
     /**
-     * @return HasMany<SocialPlatformTask, $this>
+     * @return BelongsTo<AccountCategory, $this>
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(AccountCategory::class, 'account_category_id');
+    }
+
+    /**
+     * @return HasMany<AccountTask, $this>
      */
     public function tasks(): HasMany
     {
-        return $this->hasMany(SocialPlatformTask::class)->orderBy('sort_order')->orderBy('id');
+        return $this->hasMany(AccountTask::class)->orderBy('sort_order')->orderBy('id');
     }
 
     /**

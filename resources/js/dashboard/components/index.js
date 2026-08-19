@@ -1,10 +1,10 @@
+import accountsPage from './accounts';
 import articlesPage from './articles';
 import backlinksPage from './backlinks';
 import leadsPage from './leads';
 import marketingToolsPage from './marketingTools';
 import overviewPage from './overview';
 import projectsPage from './projects';
-import socialAccountsPage from './socialAccounts';
 import subscriptionsPage from './subscriptions';
 import usefulLinksPage from './usefulLinks';
 import visitorsPage from './visitors';
@@ -17,7 +17,7 @@ export default function registerComponents(Alpine) {
     Alpine.data('articlesPage', articlesPage);
     Alpine.data('visitorsPage', visitorsPage);
     Alpine.data('leadsPage', leadsPage);
-    Alpine.data('socialAccountsPage', socialAccountsPage);
+    Alpine.data('accountsPage', accountsPage);
     Alpine.data('subscriptionsPage', subscriptionsPage);
     Alpine.data('usefulLinksPage', usefulLinksPage);
     Alpine.data('backlinksPage', backlinksPage);

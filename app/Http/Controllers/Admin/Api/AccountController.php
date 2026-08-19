@@ -3,37 +3,37 @@
 namespace App\Http\Controllers\Admin\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StoreSocialPlatformRequest;
-use App\Http\Requests\Admin\UpdateSocialPlatformRequest;
-use App\Http\Resources\Admin\SocialPlatformResource;
-use App\Models\SocialPlatform;
+use App\Http\Requests\Admin\StoreAccountRequest;
+use App\Http\Requests\Admin\UpdateAccountRequest;
+use App\Http\Resources\Admin\AccountResource;
+use App\Models\Account;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 
-class SocialPlatformController extends Controller
+class AccountController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
-        return SocialPlatformResource::collection(
-            SocialPlatform::query()
-                ->with('tasks')
+        return AccountResource::collection(
+            Account::query()
+                ->with(['tasks', 'category'])
                 ->orderBy('sort_order')
                 ->orderBy('id')
                 ->get()
         );
     }
 
-    public function store(StoreSocialPlatformRequest $request): JsonResponse
+    public function store(StoreAccountRequest $request): JsonResponse
     {
         $attributes = $request->validated();
         $applyTemplates = (bool) ($attributes['apply_templates'] ?? true);
         unset($attributes['apply_templates']);
 
-        $platform = DB::transaction(function () use ($attributes, $applyTemplates): SocialPlatform {
-            $platform = SocialPlatform::query()->create([
+        $platform = DB::transaction(function () use ($attributes, $applyTemplates): Account {
+            $platform = Account::query()->create([
                 ...$attributes,
-                'sort_order' => (int) SocialPlatform::query()->max('sort_order') + 1,
+                'sort_order' => (int) Account::query()->max('sort_order') + 1,
             ]);
 
             if ($applyTemplates) {
@@ -43,12 +43,12 @@ class SocialPlatformController extends Controller
             return $platform;
         });
 
-        return (new SocialPlatformResource($platform->load('tasks')))
+        return (new AccountResource($platform->load('tasks')))
             ->response()
             ->setStatusCode(201);
     }
 
-    public function update(UpdateSocialPlatformRequest $request, SocialPlatform $socialPlatform): SocialPlatformResource
+    public function update(UpdateAccountRequest $request, Account $account): AccountResource
     {
         $attributes = $request->validated();
 
@@ -57,15 +57,15 @@ class SocialPlatformController extends Controller
             $attributes['password'] = null;
         }
 
-        $socialPlatform->update($attributes);
+        $account->update($attributes);
 
-        return new SocialPlatformResource($socialPlatform->load('tasks'));
+        return new AccountResource($account->load(['tasks', 'category']));
     }
 
-    public function destroy(SocialPlatform $socialPlatform): JsonResponse
+    public function destroy(Account $account): JsonResponse
     {
-        $id = $socialPlatform->id;
-        $socialPlatform->delete();
+        $id = $account->id;
+        $account->delete();
 
         return response()->json(['data' => ['id' => $id, 'deleted' => true]]);
     }

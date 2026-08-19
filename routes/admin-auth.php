@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\Api\AccountCategoryController;
+use App\Http\Controllers\Admin\Api\AccountController;
+use App\Http\Controllers\Admin\Api\AccountTaskController;
 use App\Http\Controllers\Admin\Api\ArticleController;
 use App\Http\Controllers\Admin\Api\ArticleFileController;
 use App\Http\Controllers\Admin\Api\BacklinkController;
@@ -14,8 +17,6 @@ use App\Http\Controllers\Admin\Api\PropertyFileController;
 use App\Http\Controllers\Admin\Api\PropertyImageController;
 use App\Http\Controllers\Admin\Api\RevealPinController;
 use App\Http\Controllers\Admin\Api\SessionController;
-use App\Http\Controllers\Admin\Api\SocialPlatformController;
-use App\Http\Controllers\Admin\Api\SocialPlatformTaskController;
 use App\Http\Controllers\Admin\Api\SubscriptionController;
 use App\Http\Controllers\Admin\Api\TaskTemplateController;
 use App\Http\Controllers\Admin\Api\UsefulLinkController;
@@ -43,7 +44,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::view('leads-dashboard', 'admin.leads')->name('leads-dashboard');
     Route::view('whatsapp-dashboard', 'admin.whatsapp')->name('whatsapp-dashboard');
     Route::view('whatsapp-messages', 'admin.whatsapp-messages')->name('whatsapp-messages');
-    Route::view('social-accounts', 'admin.social-accounts')->name('social-accounts');
+    Route::view('accounts', 'admin.accounts')->name('accounts');
     Route::view('subscriptions', 'admin.subscriptions')->name('subscriptions');
     Route::view('useful-links', 'admin.useful-links')->name('useful-links');
     Route::view('backlinks', 'admin.backlinks')->name('backlinks');
@@ -99,10 +100,11 @@ Route::prefix('api')->name('panel.api.')->group(function () {
             Route::delete('property-images/{image}', [PropertyImageController::class, 'destroy'])->name('property-images.destroy');
         });
 
-        Route::get('social-platforms', [SocialPlatformController::class, 'index'])->name('social-platforms.index');
+        Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
+        Route::get('account-categories', [AccountCategoryController::class, 'index'])->name('account-categories.index');
         Route::get('reveal-pin', [RevealPinController::class, 'show'])->name('reveal-pin.show');
         Route::put('reveal-pin', [RevealPinController::class, 'store'])->name('reveal-pin.store');
-        Route::post('social-platforms/{socialPlatform}/reveal', [RevealPinController::class, 'reveal'])->name('social-platforms.reveal');
+        Route::post('accounts/{account}/reveal', [RevealPinController::class, 'reveal'])->name('accounts.reveal');
 
         Route::get('task-templates', [TaskTemplateController::class, 'index'])->name('task-templates.index');
 
@@ -114,18 +116,22 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('marketing-checklists', [MarketingChecklistController::class, 'index'])->name('marketing-checklists.index');
 
         Route::middleware('idempotency')->group(function () {
-            Route::post('social-platforms', [SocialPlatformController::class, 'store'])->name('social-platforms.store');
-            Route::put('social-platforms/{socialPlatform}', [SocialPlatformController::class, 'update'])->name('social-platforms.update');
-            Route::delete('social-platforms/{socialPlatform}', [SocialPlatformController::class, 'destroy'])->name('social-platforms.destroy');
+            Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
+            Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
+            Route::delete('accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
 
             Route::post('task-templates', [TaskTemplateController::class, 'store'])->name('task-templates.store');
             Route::put('task-templates/{taskTemplate}', [TaskTemplateController::class, 'update'])->name('task-templates.update');
             Route::delete('task-templates/{taskTemplate}', [TaskTemplateController::class, 'destroy'])->name('task-templates.destroy');
 
-            Route::post('social-platforms/{socialPlatform}/tasks', [SocialPlatformTaskController::class, 'store'])->name('social-platforms.tasks.store');
-            Route::post('social-platforms/{socialPlatform}/apply-templates', [SocialPlatformTaskController::class, 'applyTemplates'])->name('social-platforms.apply-templates');
-            Route::put('social-platform-tasks/{task}', [SocialPlatformTaskController::class, 'update'])->name('social-platform-tasks.update');
-            Route::delete('social-platform-tasks/{task}', [SocialPlatformTaskController::class, 'destroy'])->name('social-platform-tasks.destroy');
+            Route::post('accounts/{account}/tasks', [AccountTaskController::class, 'store'])->name('accounts.tasks.store');
+            Route::post('accounts/{account}/apply-templates', [AccountTaskController::class, 'applyTemplates'])->name('accounts.apply-templates');
+            Route::put('account-tasks/{task}', [AccountTaskController::class, 'update'])->name('account-tasks.update');
+            Route::delete('account-tasks/{task}', [AccountTaskController::class, 'destroy'])->name('account-tasks.destroy');
+
+            Route::post('account-categories', [AccountCategoryController::class, 'store'])->name('account-categories.store');
+            Route::put('account-categories/{accountCategory}', [AccountCategoryController::class, 'update'])->name('account-categories.update');
+            Route::delete('account-categories/{accountCategory}', [AccountCategoryController::class, 'destroy'])->name('account-categories.destroy');
 
             Route::post('subscriptions', [SubscriptionController::class, 'store'])->name('subscriptions.store');
             Route::put('subscriptions/{subscription}', [SubscriptionController::class, 'update'])->name('subscriptions.update');

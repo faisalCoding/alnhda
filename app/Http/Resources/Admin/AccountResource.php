@@ -6,9 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\SocialPlatform
+ * @mixin \App\Models\Account
  */
-class SocialPlatformResource extends JsonResource
+class AccountResource extends JsonResource
 {
     /**
      * Note the absence of the password: it never travels with a platform, only
@@ -22,11 +22,13 @@ class SocialPlatformResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'account_category_id' => $this->account_category_id,
+            'category' => new AccountCategoryResource($this->whenLoaded('category')),
             'name' => $this->name,
             'identifier' => $this->identifier,
             'has_password' => filled($this->getRawOriginal('password')),
             'sort_order' => $this->sort_order,
-            'tasks' => SocialPlatformTaskResource::collection($tasks),
+            'tasks' => AccountTaskResource::collection($tasks),
             'tasks_total' => $this->whenCounted('tasks'),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

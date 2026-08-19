@@ -6,9 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\SocialPlatformTask
+ * @mixin \App\Models\AccountTask
  */
-class SocialPlatformTaskResource extends JsonResource
+class AccountTaskResource extends JsonResource
 {
     /**
      * @return array<string, mixed>
@@ -17,7 +17,7 @@ class SocialPlatformTaskResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'social_platform_id' => $this->social_platform_id,
+            'account_id' => $this->account_id,
             'title' => $this->title,
             'is_done' => $this->is_done,
             'completed_at' => $this->completed_at?->toISOString(),
