@@ -73,8 +73,10 @@ export default function weeklyTasksPage() {
 
             try {
                 const payload = await request('POST', '/api/weekly-tasks/generate', {}, { idempotencyKey: uuid() });
-                const { created, skipped } = payload.data;
-                this.notice = `أُنشئت ${created} قائمة، وتُركت ${skipped} قائمة موجودة.`;
+                const { created, topped_up: toppedUp, added } = payload.data;
+                this.notice = added === 0 && created === 0
+                    ? 'كل القوائم محدّثة بالفعل، لا جديد يُضاف.'
+                    : `أُنشئت ${created} قائمة، وأُكملت ${toppedUp} قائمة بـ ${added} مهمة.`;
                 await this.loadWeek();
             } catch (error) {
                 this.error = error.message;

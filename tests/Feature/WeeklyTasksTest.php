@@ -90,8 +90,74 @@ it('does not rebuild a list that already exists', function () {
     $second = $planner->generateFor(now());
 
     expect($second['created'])->toBe(0)
-        ->and($second['skipped'])->toBe(1)
+        ->and($second['added'])->toBe(0)
         ->and(WeeklyTaskItem::query()->where('is_done', true)->count())->toBe(1);
+});
+
+// A template added after the week opened used to never reach it: generation
+// either built a list or skipped it whole.
+it('carries a template added mid week into the lists already open', function () {
+    $ahmed = Employee::factory()->create(['name' => 'أحمد', 'enrolled_on' => '2026-01-01']);
+    $sara = Employee::factory()->create(['name' => 'سارة', 'enrolled_on' => '2026-01-01']);
+    WeeklyTaskTemplate::factory()->create(['title' => 'مهمة عامة', 'sort_order' => 1]);
+
+    $planner = app(WeeklyTaskPlanner::class);
+    $planner->generateFor(now());
+
+    WeeklyTaskTemplate::factory()->create(['employee_id' => $sara->id, 'title' => 'مهمة سارة', 'sort_order' => 2]);
+    $result = $planner->generateFor(now());
+
+    expect($result['added'])->toBe(1)
+        ->and($result['topped_up'])->toBe(1)
+        ->and($sara->fresh()->weeklyTaskLists->first()->items->pluck('title')->all())
+        ->toBe(['مهمة عامة', 'مهمة سارة'])
+        ->and($ahmed->fresh()->weeklyTaskLists->first()->items->pluck('title')->all())
+        ->toBe(['مهمة عامة']);
+});
+
+it('keeps a ticked task ticked while topping the list up', function () {
+    $employee = Employee::factory()->create(['enrolled_on' => '2026-01-01']);
+    WeeklyTaskTemplate::factory()->create(['title' => 'مهمة أولى', 'sort_order' => 1]);
+
+    $planner = app(WeeklyTaskPlanner::class);
+    $planner->generateFor(now());
+    $employee->weeklyTaskLists->first()->items->first()->update(['is_done' => true, 'completed_at' => now()]);
+
+    WeeklyTaskTemplate::factory()->create(['title' => 'مهمة ثانية', 'sort_order' => 2]);
+    $planner->generateFor(now());
+
+    $items = $employee->fresh()->weeklyTaskLists->first()->items;
+
+    expect($items)->toHaveCount(2)
+        ->and($items->firstWhere('title', 'مهمة أولى')->is_done)->toBeTrue()
+        ->and($items->firstWhere('title', 'مهمة ثانية')->is_done)->toBeFalse();
+});
+
+it('does not count an untouched list as topped up', function () {
+    Employee::factory()->create(['name' => 'أحمد', 'enrolled_on' => '2026-01-01']);
+    $sara = Employee::factory()->create(['name' => 'سارة', 'enrolled_on' => '2026-01-01']);
+    WeeklyTaskTemplate::factory()->create(['title' => 'مهمة عامة']);
+
+    $planner = app(WeeklyTaskPlanner::class);
+    $planner->generateFor(now());
+
+    WeeklyTaskTemplate::factory()->create(['employee_id' => $sara->id, 'title' => 'خاصة بسارة']);
+    $result = $planner->generateFor(now());
+
+    // Only سارة gained anything, so أحمد must not be counted alongside her.
+    expect($result['topped_up'])->toBe(1);
+});
+
+it('adds nothing extra when a one off task shares a template title', function () {
+    $employee = Employee::factory()->create(['enrolled_on' => '2026-01-01']);
+    $planner = app(WeeklyTaskPlanner::class);
+    $planner->generateFor(now());
+
+    $employee->weeklyTaskLists->first()->items()->create(['title' => 'مهمة يدوية', 'sort_order' => 9]);
+    WeeklyTaskTemplate::factory()->create(['title' => 'مهمة يدوية']);
+
+    expect($planner->generateFor(now())['added'])->toBe(0)
+        ->and($employee->fresh()->weeklyTaskLists->first()->items)->toHaveCount(1);
 });
 
 it('gives an employee the shared tasks plus their own', function () {

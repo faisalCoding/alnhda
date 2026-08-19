@@ -11,18 +11,20 @@ use Illuminate\Support\Facades\DB;
 class WeeklyTaskPlanner
 {
     /**
-     * Open this week's list for every active employee enrolled by then.
+     * Open this week's list for every active employee enrolled by then, and
+     * top up lists already open with any template task they are missing.
      *
-     * Re-running is safe: a list already opened is left as it is rather than
-     * refilled, so ticked tasks are never wiped by a second run.
+     * Re-running never removes or unticks anything: a template added after the
+     * week began still reaches it, while work already done stays as it is.
      *
-     * @return array{created: int, skipped: int, week_start: string}
+     * @return array{created: int, topped_up: int, added: int, week_start: string}
      */
     public function generateFor(CarbonInterface $date): array
     {
         $weekStart = WeeklyTaskList::weekStartFor($date);
         $created = 0;
-        $skipped = 0;
+        $toppedUp = 0;
+        $added = 0;
 
         // Anyone enrolled by the end of this week takes part in it. Keying off
         // the week's start instead would leave someone added on a Wednesday
@@ -37,36 +39,54 @@ class WeeklyTaskPlanner
             ->get();
 
         foreach ($employees as $employee) {
-            $exists = WeeklyTaskList::query()
+            $list = WeeklyTaskList::query()
                 ->where('employee_id', $employee->id)
                 ->whereDate('week_start', $weekStart->toDateString())
-                ->exists();
+                ->first();
 
-            if ($exists) {
-                $skipped++;
+            $isNew = $list === null;
 
-                continue;
-            }
+            $addedHere = 0;
 
-            DB::transaction(function () use ($employee, $weekStart): void {
-                $list = WeeklyTaskList::query()->create([
+            DB::transaction(function () use ($employee, $weekStart, &$list, &$addedHere): void {
+                $list ??= WeeklyTaskList::query()->create([
                     'employee_id' => $employee->id,
                     'week_start' => $weekStart->toDateString(),
                 ]);
 
-                $list->items()->createMany(
-                    $employee->applicableTemplates()
-                        ->map(fn ($template): array => [
-                            'title' => $template->title,
-                            'sort_order' => $template->sort_order,
-                        ])->all()
-                );
+                // Matching on the title is what lets a task keep its tick: the
+                // row is left alone rather than replaced by a fresh copy.
+                $present = $list->items()->pluck('title');
+
+                $missing = $employee->applicableTemplates()
+                    ->reject(fn ($template): bool => $present->contains($template->title))
+                    ->map(fn ($template): array => [
+                        'title' => $template->title,
+                        'sort_order' => $template->sort_order,
+                    ])
+                    ->all();
+
+                if ($missing !== []) {
+                    $list->items()->createMany($missing);
+                    $addedHere = count($missing);
+                }
             });
 
-            $created++;
+            $added += $addedHere;
+
+            if ($isNew) {
+                $created++;
+            } elseif ($addedHere > 0) {
+                $toppedUp++;
+            }
         }
 
-        return ['created' => $created, 'skipped' => $skipped, 'week_start' => $weekStart->toDateString()];
+        return [
+            'created' => $created,
+            'topped_up' => $toppedUp,
+            'added' => $added,
+            'week_start' => $weekStart->toDateString(),
+        ];
     }
 
     /**

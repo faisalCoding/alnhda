@@ -22,7 +22,10 @@ class WeeklyTasksGenerate extends Command
 
         $result = $this->planner->generateFor($date);
 
-        $this->info("أسبوع {$result['week_start']}: أُنشئت {$result['created']} قائمة، وتُركت {$result['skipped']} قائمة موجودة.");
+        $this->info(
+            "أسبوع {$result['week_start']}: أُنشئت {$result['created']} قائمة، "
+            ."وأُكملت {$result['topped_up']} قائمة بـ {$result['added']} مهمة."
+        );
 
         return self::SUCCESS;
     }
