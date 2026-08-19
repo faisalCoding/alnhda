@@ -31,11 +31,11 @@ export default function accountsPage() {
 
         search: '',
         activeCategory: 'all',
-        collapsed: {},
+        expanded: {},
 
         colors: CATEGORY_COLORS,
 
-        form: { id: null, account_category_id: '', name: '', identifier: '', password: '' },
+        form: { id: null, account_category_id: '', name: '', identifier: '', url: '', password: '' },
         formErrors: {},
         showForm: false,
 
@@ -160,8 +160,9 @@ export default function accountsPage() {
             return { done, total, percent: Math.round((done / total) * 100) };
         },
 
-        toggleCollapse(accountId) {
-            this.collapsed[accountId] = !this.collapsed[accountId];
+        /** Task lists start shut, so this tracks the ones opened rather than closed. */
+        toggleTasks(accountId) {
+            this.expanded[accountId] = !this.expanded[accountId];
         },
 
         // ---- accounts -------------------------------------------------------
@@ -172,6 +173,7 @@ export default function accountsPage() {
                 account_category_id: this.activeCategory !== 'all' && this.activeCategory !== 'none' ? this.activeCategory : '',
                 name: '',
                 identifier: '',
+                url: '',
                 password: '',
             };
             this.formErrors = {};
@@ -184,6 +186,7 @@ export default function accountsPage() {
                 account_category_id: account.account_category_id ?? '',
                 name: account.name,
                 identifier: account.identifier,
+                url: account.url ?? '',
                 password: '',
             };
             this.formErrors = {};
@@ -198,6 +201,7 @@ export default function accountsPage() {
             const body = {
                 name: this.form.name,
                 identifier: this.form.identifier,
+                url: this.form.url === '' ? null : this.form.url,
                 account_category_id: this.form.account_category_id === '' ? null : this.form.account_category_id,
             };
 
@@ -359,25 +363,34 @@ export default function accountsPage() {
             delete this.revealed[accountId];
         },
 
-        async copy(accountId) {
-            const value = this.revealed[accountId];
+        copied: null,
 
+        /** Copy any value and flag which one, so the button can confirm itself. */
+        async copyValue(key, value) {
             if (!value) {
                 return;
             }
 
             try {
                 await navigator.clipboard.writeText(value);
-                this.copied = accountId;
+                this.copied = key;
                 setTimeout(() => {
-                    this.copied = null;
+                    if (this.copied === key) {
+                        this.copied = null;
+                    }
                 }, 1500);
             } catch {
                 this.error = 'تعذر النسخ إلى الحافظة';
             }
         },
 
-        copied: null,
+        copyPassword(accountId) {
+            return this.copyValue('pw-' + accountId, this.revealed[accountId]);
+        },
+
+        copyIdentifier(account) {
+            return this.copyValue('id-' + account.id, account.identifier);
+        },
 
         async saveRevealPin() {
             this.pinSetup.busy = true;

@@ -29,6 +29,12 @@
             </div>
 
             <div>
+                <label class="{{ $label }}">رابط المنصة</label>
+                <input type="url" x-model="form.url" class="{{ $input }}" dir="ltr" placeholder="https://">
+                <p class="{{ $error }}" x-show="formErrors.url" x-text="formErrors.url?.[0]"></p>
+            </div>
+
+            <div>
                 <label class="{{ $label }}">كلمة المرور</label>
                 <input type="password" x-model="form.password" class="{{ $input }}" dir="ltr" autocomplete="new-password">
                 <p class="mt-1 text-xs text-zinc-400" x-show="form.id">اتركها فارغة للإبقاء على كلمة المرور الحالية</p>

@@ -17,6 +17,7 @@ class AccountFactory extends Factory
         return [
             'name' => fake()->randomElement(['إنستغرام', 'تويتر', 'يوتيوب', 'سناب شات', 'تيك توك']),
             'identifier' => fake()->userName(),
+            'url' => fake()->url(),
             'password' => fake()->password(),
             'sort_order' => 0,
         ];

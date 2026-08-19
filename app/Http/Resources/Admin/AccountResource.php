@@ -26,6 +26,7 @@ class AccountResource extends JsonResource
             'category' => new AccountCategoryResource($this->whenLoaded('category')),
             'name' => $this->name,
             'identifier' => $this->identifier,
+            'url' => $this->url,
             'has_password' => filled($this->getRawOriginal('password')),
             'sort_order' => $this->sort_order,
             'tasks' => AccountTaskResource::collection($tasks),

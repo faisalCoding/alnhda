@@ -46,7 +46,25 @@
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <h2 class="truncate font-bold" x-text="record.name"></h2>
-                            <p class="truncate text-sm text-zinc-500 dark:text-zinc-400" dir="ltr" x-text="record.identifier"></p>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" @click="copyIdentifier(record)"
+                                    class="group/copy flex min-w-0 items-center gap-1.5 rounded-lg px-1.5 py-0.5 -mr-1.5 text-sm text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                                    :title="'نسخ ' + record.identifier">
+                                    <span class="truncate" dir="ltr" x-text="record.identifier"></span>
+                                    <span x-show="copied === 'id-' + record.id" x-cloak
+                                        class="shrink-0 text-xs font-bold text-emerald-600 dark:text-emerald-400">تم النسخ</span>
+                                </button>
+
+                                <template x-if="record.url">
+                                    <a :href="record.url" target="_blank" rel="noopener noreferrer"
+                                        class="shrink-0 rounded-lg p-1 text-zinc-400 transition hover:bg-zinc-100 hover:text-primary-600 dark:hover:bg-zinc-800 dark:hover:text-primary-300"
+                                        :title="'فتح ' + record.name">
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                        </svg>
+                                    </a>
+                                </template>
+                            </div>
                         </div>
                         <span class="shrink-0 text-xs" :class="expiryTone(record)" x-text="expiryLabel(record)"></span>
                     </div>
@@ -105,6 +123,12 @@
                         <input type="text" x-model="form.identifier" class="{{ $input }}" dir="ltr">
                         <p class="{{ $error }}" x-show="formErrors.identifier" x-text="formErrors.identifier?.[0]"></p>
                     </div>
+                    <div>
+                        <label class="{{ $label }}">رابط المنصة</label>
+                        <input type="url" x-model="form.url" class="{{ $input }}" dir="ltr" placeholder="https://">
+                        <p class="{{ $error }}" x-show="formErrors.url" x-text="formErrors.url?.[0]"></p>
+                    </div>
+
                     <div>
                         <label class="{{ $label }}">تاريخ انتهاء الاشتراك</label>
                         <input type="date" x-model="form.expires_on" class="{{ $input }}" dir="ltr">

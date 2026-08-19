@@ -452,3 +452,40 @@ it('closes the window when the pin is changed', function () {
 
     $this->postJson(apiUrl('accounts/'.$account->id.'/reveal'))->assertStatus(422);
 });
+
+// ---- platform link -------------------------------------------------------
+
+it('stores and returns the platform link', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(apiUrl('accounts'), [
+            'name' => 'إنستغرام',
+            'identifier' => 'nahda_realestate',
+            'url' => 'https://instagram.com/nahda_realestate',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.url', 'https://instagram.com/nahda_realestate');
+});
+
+it('accepts an account with no link at all', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(apiUrl('accounts'), ['name' => 'منصة', 'identifier' => 'x'])
+        ->assertCreated()
+        ->assertJsonPath('data.url', null);
+});
+
+it('refuses a link that is not a url', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(apiUrl('accounts'), ['name' => 'منصة', 'identifier' => 'x', 'url' => 'ليس رابطاً'])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('url');
+});
+
+it('lets the link be cleared on edit', function () {
+    $account = Account::factory()->create(['url' => 'https://example.com']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->putJson(apiUrl('accounts/'.$account->id), ['url' => null])
+        ->assertOk();
+
+    expect($account->fresh()->url)->toBeNull();
+});

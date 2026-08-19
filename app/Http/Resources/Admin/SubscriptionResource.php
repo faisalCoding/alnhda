@@ -19,6 +19,7 @@ class SubscriptionResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'identifier' => $this->identifier,
+            'url' => $this->url,
             'expires_on' => $this->expires_on?->toDateString(),
             'days_until_expiry' => $this->daysUntilExpiry(),
             // The billing detail itself only ever travels via the reveal endpoint.

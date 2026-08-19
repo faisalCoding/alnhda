@@ -13,6 +13,7 @@ class Subscription extends Model
     protected $fillable = [
         'name',
         'identifier',
+        'url',
         'expires_on',
         'payment_account',
         'note',

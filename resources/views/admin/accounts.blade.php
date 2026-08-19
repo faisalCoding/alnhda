@@ -146,7 +146,29 @@
                                     </span>
                                 </template>
                             </div>
-                            <p class="mt-1 truncate text-sm text-zinc-500 dark:text-zinc-400" dir="ltr" x-text="account.identifier"></p>
+                            <div class="mt-1 flex items-center gap-2">
+                                <button type="button" @click="copyIdentifier(account)"
+                                    class="group/copy flex min-w-0 items-center gap-1.5 rounded-lg px-1.5 py-0.5 -mr-1.5 text-sm text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                                    :title="'نسخ ' + account.identifier">
+                                    <span class="truncate" dir="ltr" x-text="account.identifier"></span>
+                                    <svg x-show="copied !== 'id-' + account.id" class="h-3.5 w-3.5 shrink-0 opacity-0 transition group-hover/copy:opacity-100"
+                                        fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
+                                    </svg>
+                                    <span x-show="copied === 'id-' + account.id" x-cloak
+                                        class="shrink-0 text-xs font-bold text-emerald-600 dark:text-emerald-400">تم النسخ</span>
+                                </button>
+
+                                <template x-if="account.url">
+                                    <a :href="account.url" target="_blank" rel="noopener noreferrer"
+                                        class="shrink-0 rounded-lg p-1 text-zinc-400 transition hover:bg-zinc-100 hover:text-primary-600 dark:hover:bg-zinc-800 dark:hover:text-primary-300"
+                                        :title="'فتح ' + account.name">
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                        </svg>
+                                    </a>
+                                </template>
+                            </div>
                         </div>
 
                         <div class="flex shrink-0 items-center gap-1">
@@ -179,9 +201,9 @@
                             <div class="flex items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2.5 dark:border-amber-700 dark:bg-amber-900/30">
                                 <code class="truncate text-sm font-bold" dir="ltr" x-text="revealed[account.id]"></code>
                                 <div class="flex shrink-0 items-center gap-2">
-                                    <button type="button" @click="copy(account.id)"
+                                    <button type="button" @click="copyPassword(account.id)"
                                         class="text-xs font-bold text-primary-600 hover:underline dark:text-primary-300"
-                                        x-text="copied === account.id ? 'تم النسخ' : 'نسخ'"></button>
+                                        x-text="copied === 'pw-' + account.id ? 'تم النسخ' : 'نسخ'"></button>
                                     <button type="button" @click="hide(account.id)"
                                         class="text-xs font-bold text-zinc-500 hover:underline">إخفاء</button>
                                 </div>
@@ -195,7 +217,7 @@
                     </div>
 
                     {{-- Progress + collapse --}}
-                    <button type="button" @click="toggleCollapse(account.id)"
+                    <button type="button" @click="toggleTasks(account.id)"
                         class="flex w-full items-center gap-3 border-t border-zinc-100 px-5 py-3 text-right transition hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50">
                         <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
                             <div class="h-full rounded-full transition-all duration-500"
@@ -204,14 +226,14 @@
                         </div>
                         <span class="text-xs font-bold text-zinc-500 dark:text-zinc-400"
                             x-text="`${progress(account).done} / ${progress(account).total}`"></span>
-                        <svg class="h-4 w-4 text-zinc-400 transition-transform" :class="collapsed[account.id] && '-rotate-90'"
+                        <svg class="h-4 w-4 text-zinc-400 transition-transform" :class="!expanded[account.id] && '-rotate-90'"
                             fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                         </svg>
                     </button>
 
                     {{-- Tasks --}}
-                    <div x-show="!collapsed[account.id]" x-collapse>
+                    <div x-show="expanded[account.id]" x-cloak x-collapse>
                         <ul class="space-y-0.5 px-5 py-3">
                             <template x-for="task in account.tasks" :key="task.id">
                                 <li class="group/task flex items-center gap-3 rounded-lg px-2 py-1.5 transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60">

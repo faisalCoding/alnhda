@@ -3,7 +3,7 @@ import { crudPage } from './simpleCrud';
 
 export default function subscriptionsPage() {
     return {
-        ...crudPage('/api/subscriptions', { id: null, name: '', identifier: '', expires_on: '', payment_account: '', note: '' }),
+        ...crudPage('/api/subscriptions', { id: null, name: '', identifier: '', url: '', expires_on: '', payment_account: '', note: '' }),
 
         pinIsSet: false,
         unlockedUntil: null,
@@ -62,6 +62,27 @@ export default function subscriptionsPage() {
                 this.pinPrompt.error = error.errors?.pin?.[0] ?? error.message;
             } finally {
                 this.pinPrompt.busy = false;
+            }
+        },
+
+        copied: null,
+
+        /** Copy the identifier and flag it, so the button can confirm itself. */
+        async copyIdentifier(record) {
+            if (!record.identifier) {
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(record.identifier);
+                this.copied = 'id-' + record.id;
+                setTimeout(() => {
+                    if (this.copied === 'id-' + record.id) {
+                        this.copied = null;
+                    }
+                }, 1500);
+            } catch {
+                this.error = 'تعذر النسخ إلى الحافظة';
             }
         },
 

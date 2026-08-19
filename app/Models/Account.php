@@ -16,6 +16,7 @@ class Account extends Model
         'account_category_id',
         'name',
         'identifier',
+        'url',
         'password',
         'sort_order',
     ];

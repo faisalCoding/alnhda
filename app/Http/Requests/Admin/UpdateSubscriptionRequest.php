@@ -19,6 +19,7 @@ class UpdateSubscriptionRequest extends FormRequest
         return [
             'name' => 'sometimes|required|string|max:255',
             'identifier' => 'sometimes|required|string|max:255',
+            'url' => 'sometimes|nullable|url|max:2048',
             'expires_on' => 'sometimes|nullable|date',
             'payment_account' => 'sometimes|nullable|string|max:255',
             'note' => 'sometimes|nullable|string|max:2000',
@@ -33,6 +34,7 @@ class UpdateSubscriptionRequest extends FormRequest
         return [
             'name.required' => 'اسم المنصة مطلوب.',
             'identifier.required' => 'البريد أو رقم الهاتف أو اسم المستخدم مطلوب.',
+            'url.url' => 'رابط المنصة غير صالح، ابدأه بـ https://',
             'expires_on.date' => 'تاريخ الانتهاء غير صالح.',
         ];
     }

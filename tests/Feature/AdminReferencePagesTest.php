@@ -278,3 +278,23 @@ it('refuses a checklist built from a method that does not exist', function () {
         ->assertStatus(422)
         ->assertJsonValidationErrors('method_ids.0');
 });
+
+// ---- subscription link ---------------------------------------------------
+
+it('stores and returns the subscription platform link', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelApi('subscriptions'), [
+            'name' => 'Canva Pro',
+            'identifier' => 'info@kayanalnhda.sa',
+            'url' => 'https://canva.com',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.url', 'https://canva.com');
+});
+
+it('refuses a subscription link that is not a url', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelApi('subscriptions'), ['name' => 'س', 'identifier' => 'x', 'url' => 'ليس رابطاً'])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('url');
+});
