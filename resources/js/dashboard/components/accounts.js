@@ -48,6 +48,7 @@ export default function accountsPage() {
         newTask: {},
 
         pinIsSet: false,
+        unlockedUntil: null,
         pinPrompt: { open: false, accountId: null, value: '', error: '', busy: false },
         pinSetup: { open: false, pin: '', pin_confirmation: '', current_password: '', error: '', busy: false },
 
@@ -91,8 +92,10 @@ export default function accountsPage() {
             try {
                 const payload = await request('GET', '/api/reveal-pin');
                 this.pinIsSet = payload?.data?.is_set ?? false;
+                this.unlockedUntil = payload?.data?.unlocked_until ?? null;
             } catch {
                 this.pinIsSet = false;
+                this.unlockedUntil = null;
             }
         },
 
@@ -300,9 +303,20 @@ export default function accountsPage() {
 
         // ---- reveal ---------------------------------------------------------
 
-        askForPin(account) {
+        /** True while the hour opened by the last correct pin is still running. */
+        get isUnlocked() {
+            return this.unlockedUntil !== null && new Date(this.unlockedUntil) > new Date();
+        },
+
+        async askForPin(account) {
             if (!this.pinIsSet) {
                 this.pinSetup.open = true;
+
+                return;
+            }
+
+            if (this.isUnlocked) {
+                await this.reveal(account.id);
 
                 return;
             }
@@ -310,17 +324,21 @@ export default function accountsPage() {
             this.pinPrompt = { open: true, accountId: account.id, value: '', error: '', busy: false };
         },
 
+        /** Ask the server for the secret; the pin is only sent when one is needed. */
+        async reveal(accountId, pin = null) {
+            const payload = await request('POST', `${BASE}/${accountId}/reveal`, pin === null ? {} : { pin });
+
+            this.revealed[accountId] = payload.data.secret;
+            this.unlockedUntil = payload.data.unlocked_until ?? this.unlockedUntil;
+            this.scheduleHide(accountId);
+        },
+
         async submitPin() {
             this.pinPrompt.busy = true;
             this.pinPrompt.error = '';
 
             try {
-                const payload = await request('POST', `${BASE}/${this.pinPrompt.accountId}/reveal`, {
-                    pin: this.pinPrompt.value,
-                });
-
-                this.revealed[this.pinPrompt.accountId] = payload.data.secret;
-                this.scheduleHide(this.pinPrompt.accountId);
+                await this.reveal(this.pinPrompt.accountId, this.pinPrompt.value);
                 this.pinPrompt.open = false;
             } catch (error) {
                 this.pinPrompt.error = error.errors?.pin?.[0] ?? error.message;
@@ -373,6 +391,7 @@ export default function accountsPage() {
                 });
 
                 this.pinIsSet = true;
+                this.unlockedUntil = null;
                 this.pinSetup = { open: false, pin: '', pin_confirmation: '', current_password: '', error: '', busy: false };
             } catch (error) {
                 this.pinSetup.error = error.errors?.pin?.[0] ?? error.errors?.current_password?.[0] ?? error.message;

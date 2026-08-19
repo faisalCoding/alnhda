@@ -6,6 +6,7 @@ export default function subscriptionsPage() {
         ...crudPage('/api/subscriptions', { id: null, name: '', identifier: '', expires_on: '', payment_account: '', note: '' }),
 
         pinIsSet: false,
+        unlockedUntil: null,
         pinPrompt: { open: false, recordId: null, value: '', error: '', busy: false },
         revealed: {},
         revealTimers: {},
@@ -19,13 +20,35 @@ export default function subscriptionsPage() {
             try {
                 const payload = await request('GET', '/api/reveal-pin');
                 this.pinIsSet = payload?.data?.is_set ?? false;
+                this.unlockedUntil = payload?.data?.unlocked_until ?? null;
             } catch {
                 this.pinIsSet = false;
+                this.unlockedUntil = null;
             }
         },
 
-        askForPin(record) {
+        /** True while the hour opened by the last correct pin is still running. */
+        get isUnlocked() {
+            return this.unlockedUntil !== null && new Date(this.unlockedUntil) > new Date();
+        },
+
+        async askForPin(record) {
+            if (this.pinIsSet && this.isUnlocked) {
+                await this.reveal(record.id);
+
+                return;
+            }
+
             this.pinPrompt = { open: true, recordId: record.id, value: '', error: '', busy: false };
+        },
+
+        async reveal(recordId, pin = null) {
+            const payload = await request('POST', `/api/subscriptions/${recordId}/reveal`, pin === null ? {} : { pin });
+
+            this.revealed[recordId] = payload.data.secret;
+            this.unlockedUntil = payload.data.unlocked_until ?? this.unlockedUntil;
+            clearTimeout(this.revealTimers[recordId]);
+            this.revealTimers[recordId] = setTimeout(() => this.hide(recordId), 60000);
         },
 
         async submitPin() {
@@ -33,13 +56,7 @@ export default function subscriptionsPage() {
             this.pinPrompt.error = '';
 
             try {
-                const payload = await request('POST', `/api/subscriptions/${this.pinPrompt.recordId}/reveal`, {
-                    pin: this.pinPrompt.value,
-                });
-
-                this.revealed[this.pinPrompt.recordId] = payload.data.secret;
-                clearTimeout(this.revealTimers[this.pinPrompt.recordId]);
-                this.revealTimers[this.pinPrompt.recordId] = setTimeout(() => this.hide(this.pinPrompt.recordId), 60000);
+                await this.reveal(this.pinPrompt.recordId, this.pinPrompt.value);
                 this.pinPrompt.open = false;
             } catch (error) {
                 this.pinPrompt.error = error.errors?.pin?.[0] ?? error.message;

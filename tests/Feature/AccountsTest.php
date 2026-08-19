@@ -345,3 +345,110 @@ it('lets an account be moved out of every category', function () {
 
     expect($account->fresh()->account_category_id)->toBeNull();
 });
+
+// ---- the one hour reveal window ------------------------------------------
+
+it('stops asking for the pin once a correct one opens the window', function () {
+    $this->admin->forceFill(['reveal_pin' => '1234'])->save();
+    $first = Account::factory()->create(['password' => 'FirstSecret']);
+    $second = Account::factory()->create(['password' => 'SecondSecret']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(apiUrl('accounts/'.$first->id.'/reveal'), ['pin' => '1234'])
+        ->assertOk();
+
+    // No pin at all this time.
+    $this->postJson(apiUrl('accounts/'.$second->id.'/reveal'))
+        ->assertOk()
+        ->assertJsonPath('data.secret', 'SecondSecret');
+});
+
+it('asks again once the hour is up', function () {
+    $this->admin->forceFill(['reveal_pin' => '1234'])->save();
+    $account = Account::factory()->create(['password' => 'TopSecret!23']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(apiUrl('accounts/'.$account->id.'/reveal'), ['pin' => '1234'])
+        ->assertOk();
+
+    $this->travel(61)->minutes();
+
+    $response = $this->postJson(apiUrl('accounts/'.$account->id.'/reveal'));
+
+    $response->assertStatus(422);
+    expect($response->getContent())->not->toContain('TopSecret!23');
+});
+
+it('still answers within the hour', function () {
+    $this->admin->forceFill(['reveal_pin' => '1234'])->save();
+    $account = Account::factory()->create(['password' => 'TopSecret!23']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(apiUrl('accounts/'.$account->id.'/reveal'), ['pin' => '1234'])
+        ->assertOk();
+
+    $this->travel(59)->minutes();
+
+    $this->postJson(apiUrl('accounts/'.$account->id.'/reveal'))
+        ->assertOk()
+        ->assertJsonPath('data.secret', 'TopSecret!23');
+});
+
+it('opens the same window for subscriptions', function () {
+    $this->admin->forceFill(['reveal_pin' => '1234'])->save();
+    $account = Account::factory()->create(['password' => 'AccountSecret']);
+    $subscription = \App\Models\Subscription::factory()->create(['payment_account' => 'Visa ****4211']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(apiUrl('accounts/'.$account->id.'/reveal'), ['pin' => '1234'])
+        ->assertOk();
+
+    $this->postJson(apiUrl('subscriptions/'.$subscription->id.'/reveal'))
+        ->assertOk()
+        ->assertJsonPath('data.secret', 'Visa ****4211');
+});
+
+it('refuses a reveal with no pin when no window is open', function () {
+    $this->admin->forceFill(['reveal_pin' => '1234'])->save();
+    $account = Account::factory()->create(['password' => 'TopSecret!23']);
+
+    $response = $this->actingAs($this->admin, 'admin')
+        ->postJson(apiUrl('accounts/'.$account->id.'/reveal'));
+
+    $response->assertStatus(422);
+    expect($response->getContent())->not->toContain('TopSecret!23');
+});
+
+it('reports when the window closes', function () {
+    $this->admin->forceFill(['reveal_pin' => '1234'])->save();
+    $account = Account::factory()->create(['password' => 'TopSecret!23']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(apiUrl('reveal-pin'))
+        ->assertOk()
+        ->assertJsonPath('data.unlocked_until', null);
+
+    $this->postJson(apiUrl('accounts/'.$account->id.'/reveal'), ['pin' => '1234'])->assertOk();
+
+    $until = $this->getJson(apiUrl('reveal-pin'))->assertOk()->json('data.unlocked_until');
+
+    expect($until)->not->toBeNull()
+        ->and(now()->diffInMinutes($until))->toBeGreaterThan(58);
+});
+
+it('closes the window when the pin is changed', function () {
+    $this->admin->forceFill(['reveal_pin' => '1234'])->save();
+    $account = Account::factory()->create(['password' => 'TopSecret!23']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(apiUrl('accounts/'.$account->id.'/reveal'), ['pin' => '1234'])
+        ->assertOk();
+
+    $this->putJson(apiUrl('reveal-pin'), [
+        'pin' => '4321',
+        'pin_confirmation' => '4321',
+        'current_password' => 'password',
+    ])->assertOk();
+
+    $this->postJson(apiUrl('accounts/'.$account->id.'/reveal'))->assertStatus(422);
+});

@@ -17,7 +17,7 @@ class RevealPasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'pin' => 'required|digits:4',
+            'pin' => 'nullable|digits:4',
         ];
     }
 
@@ -27,7 +27,6 @@ class RevealPasswordRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'pin.required' => 'أدخل رمز الإظهار.',
             'pin.digits' => 'الرمز أربعة أرقام.',
         ];
     }
