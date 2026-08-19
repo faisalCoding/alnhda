@@ -630,6 +630,17 @@ app.get('/groups/:clientId', async (req, res) => {
     }
 
     try {
+        // status قد يبقى ready بينما صفحة puppeteer تحتها ماتت. لمسة خفيفة على
+        // العميل تكشف ذلك برسالة مفهومة بدل انهيار غامض داخل getChats.
+        try {
+            await session.client.getState();
+        } catch (error) {
+            return res.status(503).json({
+                success: false,
+                message: `الجلسة تبدو مرتبطة لكنها لا تستجيب (${error.message}). أعد تشغيل الخدمة ثم أعد الربط إن لزم.`,
+            });
+        }
+
         const chats = await session.client.getChats();
 
         const groups = chats
@@ -645,7 +656,11 @@ app.get('/groups/:clientId', async (req, res) => {
     } catch (error) {
         console.error(`[${req.params.clientId}] تعذر جلب المجموعات:`, error.message);
 
-        return res.status(500).json({ success: false, message: 'تعذر جلب قائمة المجموعات.' });
+        // السبب الحقيقي يُمرَّر كما هو: رسالة عامة تترك المستخدم بلا دليل.
+        return res.status(500).json({
+            success: false,
+            message: `تعذر جلب قائمة المجموعات: ${error.message}`,
+        });
     }
 });
 
