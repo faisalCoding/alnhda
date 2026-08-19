@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\Api\AccountCategoryController;
 use App\Http\Controllers\Admin\Api\AccountController;
 use App\Http\Controllers\Admin\Api\AccountTaskController;
+use App\Http\Controllers\Admin\Api\AdvertisingLicenceController;
 use App\Http\Controllers\Admin\Api\ArticleController;
 use App\Http\Controllers\Admin\Api\ArticleFileController;
 use App\Http\Controllers\Admin\Api\BacklinkController;
@@ -51,6 +52,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::view('backlinks', 'admin.backlinks')->name('backlinks');
     Route::view('marketing-tools', 'admin.marketing-tools')->name('marketing-tools');
     Route::view('weekly-tasks', 'admin.weekly-tasks')->name('weekly-tasks');
+    Route::view('advertising-licences', 'admin.advertising-licences')->name('advertising-licences');
 });
 
 Route::prefix('api')->name('panel.api.')->group(function () {
@@ -114,6 +116,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::post('subscriptions/{subscription}/reveal', [RevealPinController::class, 'revealPaymentAccount'])->name('subscriptions.reveal');
         Route::get('useful-links', [UsefulLinkController::class, 'index'])->name('useful-links.index');
         Route::get('backlinks', [BacklinkController::class, 'index'])->name('backlinks.index');
+        Route::get('advertising-licences', [AdvertisingLicenceController::class, 'index'])->name('advertising-licences.index');
         Route::get('marketing-methods', [MarketingMethodController::class, 'index'])->name('marketing-methods.index');
         Route::get('marketing-checklists', [MarketingChecklistController::class, 'index'])->name('marketing-checklists.index');
 
@@ -153,6 +156,10 @@ Route::prefix('api')->name('panel.api.')->group(function () {
             Route::post('backlinks', [BacklinkController::class, 'store'])->name('backlinks.store');
             Route::put('backlinks/{backlink}', [BacklinkController::class, 'update'])->name('backlinks.update');
             Route::delete('backlinks/{backlink}', [BacklinkController::class, 'destroy'])->name('backlinks.destroy');
+
+            Route::post('advertising-licences', [AdvertisingLicenceController::class, 'store'])->name('advertising-licences.store');
+            Route::put('advertising-licences/{advertisingLicence}', [AdvertisingLicenceController::class, 'update'])->name('advertising-licences.update');
+            Route::delete('advertising-licences/{advertisingLicence}', [AdvertisingLicenceController::class, 'destroy'])->name('advertising-licences.destroy');
 
             Route::post('marketing-methods', [MarketingMethodController::class, 'store'])->name('marketing-methods.store');
             Route::put('marketing-methods/{marketingMethod}', [MarketingMethodController::class, 'update'])->name('marketing-methods.update');
