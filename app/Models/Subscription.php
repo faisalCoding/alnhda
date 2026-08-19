@@ -79,6 +79,13 @@ class Subscription extends Model
      */
     public function daysUntilExpiry(): ?int
     {
-        return $this->expires_on?->startOfDay()->diffInDays(now()->startOfDay(), false) * -1;
+        // The null-safe call stops the chain, but the negation still runs, and
+        // null * -1 is 0 — which reads as "expires today" on a record that has
+        // no expiry at all. The guard has to come first.
+        if ($this->expires_on === null) {
+            return null;
+        }
+
+        return -1 * $this->expires_on->startOfDay()->diffInDays(now()->startOfDay(), false);
     }
 }

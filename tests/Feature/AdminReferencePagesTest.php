@@ -410,3 +410,19 @@ it('leaves an unlinked record with no identifier to show', function () {
         ->assertJsonPath('data.identifier', null)
         ->assertJsonPath('data.url', null);
 });
+
+it('reports no day count for a record that never expires', function () {
+    $payment = Subscription::factory()->payment()->create();
+
+    // null * -1 is 0 in PHP, which used to make a payment read as expiring today.
+    expect($payment->daysUntilExpiry())->toBeNull();
+});
+
+it('sends a null day count to the panel for a payment', function () {
+    Subscription::factory()->payment()->create(['name' => 'دفعة']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(panelApi('subscriptions'))
+        ->assertOk()
+        ->assertJsonPath('data.0.days_until_expiry', null);
+});

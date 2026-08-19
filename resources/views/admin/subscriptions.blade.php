@@ -51,65 +51,44 @@
             <p class="font-bold text-zinc-500 dark:text-zinc-400">لا توجد سجلات بعد</p>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <template x-for="record in visible" :key="record.id">
-                <article class="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="min-w-0">
-                            <h2 class="truncate font-bold" x-text="record.display_name"></h2>
-                            <div class="flex items-center gap-1.5" x-show="record.identifier || record.url" x-cloak>
-                                <button type="button" x-show="record.identifier" @click="copyIdentifier(record)"
-                                    class="group/copy flex min-w-0 items-center gap-1.5 rounded-lg px-1.5 py-0.5 -mr-1.5 text-sm text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-                                    :title="'نسخ ' + record.identifier">
-                                    <span class="truncate" dir="ltr" x-text="record.identifier"></span>
-                                    <span x-show="copied === 'id-' + record.id" x-cloak
-                                        class="shrink-0 text-xs font-bold text-emerald-600 dark:text-emerald-400">تم النسخ</span>
-                                </button>
-
-                                <template x-if="record.url">
-                                    <a :href="record.url" target="_blank" rel="noopener noreferrer"
-                                        class="shrink-0 rounded-lg p-1 text-zinc-400 transition hover:bg-zinc-100 hover:text-primary-600 dark:hover:bg-zinc-800 dark:hover:text-primary-300"
-                                        :title="'فتح ' + record.name">
-                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                                        </svg>
-                                    </a>
-                                </template>
-                            </div>
-                        </div>
-                        <span class="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold"
-                            :class="record.is_subscription ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'"
-                            x-text="record.is_subscription ? 'اشتراك' : 'دفعة'"></span>
-                    </div>
-
-                    <template x-if="record.account">
-                        <p class="-mt-1 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
-                            </svg>
-                            <span x-text="'مرتبط بحساب: ' + record.account.name"></span>
-                        </p>
-                    </template>
-
-                    <dl class="space-y-1.5 text-sm">
-                        <div class="flex justify-between gap-3">
-                            <dt class="text-zinc-500 dark:text-zinc-400">القيمة</dt>
-                            <dd class="font-bold" x-text="record.amount ? formatAmount(record.amount) + ' ريال' : '—'"></dd>
-                        </div>
-                        <div class="flex justify-between gap-3">
-                            <dt class="text-zinc-500 dark:text-zinc-400">تاريخ الدفع</dt>
-                            <dd dir="ltr" x-text="record.paid_on ?? '—'"></dd>
-                        </div>
-                        <div class="flex justify-between gap-3" x-show="record.is_subscription">
-                            <dt class="text-zinc-500 dark:text-zinc-400">تاريخ الانتهاء</dt>
-                            <dd class="flex items-center gap-2">
+        <div x-show="visible.length" x-cloak class="sheet-wrap">
+            <table class="sheet">
+                <thead>
+                    <tr>
+                        <th class="gutter">#</th>
+                        <th>النوع</th>
+                        <th>المنصة</th>
+                        <th>الحساب المرتبط</th>
+                        <th>القيمة</th>
+                        <th>تاريخ الدفع</th>
+                        <th>الانتهاء</th>
+                        <th>حساب الدفع</th>
+                        <th>ملاحظة</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="(record, index) in visible" :key="record.id">
+                        <tr>
+                            <td class="gutter" x-text="index + 1"></td>
+                            <td>
+                                <span class="rounded-full px-2 py-0.5 text-xs font-bold"
+                                    :class="record.is_subscription ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'"
+                                    x-text="record.is_subscription ? 'اشتراك' : 'دفعة'"></span>
+                            </td>
+                            <td class="font-bold" x-text="record.display_name"></td>
+                            <td>
+                                <span x-show="record.account" class="text-zinc-600 dark:text-zinc-300" x-text="record.account?.name"></span>
+                                <span x-show="!record.account" class="text-zinc-400">—</span>
+                            </td>
+                            <td class="font-bold" x-text="record.amount ? formatAmount(record.amount) + ' ريال' : '—'"></td>
+                            <td dir="ltr" x-text="record.paid_on ?? '—'"></td>
+                            <td>
                                 <span dir="ltr" x-text="record.expires_on ?? '—'"></span>
-                                <span class="text-xs" :class="expiryTone(record)" x-text="expiryLabel(record)"></span>
-                            </dd>
-                        </div>
-                        <div class="flex items-center justify-between gap-3">
-                            <dt class="text-zinc-500 dark:text-zinc-400">حساب الدفع</dt>
-                            <dd>
+                                <span x-show="record.is_subscription" class="mr-1 text-xs" :class="expiryTone(record)"
+                                    x-text="expiryLabel(record)"></span>
+                            </td>
+                            <td>
                                 <template x-if="record.has_payment_account && !revealed[record.id]">
                                     <button type="button" @click="askForPin(record)"
                                         class="text-xs font-bold text-primary-600 hover:underline dark:text-primary-300">إظهار</button>
@@ -121,22 +100,21 @@
                                             class="text-xs font-bold text-zinc-500 hover:underline">إخفاء</button>
                                     </span>
                                 </template>
-                                <span x-show="!record.has_payment_account" x-cloak class="text-xs text-zinc-400">—</span>
-                            </dd>
-                        </div>
-                    </dl>
-
-                    <p x-show="record.note" x-cloak
-                        class="rounded-xl bg-zinc-50 px-3 py-2 text-xs leading-relaxed text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-                        x-text="record.note"></p>
-
-                    <div class="mt-auto flex gap-2 pt-2">
-                        <button type="button" @click="openEdit(record)" class="{{ $ghostButton }} flex-1 justify-center">تعديل</button>
-                        <button type="button" @click="remove(record)"
-                            class="rounded-xl border border-red-200 px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-900/30">حذف</button>
-                    </div>
-                </article>
-            </template>
+                                <span x-show="!record.has_payment_account" class="text-zinc-400">—</span>
+                            </td>
+                            <td class="cell-clip text-zinc-600 dark:text-zinc-300" :title="record.note" x-text="record.note || '—'"></td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <button type="button" @click="openEdit(record)"
+                                        class="text-xs font-bold text-primary-600 hover:underline dark:text-primary-300">تعديل</button>
+                                    <button type="button" @click="remove(record)"
+                                        class="text-xs font-bold text-red-500 hover:underline">حذف</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
         </div>
 
         {{-- Form --}}

@@ -60,3 +60,119 @@
 .sync-pulse {
     animation: pulse-dot 1.2s ease-in-out infinite;
 }
+
+/*
+ * Sheet: a spreadsheet-style table for the reference pages. Gridlines on every
+ * cell, a header that stays put while the body scrolls, and rows tight enough
+ * to read many at once — closer to a spreadsheet than to a card list.
+ */
+@layer components {
+    .sheet-wrap {
+        /* Breaks out of the main padding so the grid reaches both edges. */
+        margin-inline: calc(var(--spacing) * -4);
+        overflow: auto;
+        max-height: calc(100vh - 15rem);
+        border-block: 1px solid var(--color-zinc-200);
+        background-color: var(--color-white);
+    }
+
+    @media (min-width: 64rem) {
+        .sheet-wrap {
+            margin-inline: calc(var(--spacing) * -8);
+        }
+    }
+
+    .dark .sheet-wrap {
+        border-color: var(--color-zinc-800);
+        background-color: var(--color-zinc-900);
+    }
+
+    /* Nested inside a card: keeps the gridlines but not the edge-to-edge break. */
+    .sheet-wrap.is-inset {
+        margin-inline: 0;
+        border-inline: 0;
+        max-height: 60vh;
+    }
+
+    .sheet {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.8125rem;
+        line-height: 1.25rem;
+        text-align: right;
+    }
+
+    .sheet th,
+    .sheet td {
+        border-inline-end: 1px solid var(--color-zinc-200);
+        border-block-end: 1px solid var(--color-zinc-200);
+        padding: 0.4rem 0.625rem;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .dark .sheet th,
+    .dark .sheet td {
+        border-color: var(--color-zinc-800);
+    }
+
+    .sheet th:last-child,
+    .sheet td:last-child {
+        border-inline-end: 0;
+    }
+
+    .sheet thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: var(--color-zinc-100);
+        font-weight: 700;
+        font-size: 0.75rem;
+        color: var(--color-zinc-600);
+    }
+
+    .dark .sheet thead th {
+        background-color: var(--color-zinc-800);
+        color: var(--color-zinc-300);
+    }
+
+    .sheet tbody tr:nth-child(even) {
+        background-color: color-mix(in oklab, var(--color-zinc-50) 60%, transparent);
+    }
+
+    .dark .sheet tbody tr:nth-child(even) {
+        background-color: color-mix(in oklab, var(--color-zinc-800) 35%, transparent);
+    }
+
+    .sheet tbody tr:hover {
+        background-color: var(--color-primary-50);
+    }
+
+    .dark .sheet tbody tr:hover {
+        background-color: color-mix(in oklab, var(--color-primary-900) 40%, transparent);
+    }
+
+    /* A cell that may hold long text: truncates rather than widening the grid. */
+    .sheet .cell-clip {
+        max-width: 18rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* The row-number gutter, like a spreadsheet's. */
+    .sheet .gutter {
+        position: sticky;
+        inline-size: 2.5rem;
+        inset-inline-start: 0;
+        z-index: 5;
+        background-color: var(--color-zinc-100);
+        color: var(--color-zinc-400);
+        text-align: center;
+        font-size: 0.6875rem;
+    }
+
+    .dark .sheet .gutter {
+        background-color: var(--color-zinc-800);
+    }
+}

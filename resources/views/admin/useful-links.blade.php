@@ -36,23 +36,40 @@
             <p class="mt-1 text-sm text-zinc-400">احفظ هنا المنصات التي تعود عليها ووصفاً لما تفيدك فيه</p>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <template x-for="record in visible" :key="record.id">
-                <article class="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-                    <h2 class="truncate font-bold" x-text="record.name"></h2>
-
-                    <a :href="record.url" target="_blank" rel="noopener noreferrer" dir="ltr"
-                        class="truncate text-sm text-primary-600 hover:underline dark:text-primary-300" x-text="record.url"></a>
-
-                    <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-300" x-text="record.benefit || '—'"></p>
-
-                    <div class="mt-auto flex gap-2 pt-2">
-                        <button type="button" @click="openEdit(record)" class="{{ $ghostButton }} flex-1 justify-center">تعديل</button>
-                        <button type="button" @click="remove(record)"
-                            class="rounded-xl border border-red-200 px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-900/30">حذف</button>
-                    </div>
-                </article>
-            </template>
+        <div x-show="visible.length" x-cloak class="sheet-wrap">
+            <table class="sheet">
+                <thead>
+                    <tr>
+                        <th class="gutter">#</th>
+                        <th>المنصة</th>
+                        <th>الرابط</th>
+                        <th>الفائدة</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="(record, index) in visible" :key="record.id">
+                        <tr>
+                            <td class="gutter" x-text="index + 1"></td>
+                            <td class="font-bold" x-text="record.name"></td>
+                            <td class="cell-clip">
+                                <a :href="record.url" target="_blank" rel="noopener noreferrer" dir="ltr"
+                                    class="text-primary-600 hover:underline dark:text-primary-300" x-text="record.url"></a>
+                            </td>
+                            <td class="cell-clip text-zinc-600 dark:text-zinc-300" :title="record.benefit"
+                                x-text="record.benefit || '—'"></td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <button type="button" @click="openEdit(record)"
+                                        class="text-xs font-bold text-primary-600 hover:underline dark:text-primary-300">تعديل</button>
+                                    <button type="button" @click="remove(record)"
+                                        class="text-xs font-bold text-red-500 hover:underline">حذف</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
         </div>
 
         <div x-show="showForm" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"

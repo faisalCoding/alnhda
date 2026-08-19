@@ -108,40 +108,39 @@
                         </select>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="bg-zinc-50 text-right text-xs text-zinc-500 dark:bg-zinc-800/40 dark:text-zinc-400">
+                    <div class="sheet-wrap is-inset">
+                        <table class="sheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-5 py-2 font-medium">الاسم</th>
-                                    <th class="px-5 py-2 font-medium">رقم الهاتف</th>
-                                    <th class="px-5 py-2 font-medium">الحالة</th>
-                                    <th class="px-5 py-2 font-medium">وقت الإرسال</th>
-                                    <th class="px-5 py-2 font-medium">تأكيد الاستلام</th>
+                                    <th class="gutter">#</th>
+                                    <th>الاسم</th>
+                                    <th>رقم الهاتف</th>
+                                    <th>الحالة</th>
+                                    <th>وقت الإرسال</th>
+                                    <th>تأكيد الاستلام</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                                <template x-for="recipient in recipientsOf(message)" :key="recipient.id">
+                            <tbody>
+                                <template x-for="(recipient, index) in recipientsOf(message)" :key="recipient.id">
                                     <tr>
-                                        <td class="px-5 py-3 font-medium" x-text="recipient.name"></td>
-                                        <td class="px-5 py-3" dir="ltr" x-text="recipient.phone"></td>
-                                        <td class="px-5 py-3">
-                                            <span class="rounded-full px-2.5 py-1 text-xs font-bold"
+                                        <td class="gutter" x-text="index + 1"></td>
+                                        <td class="font-bold" x-text="recipient.name"></td>
+                                        <td dir="ltr" x-text="recipient.phone"></td>
+                                        <td>
+                                            <span class="rounded-full px-2 py-0.5 text-xs font-bold"
                                                 :class="statusClass(recipient.status)"
                                                 x-text="statusLabel(recipient.status)"></span>
-                                            <p x-show="recipient.error" x-cloak
-                                                class="mt-1 text-xs text-red-500" x-text="recipient.error"></p>
+                                            <span x-show="recipient.error" x-cloak class="mr-1 text-xs text-red-500"
+                                                :title="recipient.error" x-text="recipient.error"></span>
                                         </td>
-                                        <td class="px-5 py-3 text-zinc-500 dark:text-zinc-400"
-                                            x-text="formatDate(recipient.sent_at)"></td>
-                                        <td class="px-5 py-3 text-zinc-500 dark:text-zinc-400"
+                                        <td class="text-zinc-500 dark:text-zinc-400" x-text="formatDate(recipient.sent_at)"></td>
+                                        <td class="text-zinc-500 dark:text-zinc-400"
                                             x-text="formatDate(recipient.read_at ?? recipient.delivered_at)"></td>
                                     </tr>
                                 </template>
 
                                 <tr x-show="!recipientsOf(message).length">
-                                    <td colspan="5" class="px-5 py-8 text-center text-zinc-400">
-                                        لا نتائج مطابقة.
-                                    </td>
+                                    <td colspan="6" class="py-8 text-center text-zinc-400">لا نتائج مطابقة.</td>
                                 </tr>
                             </tbody>
                         </table>

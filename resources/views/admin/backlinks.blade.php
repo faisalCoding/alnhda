@@ -38,35 +38,39 @@
             <p class="mt-1 text-sm text-zinc-400">سجّل هنا المواقع التي تشير إلى موقعك</p>
         </div>
 
-        <div x-show="visible.length" x-cloak class="overflow-x-auto rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-            <table class="w-full text-right text-sm">
-                <thead class="border-b border-zinc-200 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+        <div x-show="visible.length" x-cloak class="sheet-wrap">
+            <table class="sheet">
+                <thead>
                     <tr>
-                        <th class="px-5 py-3 font-bold">المنصة</th>
-                        <th class="px-5 py-3 font-bold">رابط المنصة</th>
-                        <th class="px-5 py-3 font-bold">الصفحة المحال إليها</th>
-                        <th class="px-5 py-3 font-bold">الزوار</th>
-                        <th class="px-5 py-3"></th>
+                        <th class="gutter">#</th>
+                        <th>المنصة</th>
+                        <th>رابط المنصة</th>
+                        <th>الصفحة المحال إليها</th>
+                        <th>الزوار</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
-                    <template x-for="record in visible" :key="record.id">
-                        <tr class="border-b border-zinc-100 last:border-0 dark:border-zinc-800">
-                            <td class="px-5 py-3 font-bold" x-text="record.name"></td>
-                            <td class="max-w-xs px-5 py-3">
+                    <template x-for="(record, index) in visible" :key="record.id">
+                        <tr>
+                            <td class="gutter" x-text="index + 1"></td>
+                            <td class="font-bold" x-text="record.name"></td>
+                            <td class="cell-clip">
                                 <a :href="record.url" target="_blank" rel="noopener noreferrer" dir="ltr"
-                                    class="block truncate text-primary-600 hover:underline dark:text-primary-300" x-text="record.url"></a>
+                                    class="text-primary-600 hover:underline dark:text-primary-300" x-text="record.url"></a>
                             </td>
-                            <td class="max-w-xs px-5 py-3">
-                                <a x-show="record.target_url" :href="record.target_url" target="_blank" rel="noopener noreferrer" dir="ltr"
-                                    class="block truncate text-zinc-600 hover:underline dark:text-zinc-300" x-text="record.target_url"></a>
+                            <td class="cell-clip">
+                                <a x-show="record.target_url" :href="record.target_url" target="_blank" rel="noopener noreferrer"
+                                    dir="ltr" class="text-zinc-600 hover:underline dark:text-zinc-300" x-text="record.target_url"></a>
                                 <span x-show="!record.target_url" class="text-zinc-400">—</span>
                             </td>
-                            <td class="px-5 py-3 font-bold" dir="ltr" x-text="record.visits"></td>
-                            <td class="px-5 py-3">
-                                <div class="flex justify-end gap-2">
-                                    <button type="button" @click="openEdit(record)" class="text-xs font-bold text-primary-600 hover:underline dark:text-primary-300">تعديل</button>
-                                    <button type="button" @click="remove(record)" class="text-xs font-bold text-red-500 hover:underline">حذف</button>
+                            <td class="font-bold" dir="ltr" x-text="record.visits"></td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <button type="button" @click="openEdit(record)"
+                                        class="text-xs font-bold text-primary-600 hover:underline dark:text-primary-300">تعديل</button>
+                                    <button type="button" @click="remove(record)"
+                                        class="text-xs font-bold text-red-500 hover:underline">حذف</button>
                                 </div>
                             </td>
                         </tr>
