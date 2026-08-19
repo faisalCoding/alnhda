@@ -707,23 +707,58 @@ app.get('/groups/:clientId', async (req, res) => {
                     participants: chat.participants ? chat.participants.length : null,
                 }));
         } catch (error) {
-            // getChats يبني كائن محادثة كاملاً لكل عنصر، وتلك الطبقة تنكسر مع
-            // بعض نسخ واتساب ويب برسالة مُصغَّرة لا تدل على شيء. المخزن نفسه
-            // يحمل ما نحتاجه: معرّفاً واسماً، بلا ذلك التحويل.
-            console.error(`[${req.params.clientId}] getChats فشل (${error.message})، سيُقرأ المخزن مباشرة.`);
+            console.error(`[${req.params.clientId}] getChats فشل (${error.message})، ستُجرَّب المصادر البديلة.`);
 
-            groups = await session.client.pupPage.evaluate(() => {
-                const chats = window.Store.Chat.getModelsArray
-                    ? window.Store.Chat.getModelsArray()
-                    : Array.from(window.Store.Chat.models || []);
+            groups = await session.client.pupPage.evaluate(async () => {
+                const found = new Map();
+                const add = (id, name) => {
+                    if (typeof id === 'string' && id.endsWith('@g.us') && !found.has(id)) {
+                        found.set(id, { id, name: name || null, participants: null });
+                    }
+                };
 
-                return chats
-                    .filter((chat) => chat.id && chat.id.server === 'g.us')
-                    .map((chat) => ({
-                        id: chat.id._serialized,
-                        name: chat.name || chat.formattedTitle || chat.contact?.name || chat.id.user,
-                        participants: chat.groupMetadata?.participants?.length ?? null,
-                    }));
+                // ١. المخزن المحقون، إن كان قد التُقط أصلاً.
+                try {
+                    const store = window.Store?.Chat;
+                    const models = store?.getModelsArray ? store.getModelsArray() : Array.from(store?.models || []);
+                    for (const chat of models) {
+                        add(chat?.id?._serialized, chat?.name || chat?.formattedTitle);
+                    }
+                } catch { /* الحقن ناقص */ }
+
+                // ٢. قاعدة واتساب الدائمة: مستقلة عن الحقن تماماً.
+                if (found.size === 0) {
+                    try {
+                        const db = await new Promise((resolve, reject) => {
+                            const request = indexedDB.open('model-storage');
+                            request.onsuccess = () => resolve(request.result);
+                            request.onerror = () => reject(request.error);
+                        });
+
+                        if (db.objectStoreNames.contains('chat')) {
+                            const rows = await new Promise((resolve, reject) => {
+                                const request = db.transaction('chat', 'readonly').objectStore('chat').getAll();
+                                request.onsuccess = () => resolve(request.result || []);
+                                request.onerror = () => reject(request.error);
+                            });
+
+                            for (const row of rows) {
+                                add(row?.id, row?.name || row?.subject || row?.formattedTitle);
+                            }
+                        }
+
+                        db.close();
+                    } catch { /* القاعدة غير متاحة */ }
+                }
+
+                // ٣. آخر ملاذ: النمط كما هو مكتوب في الصفحة المعروضة.
+                if (found.size === 0) {
+                    for (const id of document.documentElement.outerHTML.match(/[\d-]{10,}@g\.us/g) || []) {
+                        add(id, null);
+                    }
+                }
+
+                return [...found.values()];
             });
         }
 
