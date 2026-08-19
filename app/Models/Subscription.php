@@ -14,8 +14,6 @@ class Subscription extends Model
     protected $fillable = [
         'account_id',
         'name',
-        'identifier',
-        'url',
         'amount',
         'paid_on',
         'expires_on',
@@ -55,6 +53,15 @@ class Subscription extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
+    }
+
+    /**
+     * What to call this record: the linked account's name when there is one,
+     * since the fields are held there rather than copied onto every payment.
+     */
+    public function displayName(): string
+    {
+        return $this->account?->name ?? (string) $this->name;
     }
 
     /**

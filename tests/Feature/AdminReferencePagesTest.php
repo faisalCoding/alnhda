@@ -109,7 +109,6 @@ it('creates a subscription with all of its fields', function () {
     $this->actingAs($this->admin, 'admin')
         ->postJson(panelApi('subscriptions'), [
             'name' => 'Canva Pro',
-            'identifier' => 'info@kayanalnhda.sa',
             'expires_on' => '2027-01-15',
             'payment_account' => 'Visa ****4211',
             'note' => 'يُجدَّد سنوياً',
@@ -282,24 +281,6 @@ it('refuses a checklist built from a method that does not exist', function () {
 
 // ---- subscription link ---------------------------------------------------
 
-it('stores and returns the subscription platform link', function () {
-    $this->actingAs($this->admin, 'admin')
-        ->postJson(panelApi('subscriptions'), [
-            'name' => 'Canva Pro',
-            'identifier' => 'info@kayanalnhda.sa',
-            'url' => 'https://canva.com',
-        ])
-        ->assertCreated()
-        ->assertJsonPath('data.url', 'https://canva.com');
-});
-
-it('refuses a subscription link that is not a url', function () {
-    $this->actingAs($this->admin, 'admin')
-        ->postJson(panelApi('subscriptions'), ['name' => 'س', 'identifier' => 'x', 'url' => 'ليس رابطاً'])
-        ->assertStatus(422)
-        ->assertJsonValidationErrors('url');
-});
-
 // ---- linking, amounts and dates ------------------------------------------
 
 it('links a record to an account and sends the account back with it', function () {
@@ -307,14 +288,12 @@ it('links a record to an account and sends the account back with it', function (
 
     $this->actingAs($this->admin, 'admin')
         ->postJson(panelApi('subscriptions'), [
-            'name' => 'Meta Business',
-            'identifier' => 'ads@kayanalnhda.sa',
             'account_id' => $account->id,
             'amount' => 1250.50,
             'paid_on' => '2026-08-01',
         ])
         ->assertCreated()
-        ->assertJsonPath('data.account.name', 'إنستغرام')
+        ->assertJsonPath('data.display_name', 'إنستغرام')
         ->assertJsonPath('data.amount', '1250.50')
         ->assertJsonPath('data.paid_on', '2026-08-01');
 });
@@ -331,14 +310,14 @@ it('keeps the record when its linked account is deleted', function () {
 
 it('refuses a link to an account that does not exist', function () {
     $this->actingAs($this->admin, 'admin')
-        ->postJson(panelApi('subscriptions'), ['name' => 'س', 'identifier' => 'x', 'account_id' => 9999])
+        ->postJson(panelApi('subscriptions'), ['name' => 'س', 'account_id' => 9999])
         ->assertStatus(422)
         ->assertJsonValidationErrors('account_id');
 });
 
 it('refuses a negative amount', function () {
     $this->actingAs($this->admin, 'admin')
-        ->postJson(panelApi('subscriptions'), ['name' => 'س', 'identifier' => 'x', 'amount' => -10])
+        ->postJson(panelApi('subscriptions'), ['name' => 'س', 'amount' => -10])
         ->assertStatus(422)
         ->assertJsonValidationErrors('amount');
 });
@@ -373,11 +352,61 @@ it('records a payment with an amount but no expiry', function () {
     $this->actingAs($this->admin, 'admin')
         ->postJson(panelApi('subscriptions'), [
             'name' => 'تصميم شعار',
-            'identifier' => 'designer@example.com',
             'amount' => 800,
             'paid_on' => '2026-07-15',
         ])
         ->assertCreated()
         ->assertJsonPath('data.is_subscription', false)
         ->assertJsonPath('data.expires_on', null);
+});
+
+// ---- fields come from the linked account ---------------------------------
+
+it('takes its name, identifier and link from the account it belongs to', function () {
+    $account = Account::factory()->create([
+        'name' => 'إنستغرام',
+        'identifier' => 'nahda_realestate',
+        'url' => 'https://instagram.com/nahda_realestate',
+    ]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelApi('subscriptions'), ['account_id' => $account->id, 'amount' => 300])
+        ->assertCreated()
+        ->assertJsonPath('data.display_name', 'إنستغرام')
+        ->assertJsonPath('data.identifier', 'nahda_realestate')
+        ->assertJsonPath('data.url', 'https://instagram.com/nahda_realestate');
+});
+
+it('needs a name of its own only when it is not linked', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelApi('subscriptions'), ['amount' => 800])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('name');
+});
+
+it('accepts a linked record with no name given', function () {
+    $account = Account::factory()->create(['name' => 'إنستغرام']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelApi('subscriptions'), ['account_id' => $account->id])
+        ->assertCreated()
+        ->assertJsonPath('data.name', null)
+        ->assertJsonPath('data.display_name', 'إنستغرام');
+});
+
+it('falls back to its own name once its account is deleted', function () {
+    $account = Account::factory()->create(['name' => 'إنستغرام']);
+    $subscription = Subscription::factory()->create(['account_id' => $account->id, 'name' => 'إعلانات ميتا']);
+
+    $account->delete();
+
+    expect($subscription->fresh()->displayName())->toBe('إعلانات ميتا');
+});
+
+it('leaves an unlinked record with no identifier to show', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelApi('subscriptions'), ['name' => 'تصميم شعار', 'amount' => 800])
+        ->assertCreated()
+        ->assertJsonPath('data.identifier', null)
+        ->assertJsonPath('data.url', null);
 });

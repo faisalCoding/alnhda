@@ -16,8 +16,6 @@ class SubscriptionFactory extends Factory
     {
         return [
             'name' => fake()->randomElement(['Canva Pro', 'Adobe Creative Cloud', 'Semrush', 'ChatGPT Plus']),
-            'identifier' => fake()->safeEmail(),
-            'url' => fake()->url(),
             'expires_on' => fake()->dateTimeBetween('+1 month', '+1 year')->format('Y-m-d'),
             'payment_account' => 'Visa ****'.fake()->numberBetween(1000, 9999),
             'amount' => fake()->randomFloat(2, 50, 5000),

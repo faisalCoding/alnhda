@@ -3,7 +3,7 @@ import { crudPage } from './simpleCrud';
 
 export default function subscriptionsPage() {
     return {
-        ...crudPage('/api/subscriptions', { id: null, account_id: '', name: '', identifier: '', url: '', amount: '', paid_on: '', expires_on: '', payment_account: '', note: '' }),
+        ...crudPage('/api/subscriptions', { id: null, account_id: '', name: '', amount: '', paid_on: '', expires_on: '', payment_account: '', note: '' }),
 
         accounts: [],
         kind: 'all',
@@ -80,6 +80,7 @@ export default function subscriptionsPage() {
         copied: null,
 
         /** Copy the identifier and flag it, so the button can confirm itself. */
+        /** The linked account owns the identifier, so an unlinked record has none. */
         async copyIdentifier(record) {
             if (!record.identifier) {
                 return;
@@ -147,7 +148,7 @@ export default function subscriptionsPage() {
                     || (this.kind === 'subscription' && record.is_subscription)
                     || (this.kind === 'payment' && !record.is_subscription);
 
-                return ofKind && this.matches(record, record.name, record.identifier, record.note, record.account?.name);
+                return ofKind && this.matches(record, record.display_name, record.identifier, record.note);
             });
         },
 

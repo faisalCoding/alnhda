@@ -20,8 +20,10 @@ class SubscriptionResource extends JsonResource
             'account_id' => $this->account_id,
             'account' => new AccountResource($this->whenLoaded('account')),
             'name' => $this->name,
-            'identifier' => $this->identifier,
-            'url' => $this->url,
+            'display_name' => $this->displayName(),
+            // Mirrored from the account so the card needs no second lookup.
+            'identifier' => $this->account?->identifier,
+            'url' => $this->account?->url,
             'amount' => $this->amount,
             'paid_on' => $this->paid_on?->toDateString(),
             'is_subscription' => $this->isSubscription(),

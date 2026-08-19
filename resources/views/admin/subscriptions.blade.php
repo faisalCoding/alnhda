@@ -56,9 +56,9 @@
                 <article class="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
-                            <h2 class="truncate font-bold" x-text="record.name"></h2>
-                            <div class="flex items-center gap-1.5">
-                                <button type="button" @click="copyIdentifier(record)"
+                            <h2 class="truncate font-bold" x-text="record.display_name"></h2>
+                            <div class="flex items-center gap-1.5" x-show="record.identifier || record.url" x-cloak>
+                                <button type="button" x-show="record.identifier" @click="copyIdentifier(record)"
                                     class="group/copy flex min-w-0 items-center gap-1.5 rounded-lg px-1.5 py-0.5 -mr-1.5 text-sm text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
                                     :title="'نسخ ' + record.identifier">
                                     <span class="truncate" dir="ltr" x-text="record.identifier"></span>
@@ -147,16 +147,6 @@
 
                 <form @submit.prevent="save()" class="space-y-4">
                     <div>
-                        <label class="{{ $label }}">اسم المنصة</label>
-                        <input type="text" x-model="form.name" class="{{ $input }}" placeholder="Canva Pro">
-                        <p class="{{ $error }}" x-show="formErrors.name" x-text="formErrors.name?.[0]"></p>
-                    </div>
-                    <div>
-                        <label class="{{ $label }}">البريد أو رقم الهاتف أو اسم المستخدم</label>
-                        <input type="text" x-model="form.identifier" class="{{ $input }}" dir="ltr">
-                        <p class="{{ $error }}" x-show="formErrors.identifier" x-text="formErrors.identifier?.[0]"></p>
-                    </div>
-                    <div>
                         <label class="{{ $label }}">الحساب المرتبط</label>
                         <select x-model.number="form.account_id" class="{{ $input }}">
                             <option value="">بلا ربط</option>
@@ -165,6 +155,14 @@
                             </template>
                         </select>
                         <p class="mt-1 text-xs text-zinc-400" x-show="!accounts.length">أضف حساباً من صفحة الحسابات أولاً</p>
+                        <p class="mt-1 text-xs text-zinc-400" x-show="form.account_id">اسم المنصة واسم المستخدم والرابط تُؤخذ من هذا الحساب.</p>
+                    </div>
+
+                    <div x-show="!form.account_id" x-cloak>
+                        <label class="{{ $label }}">اسم السجل</label>
+                        <input type="text" x-model="form.name" class="{{ $input }}" placeholder="تصميم شعار">
+                        <p class="mt-1 text-xs text-zinc-400">مطلوب فقط للسجلات غير المرتبطة بحساب.</p>
+                        <p class="{{ $error }}" x-show="formErrors.name" x-text="formErrors.name?.[0]"></p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -178,12 +176,6 @@
                             <input type="date" x-model="form.paid_on" class="{{ $input }}" dir="ltr">
                             <p class="{{ $error }}" x-show="formErrors.paid_on" x-text="formErrors.paid_on?.[0]"></p>
                         </div>
-                    </div>
-
-                    <div>
-                        <label class="{{ $label }}">رابط المنصة</label>
-                        <input type="url" x-model="form.url" class="{{ $input }}" dir="ltr" placeholder="https://">
-                        <p class="{{ $error }}" x-show="formErrors.url" x-text="formErrors.url?.[0]"></p>
                     </div>
 
                     <div>
