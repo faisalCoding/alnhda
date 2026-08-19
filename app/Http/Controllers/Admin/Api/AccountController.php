@@ -27,11 +27,10 @@ class AccountController extends Controller
     public function store(StoreAccountRequest $request): JsonResponse
     {
         $attributes = $request->validated();
-        $applyTemplates = (bool) ($attributes['apply_templates'] ?? true);
         $categoryIds = $attributes['category_ids'] ?? [];
-        unset($attributes['apply_templates'], $attributes['category_ids']);
+        unset($attributes['category_ids']);
 
-        $account = DB::transaction(function () use ($attributes, $applyTemplates, $categoryIds): Account {
+        $account = DB::transaction(function () use ($attributes, $categoryIds): Account {
             $account = Account::query()->create([
                 ...$attributes,
                 'sort_order' => (int) Account::query()->max('sort_order') + 1,
@@ -39,10 +38,7 @@ class AccountController extends Controller
 
             $account->categories()->sync($categoryIds);
 
-            if ($applyTemplates) {
-                $account->applyTaskTemplates();
-            }
-
+            // The checklist is pulled in on demand from the card, not seeded here.
             return $account;
         });
 

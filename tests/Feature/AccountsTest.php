@@ -58,19 +58,31 @@ it('refuses the listing to guests', function () {
 
 // ---- creation ------------------------------------------------------------
 
-it('copies the template checklist onto a new account', function () {
+it('leaves a new account with an empty checklist', function () {
+    TaskTemplate::factory()->create(['title' => 'تفعيل التحقق بخطوتين']);
+    TaskTemplate::factory()->create(['title' => 'ربط البريد الرسمي']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(apiUrl('accounts'), ['name' => 'إنستغرام', 'identifier' => 'nahda_realestate'])
+        ->assertCreated()
+        ->assertJsonCount(0, 'data.tasks');
+
+    expect(Account::query()->first()->tasks)->toBeEmpty();
+});
+
+it('pulls the templates in only when asked from the card', function () {
     TaskTemplate::factory()->create(['title' => 'تفعيل التحقق بخطوتين', 'sort_order' => 1]);
     TaskTemplate::factory()->create(['title' => 'ربط البريد الرسمي', 'sort_order' => 2]);
 
-    $response = $this->actingAs($this->admin, 'admin')->postJson(apiUrl('accounts'), [
-        'name' => 'إنستغرام',
-        'identifier' => 'nahda_realestate',
-        'password' => 'TopSecret!23',
-    ]);
+    $account = Account::factory()->create();
+    expect($account->tasks)->toBeEmpty();
 
-    $response->assertCreated()->assertJsonCount(2, 'data.tasks');
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(apiUrl('accounts/'.$account->id.'/apply-templates'))
+        ->assertOk()
+        ->assertJsonCount(2, 'data.tasks');
 
-    expect(Account::query()->first()->tasks->pluck('title')->all())
+    expect($account->fresh()->tasks->pluck('title')->all())
         ->toBe(['تفعيل التحقق بخطوتين', 'ربط البريد الرسمي']);
 });
 

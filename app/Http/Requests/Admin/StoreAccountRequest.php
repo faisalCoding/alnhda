@@ -23,7 +23,6 @@ class StoreAccountRequest extends FormRequest
             'identifier' => 'required|string|max:255',
             'url' => 'nullable|url|max:2048',
             'password' => 'nullable|string|max:500',
-            'apply_templates' => 'sometimes|boolean',
         ];
     }
 

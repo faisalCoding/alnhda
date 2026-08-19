@@ -48,10 +48,6 @@
                 <p class="{{ $error }}" x-show="formErrors.password" x-text="formErrors.password?.[0]"></p>
             </div>
 
-            <p class="rounded-xl bg-zinc-100 px-3 py-2 text-xs text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400" x-show="!form.id">
-                ستُنسخ قائمة المهام النموذجية إلى هذا الحساب تلقائياً.
-            </p>
-
             <div class="flex justify-end gap-2 pt-2">
                 <button type="button" @click="showForm = false" class="{{ $ghost }}">إلغاء</button>
                 <button type="submit" :disabled="saving" class="{{ $primary }}" x-text="saving ? 'جارٍ الحفظ…' : 'حفظ'"></button>
