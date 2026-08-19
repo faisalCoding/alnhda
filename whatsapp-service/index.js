@@ -641,16 +641,40 @@ app.get('/groups/:clientId', async (req, res) => {
             });
         }
 
-        const chats = await session.client.getChats();
+        let groups;
 
-        const groups = chats
-            .filter((chat) => chat.isGroup)
-            .map((chat) => ({
-                id: chat.id._serialized,
-                name: chat.name || chat.formattedTitle || chat.id.user,
-                participants: chat.participants ? chat.participants.length : null,
-            }))
-            .sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+        try {
+            const chats = await session.client.getChats();
+
+            groups = chats
+                .filter((chat) => chat.isGroup)
+                .map((chat) => ({
+                    id: chat.id._serialized,
+                    name: chat.name || chat.formattedTitle || chat.id.user,
+                    participants: chat.participants ? chat.participants.length : null,
+                }));
+        } catch (error) {
+            // getChats يبني كائن محادثة كاملاً لكل عنصر، وتلك الطبقة تنكسر مع
+            // بعض نسخ واتساب ويب برسالة مُصغَّرة لا تدل على شيء. المخزن نفسه
+            // يحمل ما نحتاجه: معرّفاً واسماً، بلا ذلك التحويل.
+            console.error(`[${req.params.clientId}] getChats فشل (${error.message})، سيُقرأ المخزن مباشرة.`);
+
+            groups = await session.client.pupPage.evaluate(() => {
+                const chats = window.Store.Chat.getModelsArray
+                    ? window.Store.Chat.getModelsArray()
+                    : Array.from(window.Store.Chat.models || []);
+
+                return chats
+                    .filter((chat) => chat.id && chat.id.server === 'g.us')
+                    .map((chat) => ({
+                        id: chat.id._serialized,
+                        name: chat.name || chat.formattedTitle || chat.contact?.name || chat.id.user,
+                        participants: chat.groupMetadata?.participants?.length ?? null,
+                    }));
+            });
+        }
+
+        groups.sort((a, b) => String(a.name).localeCompare(String(b.name), 'ar'));
 
         return res.json({ success: true, groups });
     } catch (error) {
