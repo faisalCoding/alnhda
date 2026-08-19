@@ -16,6 +16,7 @@ use App\Http\Resources\Admin\WeeklyTaskTemplateResource;
 use App\Models\Admin;
 use App\Models\AppSettings;
 use App\Models\Employee;
+use App\Models\WeeklyReportSend;
 use App\Models\WeeklyTaskItem;
 use App\Models\WeeklyTaskList;
 use App\Models\WeeklyTaskTemplate;
@@ -227,6 +228,12 @@ class WeeklyTaskController extends Controller
         if (! ($result['sent'] ?? false)) {
             return response()->json(['message' => $result['error'] ?? 'تعذر الإرسال.'], 422);
         }
+
+        // Recorded so the scheduled run does not repeat what was just sent by hand.
+        WeeklyReportSend::query()->updateOrCreate(
+            ['week_start' => WeeklyTaskList::weekStartFor(now())->toDateString(), 'kind' => $kind],
+            ['sent_at' => now()],
+        );
 
         return response()->json(['data' => ['sent' => true]]);
     }

@@ -3,6 +3,7 @@
 use App\Models\Admin;
 use App\Models\AppSettings;
 use App\Models\Employee;
+use App\Models\WeeklyReportSend;
 use App\Models\WeeklyTaskItem;
 use App\Models\WeeklyTaskList;
 use App\Models\WeeklyTaskTemplate;
@@ -270,4 +271,70 @@ it('refuses to send while no group is set', function () {
     $this->actingAs($this->admin, 'admin')
         ->postJson(weeklyApi('weekly-tasks/send'), ['kind' => 'opening'])
         ->assertStatus(422);
+});
+
+// ---- one report per week -------------------------------------------------
+
+// The server had schedule:run in cron four times over, so a scheduled report
+// could reach the group four times. The record makes the send idempotent.
+it('refuses to send the same report twice in one week', function () {
+    Employee::factory()->create(['enrolled_on' => '2026-01-01']);
+    WeeklyTaskTemplate::factory()->create();
+    app(WeeklyTaskPlanner::class)->generateFor(now());
+
+    WeeklyReportSend::query()->create([
+        'week_start' => '2026-08-15',
+        'kind' => 'opening',
+        'sent_at' => now(),
+    ]);
+
+    $this->artisan('weekly-tasks:report', ['kind' => 'opening'])
+        ->expectsOutputToContain('أُرسل من قبل')
+        ->assertSuccessful();
+});
+
+it('still sends the other kind in the same week', function () {
+    Employee::factory()->create(['enrolled_on' => '2026-01-01']);
+    WeeklyTaskTemplate::factory()->create();
+    app(WeeklyTaskPlanner::class)->generateFor(now());
+
+    WeeklyReportSend::query()->create([
+        'week_start' => '2026-08-15',
+        'kind' => 'opening',
+        'sent_at' => now(),
+    ]);
+
+    // Passes the guard and stops later, at the group not being configured.
+    $this->artisan('weekly-tasks:report', ['kind' => 'closing'])
+        ->expectsOutputToContain('غير مفعّلة')
+        ->assertSuccessful();
+});
+
+it('sends again for the same week when forced', function () {
+    Employee::factory()->create(['enrolled_on' => '2026-01-01']);
+    WeeklyTaskTemplate::factory()->create();
+    app(WeeklyTaskPlanner::class)->generateFor(now());
+
+    WeeklyReportSend::query()->create([
+        'week_start' => '2026-08-15',
+        'kind' => 'opening',
+        'sent_at' => now(),
+    ]);
+
+    $this->artisan('weekly-tasks:report', ['kind' => 'opening', '--force' => true])
+        ->doesntExpectOutputToContain('أُرسل من قبل')
+        ->assertSuccessful();
+});
+
+it('keeps one record per week and kind', function () {
+    expect(fn () => WeeklyReportSend::query()->create(['week_start' => '2026-08-15', 'kind' => 'opening', 'sent_at' => now()])
+        && WeeklyReportSend::query()->create(['week_start' => '2026-08-15', 'kind' => 'opening', 'sent_at' => now()]))
+        ->toThrow(Illuminate\Database\QueryException::class);
+});
+
+it('lets the next week be reported normally', function () {
+    WeeklyReportSend::query()->create(['week_start' => '2026-08-15', 'kind' => 'opening', 'sent_at' => now()]);
+
+    expect(WeeklyReportSend::alreadySent('2026-08-15', 'opening'))->toBeTrue()
+        ->and(WeeklyReportSend::alreadySent('2026-08-22', 'opening'))->toBeFalse();
 });

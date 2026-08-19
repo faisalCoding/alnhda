@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use App\Models\Admin;
 use App\Models\AppSettings;
+use App\Models\WeeklyReportSend;
+use App\Models\WeeklyTaskList;
 use App\Services\WeeklyTaskPlanner;
 use App\Services\WhatsappGateway;
 use Illuminate\Console\Command;
@@ -14,7 +16,8 @@ class WeeklyTasksReport extends Command
     protected $signature = 'weekly-tasks:report
         {kind : opening for the Saturday brief, closing for the Thursday summary}
         {--date= : Any day inside the week to report on, defaults to today}
-        {--dry-run : Print the message instead of sending it}';
+        {--dry-run : Print the message instead of sending it}
+        {--force : Send again even if this week\'s report already went out}';
 
     protected $description = 'Send the weekly task brief or summary to the configured WhatsApp group';
 
@@ -53,6 +56,16 @@ class WeeklyTasksReport extends Command
             return self::SUCCESS;
         }
 
+        // Duplicate cron entries, a retry, or a manual run should not put the
+        // same report into the group twice.
+        $weekStart = WeeklyTaskList::weekStartFor($date)->toDateString();
+
+        if (! $this->option('force') && WeeklyReportSend::alreadySent($weekStart, $kind)) {
+            $this->warn("تقرير {$kind} لأسبوع {$weekStart} أُرسل من قبل، فلم يُعد إرساله.");
+
+            return self::SUCCESS;
+        }
+
         $settings = AppSettings::current();
 
         if (! $settings->weeklyReportsAreReady()) {
@@ -84,6 +97,11 @@ class WeeklyTasksReport extends Command
 
             return self::FAILURE;
         }
+
+        WeeklyReportSend::query()->updateOrCreate(
+            ['week_start' => $weekStart, 'kind' => $kind],
+            ['sent_at' => now()],
+        );
 
         $this->info('أُرسلت الرسالة إلى '.($settings->whatsapp_group_name ?? 'المجموعة المحددة').'.');
 
