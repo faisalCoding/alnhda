@@ -1,7 +1,7 @@
 @extends('admin.layouts.panel')
 
-@section('title', 'اشتراكات البرامج')
-@section('heading', 'اشتراكات البرامج')
+@section('title', 'الاشتراكات والمدفوعات')
+@section('heading', 'الاشتراكات والمدفوعات')
 
 @php
     $input = 'w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 dark:border-zinc-700 dark:bg-zinc-800';
@@ -19,13 +19,14 @@
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
-                إضافة اشتراك
+                إضافة سجل
             </button>
 
             <input type="search" x-model="search" placeholder="بحث بالاسم أو الحساب…"
                 class="w-full max-w-xs rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-sm outline-none focus:border-primary-500 dark:border-zinc-700 dark:bg-zinc-800">
 
-            <span class="text-xs text-zinc-400" x-text="records.length + ' اشتراك'"></span>
+            <span class="rounded-lg bg-primary-50 px-3 py-1.5 text-xs font-bold text-primary-700 dark:bg-primary-900/40 dark:text-primary-200"
+                x-text="'الإجمالي: ' + formatAmount(totalAmount) + ' ريال'"></span>
 
             <span x-show="!pinIsSet" x-cloak
                 class="mr-auto rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
@@ -33,11 +34,21 @@
             </span>
         </div>
 
+        <div class="flex flex-wrap items-center gap-2">
+            <template x-for="option in [{ key: 'all', label: 'الكل' }, { key: 'subscription', label: 'اشتراكات' }, { key: 'payment', label: 'مدفوعات' }]" :key="option.key">
+                <button type="button" @click="kind = option.key"
+                    class="rounded-full px-3.5 py-1.5 text-xs font-bold transition"
+                    :class="kind === option.key ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300'">
+                    <span x-text="option.label"></span> <span x-text="countOf(option.key)"></span>
+                </button>
+            </template>
+        </div>
+
         <p x-show="error" x-cloak class="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-600 dark:bg-red-900/30 dark:text-red-300" x-text="error"></p>
 
         <div x-show="!loading && !visible.length" x-cloak
             class="rounded-2xl border border-dashed border-zinc-300 px-6 py-16 text-center dark:border-zinc-700">
-            <p class="font-bold text-zinc-500 dark:text-zinc-400">لا توجد اشتراكات بعد</p>
+            <p class="font-bold text-zinc-500 dark:text-zinc-400">لا توجد سجلات بعد</p>
         </div>
 
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -66,13 +77,35 @@
                                 </template>
                             </div>
                         </div>
-                        <span class="shrink-0 text-xs" :class="expiryTone(record)" x-text="expiryLabel(record)"></span>
+                        <span class="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold"
+                            :class="record.is_subscription ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'"
+                            x-text="record.is_subscription ? 'اشتراك' : 'دفعة'"></span>
                     </div>
+
+                    <template x-if="record.account">
+                        <p class="-mt-1 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                            </svg>
+                            <span x-text="'مرتبط بحساب: ' + record.account.name"></span>
+                        </p>
+                    </template>
 
                     <dl class="space-y-1.5 text-sm">
                         <div class="flex justify-between gap-3">
+                            <dt class="text-zinc-500 dark:text-zinc-400">القيمة</dt>
+                            <dd class="font-bold" x-text="record.amount ? formatAmount(record.amount) + ' ريال' : '—'"></dd>
+                        </div>
+                        <div class="flex justify-between gap-3">
+                            <dt class="text-zinc-500 dark:text-zinc-400">تاريخ الدفع</dt>
+                            <dd dir="ltr" x-text="record.paid_on ?? '—'"></dd>
+                        </div>
+                        <div class="flex justify-between gap-3" x-show="record.is_subscription">
                             <dt class="text-zinc-500 dark:text-zinc-400">تاريخ الانتهاء</dt>
-                            <dd dir="ltr" x-text="record.expires_on ?? '—'"></dd>
+                            <dd class="flex items-center gap-2">
+                                <span dir="ltr" x-text="record.expires_on ?? '—'"></span>
+                                <span class="text-xs" :class="expiryTone(record)" x-text="expiryLabel(record)"></span>
+                            </dd>
                         </div>
                         <div class="flex items-center justify-between gap-3">
                             <dt class="text-zinc-500 dark:text-zinc-400">حساب الدفع</dt>
@@ -110,7 +143,7 @@
         <div x-show="showForm" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
             @click.self="showForm = false" @keydown.escape.window="showForm = false">
             <div class="w-full max-w-md rounded-2xl bg-white p-6 dark:bg-zinc-900" x-trap.noscroll="showForm">
-                <h2 class="mb-5 text-lg font-extrabold" x-text="form.id ? 'تعديل الاشتراك' : 'اشتراك جديد'"></h2>
+                <h2 class="mb-5 text-lg font-extrabold" x-text="form.id ? 'تعديل السجل' : 'سجل جديد'"></h2>
 
                 <form @submit.prevent="save()" class="space-y-4">
                     <div>
@@ -124,6 +157,30 @@
                         <p class="{{ $error }}" x-show="formErrors.identifier" x-text="formErrors.identifier?.[0]"></p>
                     </div>
                     <div>
+                        <label class="{{ $label }}">الحساب المرتبط</label>
+                        <select x-model.number="form.account_id" class="{{ $input }}">
+                            <option value="">بلا ربط</option>
+                            <template x-for="account in accounts" :key="account.id">
+                                <option :value="account.id" x-text="account.name"></option>
+                            </template>
+                        </select>
+                        <p class="mt-1 text-xs text-zinc-400" x-show="!accounts.length">أضف حساباً من صفحة الحسابات أولاً</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="{{ $label }}">القيمة (ريال)</label>
+                            <input type="number" step="0.01" min="0" x-model="form.amount" class="{{ $input }}" dir="ltr">
+                            <p class="{{ $error }}" x-show="formErrors.amount" x-text="formErrors.amount?.[0]"></p>
+                        </div>
+                        <div>
+                            <label class="{{ $label }}">تاريخ الدفع</label>
+                            <input type="date" x-model="form.paid_on" class="{{ $input }}" dir="ltr">
+                            <p class="{{ $error }}" x-show="formErrors.paid_on" x-text="formErrors.paid_on?.[0]"></p>
+                        </div>
+                    </div>
+
+                    <div>
                         <label class="{{ $label }}">رابط المنصة</label>
                         <input type="url" x-model="form.url" class="{{ $input }}" dir="ltr" placeholder="https://">
                         <p class="{{ $error }}" x-show="formErrors.url" x-text="formErrors.url?.[0]"></p>
@@ -132,6 +189,7 @@
                     <div>
                         <label class="{{ $label }}">تاريخ انتهاء الاشتراك</label>
                         <input type="date" x-model="form.expires_on" class="{{ $input }}" dir="ltr">
+                        <p class="mt-1 text-xs text-zinc-400">اتركه فارغاً إن كانت دفعة لمرة واحدة لا اشتراكاً متجدداً.</p>
                         <p class="{{ $error }}" x-show="formErrors.expires_on" x-text="formErrors.expires_on?.[0]"></p>
                     </div>
                     <div>

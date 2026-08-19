@@ -3,7 +3,10 @@ import { crudPage } from './simpleCrud';
 
 export default function subscriptionsPage() {
     return {
-        ...crudPage('/api/subscriptions', { id: null, name: '', identifier: '', url: '', expires_on: '', payment_account: '', note: '' }),
+        ...crudPage('/api/subscriptions', { id: null, account_id: '', name: '', identifier: '', url: '', amount: '', paid_on: '', expires_on: '', payment_account: '', note: '' }),
+
+        accounts: [],
+        kind: 'all',
 
         pinIsSet: false,
         unlockedUntil: null,
@@ -12,8 +15,17 @@ export default function subscriptionsPage() {
         revealTimers: {},
 
         async init() {
-            await Promise.all([this.load(), this.loadPinState()]);
+            await Promise.all([this.load(), this.loadAccounts(), this.loadPinState()]);
             this.loading = false;
+        },
+
+        async loadAccounts() {
+            try {
+                const payload = await request('GET', '/api/accounts');
+                this.accounts = payload?.data ?? [];
+            } catch {
+                this.accounts = [];
+            }
         },
 
         async loadPinState() {
@@ -130,7 +142,34 @@ export default function subscriptionsPage() {
         },
 
         get visible() {
-            return this.records.filter((record) => this.matches(record, record.name, record.identifier, record.note));
+            return this.records.filter((record) => {
+                const ofKind = this.kind === 'all'
+                    || (this.kind === 'subscription' && record.is_subscription)
+                    || (this.kind === 'payment' && !record.is_subscription);
+
+                return ofKind && this.matches(record, record.name, record.identifier, record.note, record.account?.name);
+            });
+        },
+
+        countOf(kind) {
+            if (kind === 'all') {
+                return this.records.length;
+            }
+
+            return this.records.filter((record) => (kind === 'subscription') === Boolean(record.is_subscription)).length;
+        },
+
+        /** What the records on screen add up to. */
+        get totalAmount() {
+            return this.visible.reduce((sum, record) => sum + Number(record.amount ?? 0), 0);
+        },
+
+        formatAmount(value) {
+            if (value === null || value === undefined || value === '') {
+                return null;
+            }
+
+            return new Intl.NumberFormat('ar-SA-u-nu-latn', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(value));
         },
     };
 }

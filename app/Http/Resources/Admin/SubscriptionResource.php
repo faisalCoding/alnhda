@@ -17,9 +17,14 @@ class SubscriptionResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'account_id' => $this->account_id,
+            'account' => new AccountResource($this->whenLoaded('account')),
             'name' => $this->name,
             'identifier' => $this->identifier,
             'url' => $this->url,
+            'amount' => $this->amount,
+            'paid_on' => $this->paid_on?->toDateString(),
+            'is_subscription' => $this->isSubscription(),
             'expires_on' => $this->expires_on?->toDateString(),
             'days_until_expiry' => $this->daysUntilExpiry(),
             // The billing detail itself only ever travels via the reveal endpoint.

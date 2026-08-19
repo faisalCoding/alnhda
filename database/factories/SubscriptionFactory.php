@@ -20,9 +20,16 @@ class SubscriptionFactory extends Factory
             'url' => fake()->url(),
             'expires_on' => fake()->dateTimeBetween('+1 month', '+1 year')->format('Y-m-d'),
             'payment_account' => 'Visa ****'.fake()->numberBetween(1000, 9999),
+            'amount' => fake()->randomFloat(2, 50, 5000),
+            'paid_on' => fake()->dateTimeBetween('-1 year', 'now')->format('Y-m-d'),
             'note' => fake()->sentence(),
             'sort_order' => 0,
         ];
+    }
+
+    public function payment(): static
+    {
+        return $this->state(fn (array $attributes): array => ['expires_on' => null]);
     }
 
     public function expiringIn(int $days): static

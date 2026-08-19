@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Account;
 use App\Models\Admin;
 use App\Models\Backlink;
 use App\Models\MarketingChecklist;
@@ -32,7 +33,7 @@ it('serves each reference page to an admin', function (string $path, string $hea
         ->assertOk()
         ->assertSee($heading);
 })->with([
-    'subscriptions' => ['subscriptions', 'اشتراكات البرامج'],
+    'subscriptions' => ['subscriptions', 'الاشتراكات والمدفوعات'],
     'useful links' => ['useful-links', 'روابط مهمة'],
     'backlinks' => ['backlinks', 'الروابط الخلفية'],
     'marketing tools' => ['marketing-tools', 'أدوات التسويق'],
@@ -297,4 +298,86 @@ it('refuses a subscription link that is not a url', function () {
         ->postJson(panelApi('subscriptions'), ['name' => 'س', 'identifier' => 'x', 'url' => 'ليس رابطاً'])
         ->assertStatus(422)
         ->assertJsonValidationErrors('url');
+});
+
+// ---- linking, amounts and dates ------------------------------------------
+
+it('links a record to an account and sends the account back with it', function () {
+    $account = Account::factory()->create(['name' => 'إنستغرام']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelApi('subscriptions'), [
+            'name' => 'Meta Business',
+            'identifier' => 'ads@kayanalnhda.sa',
+            'account_id' => $account->id,
+            'amount' => 1250.50,
+            'paid_on' => '2026-08-01',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.account.name', 'إنستغرام')
+        ->assertJsonPath('data.amount', '1250.50')
+        ->assertJsonPath('data.paid_on', '2026-08-01');
+});
+
+it('keeps the record when its linked account is deleted', function () {
+    $account = Account::factory()->create();
+    $subscription = Subscription::factory()->create(['account_id' => $account->id]);
+
+    $account->delete();
+
+    expect(Subscription::query()->count())->toBe(1)
+        ->and($subscription->fresh()->account_id)->toBeNull();
+});
+
+it('refuses a link to an account that does not exist', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelApi('subscriptions'), ['name' => 'س', 'identifier' => 'x', 'account_id' => 9999])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('account_id');
+});
+
+it('refuses a negative amount', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelApi('subscriptions'), ['name' => 'س', 'identifier' => 'x', 'amount' => -10])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('amount');
+});
+
+it('calls a record with a renewal date a subscription', function () {
+    $subscription = Subscription::factory()->expiringIn(30)->create();
+
+    expect($subscription->isSubscription())->toBeTrue();
+});
+
+it('calls a record with no renewal date a payment', function () {
+    $payment = Subscription::factory()->payment()->create();
+
+    expect($payment->isSubscription())->toBeFalse();
+});
+
+it('flags which kind each record is in the listing', function () {
+    Subscription::factory()->expiringIn(30)->create(['name' => 'اشتراك']);
+    Subscription::factory()->payment()->create(['name' => 'دفعة']);
+
+    $data = collect($this->actingAs($this->admin, 'admin')
+        ->getJson(panelApi('subscriptions'))
+        ->assertOk()
+        ->json('data'))
+        ->pluck('is_subscription', 'name');
+
+    expect($data['اشتراك'])->toBeTrue()
+        ->and($data['دفعة'])->toBeFalse();
+});
+
+it('records a payment with an amount but no expiry', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelApi('subscriptions'), [
+            'name' => 'تصميم شعار',
+            'identifier' => 'designer@example.com',
+            'amount' => 800,
+            'paid_on' => '2026-07-15',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.is_subscription', false)
+        ->assertJsonPath('data.expires_on', null);
 });

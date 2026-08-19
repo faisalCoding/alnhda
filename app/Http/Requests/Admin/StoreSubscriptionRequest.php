@@ -17,6 +17,9 @@ class StoreSubscriptionRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'account_id' => 'nullable|integer|exists:accounts,id',
+            'amount' => 'nullable|numeric|min:0|max:99999999',
+            'paid_on' => 'nullable|date',
             'name' => 'required|string|max:255',
             'identifier' => 'required|string|max:255',
             'url' => 'nullable|url|max:2048',
@@ -35,6 +38,8 @@ class StoreSubscriptionRequest extends FormRequest
             'name.required' => 'اسم المنصة مطلوب.',
             'identifier.required' => 'البريد أو رقم الهاتف أو اسم المستخدم مطلوب.',
             'url.url' => 'رابط المنصة غير صالح، ابدأه بـ https://',
+            'amount.numeric' => 'القيمة يجب أن تكون رقماً.',
+            'paid_on.date' => 'تاريخ الدفع غير صالح.',
             'expires_on.date' => 'تاريخ الانتهاء غير صالح.',
         ];
     }

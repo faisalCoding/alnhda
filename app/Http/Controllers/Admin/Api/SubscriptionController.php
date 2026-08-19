@@ -16,6 +16,7 @@ class SubscriptionController extends Controller
     {
         return SubscriptionResource::collection(
             Subscription::query()
+                ->with('account')
                 ->orderByRaw('expires_on is null, expires_on asc')
                 ->orderBy('id')
                 ->get()
@@ -29,7 +30,7 @@ class SubscriptionController extends Controller
             'sort_order' => (int) Subscription::query()->max('sort_order') + 1,
         ]);
 
-        return (new SubscriptionResource($subscription))
+        return (new SubscriptionResource($subscription->load('account')))
             ->response()
             ->setStatusCode(201);
     }
@@ -45,7 +46,7 @@ class SubscriptionController extends Controller
 
         $subscription->update($attributes);
 
-        return new SubscriptionResource($subscription);
+        return new SubscriptionResource($subscription->load('account'));
     }
 
     public function destroy(Subscription $subscription): JsonResponse
