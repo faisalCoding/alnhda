@@ -248,9 +248,11 @@ class WeeklyTaskController extends Controller
      */
     public function testGroup(Request $request): JsonResponse
     {
-        $settings = AppSettings::current();
+        // The id on screen wins over the stored one, so a group can be proved
+        // before it is committed rather than after.
+        $groupId = trim((string) $request->input('group_id')) ?: (string) AppSettings::current()->whatsapp_group_id;
 
-        if (blank($settings->whatsapp_group_id)) {
+        if (blank($groupId)) {
             return response()->json(['message' => 'اعتمد مجموعة أولاً.'], 422);
         }
 
@@ -259,7 +261,7 @@ class WeeklyTaskController extends Controller
 
         $result = $this->gateway->sendToGroup(
             $this->gateway->clientIdFor($admin),
-            (string) $settings->whatsapp_group_id,
+            $groupId,
             'رسالة تجريبية من لوحة كيان النهضة للتأكد من ربط مجموعة التقارير.',
         );
 
@@ -267,7 +269,7 @@ class WeeklyTaskController extends Controller
             return response()->json(['message' => $result['error'] ?? 'تعذر الإرسال.'], 422);
         }
 
-        return response()->json(['data' => ['sent' => true]]);
+        return response()->json(['data' => ['sent' => true, 'group_id' => $groupId]]);
     }
 
     /**

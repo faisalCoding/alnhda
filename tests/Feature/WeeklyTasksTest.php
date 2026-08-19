@@ -520,3 +520,44 @@ it('relays a refused test send', function () {
 it('keeps the test send away from guests', function () {
     $this->postJson(weeklyApi('whatsapp/test-group'))->assertUnauthorized();
 });
+
+it('tests the group on screen rather than the one already saved', function () {
+    AppSettings::current()->update(['whatsapp_group_id' => 'المحفوظة@g.us']);
+
+    $sentTo = null;
+    $this->mock(WhatsappGateway::class, function ($mock) use (&$sentTo) {
+        $mock->shouldReceive('clientIdFor')->andReturn('admin_1');
+        $mock->shouldReceive('sendToGroup')->andReturnUsing(function ($client, $groupId) use (&$sentTo) {
+            $sentTo = $groupId;
+
+            return ['sent' => true];
+        });
+    });
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(weeklyApi('whatsapp/test-group'), ['group_id' => '120363999@g.us'])
+        ->assertOk()
+        ->assertJsonPath('data.group_id', '120363999@g.us');
+
+    expect($sentTo)->toBe('120363999@g.us');
+});
+
+it('falls back to the saved group when none is sent', function () {
+    AppSettings::current()->update(['whatsapp_group_id' => 'المحفوظة@g.us']);
+
+    $sentTo = null;
+    $this->mock(WhatsappGateway::class, function ($mock) use (&$sentTo) {
+        $mock->shouldReceive('clientIdFor')->andReturn('admin_1');
+        $mock->shouldReceive('sendToGroup')->andReturnUsing(function ($client, $groupId) use (&$sentTo) {
+            $sentTo = $groupId;
+
+            return ['sent' => true];
+        });
+    });
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(weeklyApi('whatsapp/test-group'))
+        ->assertOk();
+
+    expect($sentTo)->toBe('المحفوظة@g.us');
+});

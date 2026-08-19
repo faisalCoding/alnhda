@@ -260,8 +260,11 @@ export default function weeklyTasksPage() {
             this.notice = '';
 
             try {
-                await request('POST', '/api/whatsapp/test-group', {}, { idempotencyKey: uuid() });
-                this.notice = 'وصلت رسالة تجريبية إلى المجموعة. المعرّف صحيح.';
+                await request('POST', '/api/whatsapp/test-group', {
+                    group_id: this.settings.whatsapp_group_id,
+                }, { idempotencyKey: uuid() });
+
+                this.notice = 'وصلت رسالة تجريبية إلى «' + (this.settings.whatsapp_group_name ?? 'المجموعة') + '». افحص واتساب للتأكد.';
             } catch (error) {
                 this.groupsError = error.message;
             } finally {

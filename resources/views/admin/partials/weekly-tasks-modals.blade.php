@@ -192,9 +192,15 @@
                 <p class="mt-0.5 font-mono text-[11px] text-emerald-600 dark:text-emerald-300" dir="ltr"
                     x-text="settings.whatsapp_group_id"></p>
                 <button type="button" @click="testGroup()" :disabled="busy"
-                    class="mt-1.5 text-xs font-bold text-emerald-700 underline hover:no-underline dark:text-emerald-200">
-                    أرسل رسالة تجريبية للتأكد
+                    class="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-700 dark:bg-transparent dark:text-emerald-200 dark:hover:bg-emerald-900/40">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                    </svg>
+                    <span x-text="busy ? 'جارٍ الإرسال…' : 'أرسل رسالة تجريبية الآن'"></span>
                 </button>
+                <p class="mt-1 text-center text-[11px] text-emerald-600 dark:text-emerald-300">
+                    تُرسل فوراً دون حفظ، لتفحصها بنفسك في واتساب قبل الاعتماد.
+                </p>
             </div>
         </div>
 
