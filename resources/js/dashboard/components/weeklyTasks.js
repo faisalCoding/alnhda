@@ -7,9 +7,7 @@ export default function weeklyTasksPage() {
         templates: [],
         lists: [],
         settings: { whatsapp_group_id: null, whatsapp_group_name: null, weekly_reports_enabled: false, is_ready: false },
-        groups: [],
         groupsError: '',
-        loadingGroups: false,
 
         loading: true,
         busy: false,
@@ -61,6 +59,7 @@ export default function weeklyTasksPage() {
         async loadSettings() {
             try {
                 this.settings = (await request('GET', '/api/weekly-report-settings'))?.data ?? this.settings;
+                this.groupSearch = this.settings.whatsapp_group_name ?? '';
             } catch {
                 // leave the defaults
             }
@@ -223,28 +222,48 @@ export default function weeklyTasksPage() {
 
         // ---- reporting ------------------------------------------------------
 
-        async loadGroups() {
-            this.loadingGroups = true;
+        groupSearch: '',
+        candidates: [],
+        resolving: false,
+
+        /** Ask the gateway which group carries this name, and adopt its id. */
+        async resolveGroup() {
+            const name = this.groupSearch.trim();
+
+            if (name === '') {
+                this.groupsError = 'اكتب اسم المجموعة.';
+
+                return;
+            }
+
+            this.resolving = true;
             this.groupsError = '';
+            this.candidates = [];
 
             try {
-                const payload = await request('GET', '/api/whatsapp/groups');
-                this.groups = payload?.groups ?? [];
+                const payload = await request('POST', '/api/whatsapp/resolve-group', { name }, { idempotencyKey: uuid() });
+                const { matched, candidates } = payload.data;
 
-                if (!payload?.ok) {
-                    this.groupsError = payload?.error ?? 'تعذر جلب المجموعات.';
+                if (matched) {
+                    this.chooseGroup(matched);
+                    this.groupSearch = matched.name;
+                } else {
+                    this.candidates = candidates;
+                    this.groupsError = 'لم يطابق الاسم مجموعة واحدة بالضبط. اختر من الأقرب:';
                 }
             } catch (error) {
                 this.groupsError = error.message;
-                this.groups = [];
             } finally {
-                this.loadingGroups = false;
+                this.resolving = false;
             }
         },
 
         chooseGroup(group) {
             this.settings.whatsapp_group_id = group.id;
             this.settings.whatsapp_group_name = group.name;
+            this.groupSearch = group.name;
+            this.candidates = [];
+            this.groupsError = '';
         },
 
         async saveSettings() {

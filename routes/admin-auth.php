@@ -121,7 +121,6 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('weekly-task-templates', [WeeklyTaskController::class, 'templates'])->name('weekly-task-templates.index');
         Route::get('weekly-tasks', [WeeklyTaskController::class, 'week'])->name('weekly-tasks.index');
         Route::get('weekly-report-settings', [WeeklyTaskController::class, 'settings'])->name('weekly-report-settings.show');
-        Route::get('whatsapp/groups', [WeeklyTaskController::class, 'groups'])->name('whatsapp.groups');
         Route::get('weekly-tasks/preview', [WeeklyTaskController::class, 'preview'])->name('weekly-tasks.preview');
 
         Route::middleware('idempotency')->group(function () {
@@ -180,6 +179,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
 
             Route::put('weekly-report-settings', [WeeklyTaskController::class, 'updateSettings'])->name('weekly-report-settings.update');
             Route::post('weekly-tasks/send', [WeeklyTaskController::class, 'send'])->name('weekly-tasks.send');
+            Route::post('whatsapp/resolve-group', [WeeklyTaskController::class, 'resolveGroup'])->name('whatsapp.resolve-group');
         });
 
         Route::post('projects/{project}/image', [ProjectFileController::class, 'storeImage'])->name('projects.image');

@@ -95,7 +95,7 @@
             <p class="{{ $error }}" x-show="templateErrors.title" x-text="templateErrors.title?.[0]"></p>
 
             <div class="flex gap-2">
-                <select x-model.number="templateForm.employee_id" class="{{ $input }}">
+                <select x-model.number="templateForm.employee_id" class="{{ $input }}" :disabled="!employees.length">
                     <option value="">لكل الموظفين</option>
                     <template x-for="employee in employees" :key="employee.id">
                         <option :value="employee.id" x-text="employee.name"></option>
@@ -103,6 +103,13 @@
                 </select>
                 <button type="submit" class="{{ $primary }}">إضافة</button>
             </div>
+
+            {{-- Without this the dropdown just reads "لكل الموظفين" and looks broken. --}}
+            <p x-show="!employees.length" x-cloak class="text-xs text-zinc-400">
+                لإسناد مهمة إلى موظف بعينه أضف الموظفين أولاً من
+                <button type="button" @click="showEmployees = true"
+                    class="font-bold text-primary-600 underline hover:no-underline dark:text-primary-300">قائمة الموظفين</button>.
+            </p>
         </form>
 
         <div class="mt-5 flex justify-end">
@@ -120,38 +127,42 @@
             تُرسل مهام الأسبوع كل سبت، وملخص الإنجاز كل خميس، إلى المجموعة المختارة.
         </p>
 
-        <div class="mb-4 rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-800">
-            <p class="text-xs text-zinc-500 dark:text-zinc-400">المجموعة الحالية</p>
-            <p class="mt-0.5 font-bold" x-text="settings.whatsapp_group_name ?? 'لم تُحدَّد بعد'"></p>
-        </div>
-
         <div class="mb-4">
-            <div class="mb-2 flex items-center justify-between">
-                <p class="text-sm font-bold">اختر مجموعة</p>
-                <button type="button" @click="loadGroups()" :disabled="loadingGroups"
-                    class="text-xs font-bold text-primary-600 hover:underline disabled:opacity-50 dark:text-primary-300"
-                    x-text="loadingGroups ? 'جارٍ الجلب…' : 'تحديث القائمة'"></button>
+            <label class="{{ $label }}">اسم المجموعة</label>
+            <div class="flex gap-2">
+                <input type="text" x-model="groupSearch" @keydown.enter.prevent="resolveGroup()"
+                    placeholder="اكتب اسم المجموعة كما يظهر في واتساب" class="{{ $input }}">
+                <button type="button" @click="resolveGroup()" :disabled="resolving" class="{{ $primary }}"
+                    x-text="resolving ? '…' : 'تحقّق'"></button>
             </div>
+            <p class="mt-1.5 text-xs text-zinc-400">
+                واتساب يعنون المجموعات بمعرّف لا باسم، فيُبحث عن الاسم مرة واحدة ليُعتمد معرّفها.
+            </p>
 
-            <p x-show="groupsError" x-cloak class="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-900/30 dark:text-amber-200"
+            <p x-show="groupsError" x-cloak
+                class="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-900/30 dark:text-amber-200"
                 x-text="groupsError"></p>
 
-            <ul class="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-zinc-200 p-2 dark:border-zinc-800">
-                <template x-for="group in groups" :key="group.id">
+            <ul x-show="candidates.length" x-cloak class="mt-2 space-y-1 rounded-xl border border-zinc-200 p-2 dark:border-zinc-800">
+                <template x-for="group in candidates" :key="group.id">
                     <li>
                         <button type="button" @click="chooseGroup(group)"
-                            class="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-right transition hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                            :class="settings.whatsapp_group_id === group.id && 'bg-primary-500/10'">
+                            class="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-right transition hover:bg-zinc-50 dark:hover:bg-zinc-800">
                             <span class="min-w-0 flex-1 truncate text-sm" x-text="group.name"></span>
                             <span x-show="group.participants" class="shrink-0 text-xs text-zinc-400"
                                 x-text="group.participants + ' عضو'"></span>
                         </button>
                     </li>
                 </template>
-                <li x-show="!groups.length && !loadingGroups" x-cloak class="px-2 py-4 text-center text-sm text-zinc-400">
-                    لا توجد مجموعات. تأكد من ربط الواتساب أولاً.
-                </li>
             </ul>
+
+            <p x-show="settings.whatsapp_group_id" x-cloak
+                class="mt-2 flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200">
+                <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+                <span x-text="'معتمدة: ' + settings.whatsapp_group_name"></span>
+            </p>
         </div>
 
         <label class="mb-5 flex cursor-pointer items-center gap-2 text-sm">

@@ -170,15 +170,50 @@ class WeeklyTaskController extends Controller
     }
 
     /**
-     * The groups the linked WhatsApp session can post to.
+     * Translate a group name into the id WhatsApp actually addresses. An exact
+     * name is adopted straight away; anything else comes back as candidates so
+     * the admin can see what was meant rather than guess.
      */
-    public function groups(Request $request): JsonResponse
+    public function resolveGroup(Request $request): JsonResponse
     {
-        $admin = $request->user('admin');
+        $wanted = trim((string) $request->input('name'));
 
-        return response()->json(
-            $this->gateway->groups($this->gateway->clientIdFor($admin))
+        if ($wanted === '') {
+            return response()->json(['message' => 'اكتب اسم المجموعة.'], 422);
+        }
+
+        /** @var Admin $admin */
+        $admin = $request->user('admin');
+        $result = $this->gateway->groups($this->gateway->clientIdFor($admin));
+
+        if (! ($result['ok'] ?? false)) {
+            return response()->json([
+                'message' => $result['error'] ?? 'تعذر الوصول إلى جلسة الواتساب.',
+            ], 422);
+        }
+
+        $groups = collect($result['groups']);
+        $normalise = fn (string $value): string => preg_replace('/\s+/u', ' ', trim($value)) ?? $value;
+
+        $exact = $groups->first(
+            fn (array $group): bool => $normalise($group['name']) === $normalise($wanted)
         );
+
+        if ($exact !== null) {
+            return response()->json(['data' => ['matched' => $exact, 'candidates' => []]]);
+        }
+
+        $candidates = $groups
+            ->filter(fn (array $group): bool => str_contains($normalise($group['name']), $normalise($wanted)))
+            ->values();
+
+        if ($candidates->isEmpty()) {
+            return response()->json([
+                'message' => 'لا توجد مجموعة بهذا الاسم في حسابك. تأكد من الاسم حرفياً كما يظهر في واتساب.',
+            ], 422);
+        }
+
+        return response()->json(['data' => ['matched' => null, 'candidates' => $candidates->all()]]);
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Models\WeeklyTaskItem;
 use App\Models\WeeklyTaskList;
 use App\Models\WeeklyTaskTemplate;
 use App\Services\WeeklyTaskPlanner;
+use App\Services\WhatsappGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -337,4 +338,78 @@ it('lets the next week be reported normally', function () {
 
     expect(WeeklyReportSend::alreadySent('2026-08-15', 'opening'))->toBeTrue()
         ->and(WeeklyReportSend::alreadySent('2026-08-22', 'opening'))->toBeFalse();
+});
+
+// ---- naming the group ----------------------------------------------------
+
+function fakeGroups(array $groups): void
+{
+    test()->mock(WhatsappGateway::class, function ($mock) use ($groups) {
+        $mock->shouldReceive('clientIdFor')->andReturn('admin_1');
+        $mock->shouldReceive('groups')->andReturn(['ok' => true, 'groups' => $groups]);
+    });
+}
+
+it('adopts the group whose name matches exactly', function () {
+    fakeGroups([
+        ['id' => '1@g.us', 'name' => 'فريق التسويق', 'participants' => 5],
+        ['id' => '2@g.us', 'name' => 'الإدارة', 'participants' => 3],
+    ]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(weeklyApi('whatsapp/resolve-group'), ['name' => 'فريق التسويق'])
+        ->assertOk()
+        ->assertJsonPath('data.matched.id', '1@g.us');
+});
+
+it('ignores stray spacing around the name', function () {
+    fakeGroups([['id' => '1@g.us', 'name' => 'فريق التسويق', 'participants' => 5]]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(weeklyApi('whatsapp/resolve-group'), ['name' => '  فريق   التسويق  '])
+        ->assertOk()
+        ->assertJsonPath('data.matched.id', '1@g.us');
+});
+
+it('offers the near misses rather than guessing', function () {
+    fakeGroups([
+        ['id' => '1@g.us', 'name' => 'فريق التسويق الداخلي', 'participants' => 5],
+        ['id' => '2@g.us', 'name' => 'فريق التسويق الخارجي', 'participants' => 4],
+    ]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(weeklyApi('whatsapp/resolve-group'), ['name' => 'فريق التسويق'])
+        ->assertOk()
+        ->assertJsonPath('data.matched', null)
+        ->assertJsonCount(2, 'data.candidates');
+});
+
+it('says so when no group carries that name', function () {
+    fakeGroups([['id' => '1@g.us', 'name' => 'الإدارة', 'participants' => 3]]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(weeklyApi('whatsapp/resolve-group'), ['name' => 'مجموعة غير موجودة'])
+        ->assertStatus(422);
+});
+
+it('will not resolve an empty name', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(weeklyApi('whatsapp/resolve-group'), ['name' => '   '])
+        ->assertStatus(422);
+});
+
+it('relays a gateway that cannot be reached', function () {
+    $this->mock(WhatsappGateway::class, function ($mock) {
+        $mock->shouldReceive('clientIdFor')->andReturn('admin_1');
+        $mock->shouldReceive('groups')->andReturn(['ok' => false, 'groups' => [], 'error' => 'الجلسة غير جاهزة.']);
+    });
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(weeklyApi('whatsapp/resolve-group'), ['name' => 'فريق التسويق'])
+        ->assertStatus(422)
+        ->assertJsonPath('message', 'الجلسة غير جاهزة.');
+});
+
+it('keeps group resolution away from guests', function () {
+    $this->postJson(weeklyApi('whatsapp/resolve-group'), ['name' => 'x'])->assertUnauthorized();
 });
