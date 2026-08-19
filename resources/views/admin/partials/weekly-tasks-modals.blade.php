@@ -131,12 +131,12 @@
             <label class="{{ $label }}">اسم المجموعة</label>
             <div class="flex gap-2">
                 <input type="text" x-model="groupSearch" @keydown.enter.prevent="resolveGroup()"
-                    placeholder="اكتب اسم المجموعة كما يظهر في واتساب" class="{{ $input }}">
+                    placeholder="اسم المجموعة أو معرّفها المنتهي بـ ‎@g.us" class="{{ $input }}">
                 <button type="button" @click="resolveGroup()" :disabled="resolving" class="{{ $ghost }}"
                     x-text="resolving ? '…' : 'بحث بالاسم'"></button>
             </div>
             <p class="mt-1.5 text-xs text-zinc-400">
-                هذا الاسم للعرض فقط. المعرّف الفعلي يُلتقط من رسالة تمرّ بالمجموعة.
+                الصق المعرّف مباشرة إن كان لديك — يُعتمد فوراً بلا بحث. وإلا فالتقطه بالطريقة أدناه.
             </p>
 
             <div class="mt-3 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
@@ -181,13 +181,21 @@
                 </template>
             </ul>
 
-            <p x-show="settings.whatsapp_group_id" x-cloak
-                class="mt-2 flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200">
-                <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                </svg>
-                <span x-text="'معتمدة: ' + settings.whatsapp_group_name"></span>
-            </p>
+            <div x-show="settings.whatsapp_group_id" x-cloak
+                class="mt-2 rounded-xl bg-emerald-50 px-3 py-2 dark:bg-emerald-900/30">
+                <p class="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-200">
+                    <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                    <span x-text="'معتمدة: ' + settings.whatsapp_group_name"></span>
+                </p>
+                <p class="mt-0.5 font-mono text-[11px] text-emerald-600 dark:text-emerald-300" dir="ltr"
+                    x-text="settings.whatsapp_group_id"></p>
+                <button type="button" @click="testGroup()" :disabled="busy"
+                    class="mt-1.5 text-xs font-bold text-emerald-700 underline hover:no-underline dark:text-emerald-200">
+                    أرسل رسالة تجريبية للتأكد
+                </button>
+            </div>
         </div>
 
         <label class="mb-5 flex cursor-pointer items-center gap-2 text-sm">

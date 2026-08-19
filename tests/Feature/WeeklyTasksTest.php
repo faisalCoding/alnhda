@@ -462,3 +462,61 @@ it('saves a captured group that arrived without a name', function () {
         ->assertOk()
         ->assertJsonPath('data.is_ready', true);
 });
+
+// ---- pasting the id straight in ------------------------------------------
+
+it('saves a pasted group id as it stands', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->putJson(weeklyApi('weekly-report-settings'), [
+            'whatsapp_group_id' => '120363043211234567@g.us',
+            'whatsapp_group_name' => '120363043211234567@g.us',
+            'weekly_reports_enabled' => true,
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.whatsapp_group_id', '120363043211234567@g.us')
+        ->assertJsonPath('data.is_ready', true);
+});
+
+it('proves the id by landing a message in the group', function () {
+    AppSettings::current()->update(['whatsapp_group_id' => '120363043211234567@g.us']);
+
+    $sentTo = null;
+    $this->mock(WhatsappGateway::class, function ($mock) use (&$sentTo) {
+        $mock->shouldReceive('clientIdFor')->andReturn('admin_1');
+        $mock->shouldReceive('sendToGroup')->andReturnUsing(function ($client, $groupId) use (&$sentTo) {
+            $sentTo = $groupId;
+
+            return ['sent' => true];
+        });
+    });
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(weeklyApi('whatsapp/test-group'))
+        ->assertOk();
+
+    expect($sentTo)->toBe('120363043211234567@g.us');
+});
+
+it('will not test before a group is adopted', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(weeklyApi('whatsapp/test-group'))
+        ->assertStatus(422);
+});
+
+it('relays a refused test send', function () {
+    AppSettings::current()->update(['whatsapp_group_id' => '120363@g.us']);
+
+    $this->mock(WhatsappGateway::class, function ($mock) {
+        $mock->shouldReceive('clientIdFor')->andReturn('admin_1');
+        $mock->shouldReceive('sendToGroup')->andReturn(['sent' => false, 'error' => 'المجموعة غير موجودة.']);
+    });
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(weeklyApi('whatsapp/test-group'))
+        ->assertStatus(422)
+        ->assertJsonPath('message', 'المجموعة غير موجودة.');
+});
+
+it('keeps the test send away from guests', function () {
+    $this->postJson(weeklyApi('whatsapp/test-group'))->assertUnauthorized();
+});

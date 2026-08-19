@@ -253,6 +253,22 @@ export default function weeklyTasksPage() {
             }
         },
 
+        /** Prove the id by making a message land in the group. */
+        async testGroup() {
+            this.busy = true;
+            this.groupsError = '';
+            this.notice = '';
+
+            try {
+                await request('POST', '/api/whatsapp/test-group', {}, { idempotencyKey: uuid() });
+                this.notice = 'وصلت رسالة تجريبية إلى المجموعة. المعرّف صحيح.';
+            } catch (error) {
+                this.groupsError = error.message;
+            } finally {
+                this.busy = false;
+            }
+        },
+
         seenAgo(timestamp) {
             const minutes = Math.round((Date.now() - timestamp) / 60000);
 
@@ -263,13 +279,39 @@ export default function weeklyTasksPage() {
             return minutes < 60 ? `قبل ${minutes} دقيقة` : `قبل ${Math.round(minutes / 60)} ساعة`;
         },
 
+        /**
+         * A pasted group id is taken at its word: it is what WhatsApp addresses,
+         * and reading it out of the page beats every lookup this build breaks.
+         */
+        adoptTypedValue() {
+            const typed = this.groupSearch.trim();
+            const match = typed.match(/(\d{5,}(?:-\d+)?@g\.us)/);
+
+            if (!match) {
+                return false;
+            }
+
+            this.settings.whatsapp_group_id = match[1];
+            this.settings.whatsapp_group_name = typed === match[1] ? match[1] : typed;
+            this.candidates = [];
+            this.captured = [];
+            this.groupsError = '';
+
+            return true;
+        },
+
         /** Ask the gateway which group carries this name, and adopt its id. */
         async resolveGroup() {
             const name = this.groupSearch.trim();
 
             if (name === '') {
-                this.groupsError = 'اكتب اسم المجموعة.';
+                this.groupsError = 'اكتب اسم المجموعة أو الصق معرّفها.';
 
+                return;
+            }
+
+            // Pasted an id rather than a name: nothing to look up.
+            if (this.adoptTypedValue()) {
                 return;
             }
 

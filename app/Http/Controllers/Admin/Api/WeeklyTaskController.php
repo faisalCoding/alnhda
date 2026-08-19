@@ -243,6 +243,34 @@ class WeeklyTaskController extends Controller
     }
 
     /**
+     * Post a short message to the configured group. Listing is broken on this
+     * build, so actually landing a message is the only real proof the id works.
+     */
+    public function testGroup(Request $request): JsonResponse
+    {
+        $settings = AppSettings::current();
+
+        if (blank($settings->whatsapp_group_id)) {
+            return response()->json(['message' => 'اعتمد مجموعة أولاً.'], 422);
+        }
+
+        /** @var Admin $admin */
+        $admin = $request->user('admin');
+
+        $result = $this->gateway->sendToGroup(
+            $this->gateway->clientIdFor($admin),
+            (string) $settings->whatsapp_group_id,
+            'رسالة تجريبية من لوحة كيان النهضة للتأكد من ربط مجموعة التقارير.',
+        );
+
+        if (! ($result['sent'] ?? false)) {
+            return response()->json(['message' => $result['error'] ?? 'تعذر الإرسال.'], 422);
+        }
+
+        return response()->json(['data' => ['sent' => true]]);
+    }
+
+    /**
      * Send the report now rather than waiting for its scheduled day.
      */
     public function send(Request $request): JsonResponse
