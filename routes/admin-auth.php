@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\Api\SubscriptionController;
 use App\Http\Controllers\Admin\Api\TaskTemplateController;
 use App\Http\Controllers\Admin\Api\UsefulLinkController;
 use App\Http\Controllers\Admin\Api\VisitorController;
+use App\Http\Controllers\Admin\Api\WeeklyTaskController;
 use App\Http\Controllers\Admin\Api\WhatsappController;
 use App\Http\Controllers\Admin\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\Auth\RegisteredAdminController;
@@ -49,6 +50,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::view('useful-links', 'admin.useful-links')->name('useful-links');
     Route::view('backlinks', 'admin.backlinks')->name('backlinks');
     Route::view('marketing-tools', 'admin.marketing-tools')->name('marketing-tools');
+    Route::view('weekly-tasks', 'admin.weekly-tasks')->name('weekly-tasks');
 });
 
 Route::prefix('api')->name('panel.api.')->group(function () {
@@ -115,6 +117,13 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('marketing-methods', [MarketingMethodController::class, 'index'])->name('marketing-methods.index');
         Route::get('marketing-checklists', [MarketingChecklistController::class, 'index'])->name('marketing-checklists.index');
 
+        Route::get('employees', [WeeklyTaskController::class, 'employees'])->name('employees.index');
+        Route::get('weekly-task-templates', [WeeklyTaskController::class, 'templates'])->name('weekly-task-templates.index');
+        Route::get('weekly-tasks', [WeeklyTaskController::class, 'week'])->name('weekly-tasks.index');
+        Route::get('weekly-report-settings', [WeeklyTaskController::class, 'settings'])->name('weekly-report-settings.show');
+        Route::get('whatsapp/groups', [WeeklyTaskController::class, 'groups'])->name('whatsapp.groups');
+        Route::get('weekly-tasks/preview', [WeeklyTaskController::class, 'preview'])->name('weekly-tasks.preview');
+
         Route::middleware('idempotency')->group(function () {
             Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
             Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
@@ -156,6 +165,21 @@ Route::prefix('api')->name('panel.api.')->group(function () {
             Route::post('marketing-checklists/{marketingChecklist}/items', [MarketingChecklistController::class, 'storeItem'])->name('marketing-checklists.items.store');
             Route::put('marketing-checklist-items/{item}', [MarketingChecklistController::class, 'updateItem'])->name('marketing-checklist-items.update');
             Route::delete('marketing-checklist-items/{item}', [MarketingChecklistController::class, 'destroyItem'])->name('marketing-checklist-items.destroy');
+
+            Route::post('employees', [WeeklyTaskController::class, 'storeEmployee'])->name('employees.store');
+            Route::put('employees/{employee}', [WeeklyTaskController::class, 'updateEmployee'])->name('employees.update');
+            Route::delete('employees/{employee}', [WeeklyTaskController::class, 'destroyEmployee'])->name('employees.destroy');
+
+            Route::post('weekly-task-templates', [WeeklyTaskController::class, 'storeTemplate'])->name('weekly-task-templates.store');
+            Route::delete('weekly-task-templates/{template}', [WeeklyTaskController::class, 'destroyTemplate'])->name('weekly-task-templates.destroy');
+
+            Route::post('weekly-tasks/generate', [WeeklyTaskController::class, 'generate'])->name('weekly-tasks.generate');
+            Route::post('weekly-tasks/{list}/items', [WeeklyTaskController::class, 'storeItem'])->name('weekly-tasks.items.store');
+            Route::put('weekly-task-items/{item}', [WeeklyTaskController::class, 'updateItem'])->name('weekly-task-items.update');
+            Route::delete('weekly-task-items/{item}', [WeeklyTaskController::class, 'destroyItem'])->name('weekly-task-items.destroy');
+
+            Route::put('weekly-report-settings', [WeeklyTaskController::class, 'updateSettings'])->name('weekly-report-settings.update');
+            Route::post('weekly-tasks/send', [WeeklyTaskController::class, 'send'])->name('weekly-tasks.send');
         });
 
         Route::post('projects/{project}/image', [ProjectFileController::class, 'storeImage'])->name('projects.image');

@@ -152,6 +152,55 @@ class WhatsappGateway
     }
 
     /**
+     * Groups are addressed by their own id, not a phone number, so this skips
+     * the normalisation that send() applies.
+     *
+     * @return array{sent: bool, message_id?: string|null, error?: string}
+     */
+    public function sendToGroup(string $clientId, string $groupId, string $message): array
+    {
+        if (trim($groupId) === '') {
+            return ['sent' => false, 'error' => 'لم تُحدَّد مجموعة.'];
+        }
+
+        try {
+            $response = $this->client(20)->post("{$this->baseUrl()}/send", [
+                'clientId' => $clientId,
+                'groupId' => $groupId,
+                'message' => $message,
+            ]);
+
+            if (! $response->successful()) {
+                return ['sent' => false, 'error' => (string) ($response->json('message') ?? 'رفضت البوابة الإرسال.')];
+            }
+
+            return ['sent' => true, 'message_id' => $response->json('message_id')];
+        } catch (\Throwable $e) {
+            return ['sent' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * The groups this session can post to.
+     *
+     * @return array{ok: bool, groups: list<array{id: string, name: string, participants: int|null}>, error?: string}
+     */
+    public function groups(string $clientId): array
+    {
+        try {
+            $response = $this->client(20)->get("{$this->baseUrl()}/groups/{$clientId}");
+
+            if (! $response->successful()) {
+                return ['ok' => false, 'groups' => [], 'error' => (string) ($response->json('message') ?? 'تعذر جلب المجموعات.')];
+            }
+
+            return ['ok' => true, 'groups' => $response->json('groups', [])];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'groups' => [], 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
      * Posts a harmless acknowledgement to the configured callback URL. The
      * endpoint ignores ids it does not know, so this proves DNS, TLS, routing,
      * the CSRF exemption and the shared key in one call — the whole path the

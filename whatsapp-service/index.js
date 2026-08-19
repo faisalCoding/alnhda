@@ -577,10 +577,10 @@ app.get('/status/:clientId', async (req, res) => {
 
 // ── POST /send ────────────────────────────────────────────────────────────────
 app.post('/send', async (req, res) => {
-    const { clientId, phone, message } = req.body;
+    const { clientId, phone, message, groupId } = req.body;
 
-    if (!clientId || !phone || !message) {
-        return res.status(400).json({ success: false, message: 'يرجى توفير clientId ورقم الهاتف والرسالة.' });
+    if (!clientId || !message || (!phone && !groupId)) {
+        return res.status(400).json({ success: false, message: 'يرجى توفير clientId ورقم الهاتف أو معرّف المجموعة والرسالة.' });
     }
 
     const session = sessions.get(clientId);
@@ -590,7 +590,8 @@ app.post('/send', async (req, res) => {
     }
 
     try {
-        const chatId = `${phone}@c.us`;
+        // المجموعات لها لاحقة g.us@ ومعرّفها ليس رقم هاتف، فيُمرَّر كما هو.
+        const chatId = groupId ? groupId : `${phone}@c.us`;
         const sent = await session.client.sendMessage(chatId, message);
 
         // sendMessage قد تُرجع undefined رغم وصول الرسالة: نموذج الرسالة يُسلسل
@@ -621,6 +622,33 @@ app.post('/send', async (req, res) => {
 
 // ── POST /acks ────────────────────────────────────────────────────────────────
 // يستعلم Laravel عن حالة تأكيد الرسائل التي ما زالت غير مؤكدة عنده.
+app.get('/groups/:clientId', async (req, res) => {
+    const session = sessions.get(req.params.clientId);
+
+    if (!session || session.status !== 'ready') {
+        return res.status(503).json({ success: false, message: `الجلسة [${req.params.clientId}] غير جاهزة بعد.` });
+    }
+
+    try {
+        const chats = await session.client.getChats();
+
+        const groups = chats
+            .filter((chat) => chat.isGroup)
+            .map((chat) => ({
+                id: chat.id._serialized,
+                name: chat.name || chat.formattedTitle || chat.id.user,
+                participants: chat.participants ? chat.participants.length : null,
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+
+        return res.json({ success: true, groups });
+    } catch (error) {
+        console.error(`[${req.params.clientId}] تعذر جلب المجموعات:`, error.message);
+
+        return res.status(500).json({ success: false, message: 'تعذر جلب قائمة المجموعات.' });
+    }
+});
+
 app.post('/acks', (req, res) => {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
 

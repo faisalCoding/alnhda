@@ -8,6 +8,7 @@ import projectsPage from './projects';
 import subscriptionsPage from './subscriptions';
 import usefulLinksPage from './usefulLinks';
 import visitorsPage from './visitors';
+import weeklyTasksPage from './weeklyTasks';
 import whatsappMessagesPage from './whatsappMessages';
 import whatsappPage from './whatsapp';
 
@@ -22,6 +23,7 @@ export default function registerComponents(Alpine) {
     Alpine.data('usefulLinksPage', usefulLinksPage);
     Alpine.data('backlinksPage', backlinksPage);
     Alpine.data('marketingToolsPage', marketingToolsPage);
+    Alpine.data('weeklyTasksPage', weeklyTasksPage);
     Alpine.data('whatsappPage', whatsappPage);
     Alpine.data('whatsappMessagesPage', whatsappMessagesPage);
 }
