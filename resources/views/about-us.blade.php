@@ -32,6 +32,31 @@
                         <h2 class="text-3xl font-bold text-gray-900">كيان النهضة العقارية</h2>
                     </div>
 
+                    {{-- Registration numbers sit above the introduction: they are what a
+                         buyer checks first, and Saudi rules expect the FAL licence shown. --}}
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div class="flex items-center gap-4 rounded-2xl border-r-4 border-[#498E49] bg-white p-4 shadow-sm">
+                            <svg class="h-8 w-8 shrink-0 text-[#498E49]" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                            </svg>
+                            <div class="min-w-0">
+                                <p class="text-sm text-gray-500">الرقم الموحد للمنشأة</p>
+                                <p class="text-xl font-bold tracking-wider text-gray-900" dir="ltr">7025720975</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4 rounded-2xl border-r-4 border-[#498E49] bg-white p-4 shadow-sm">
+                            <img src="{{ asset('img/fal.webp') }}" alt="شعار رخصة فال من الهيئة العامة للعقار"
+                                class="h-8 w-auto shrink-0" width="714" height="136" loading="lazy">
+                            <div class="min-w-0">
+                                <p class="text-sm text-gray-500">رقم رخصة فال</p>
+                                <p class="text-xl font-bold tracking-wider text-gray-900" dir="ltr">1200019224</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <p class="text-gray-600 leading-8 text-lg text-justify">
                         نحن في كيان النهضة العقارية نفتخر بمسيرة حافلة تمتد لأكثر من <span
                             class="text-[#498E49] font-bold">40 عاماً</span> من الخبرة والتميز في سوق المملكة العربية

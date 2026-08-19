@@ -39,3 +39,26 @@ it('serves the ministry logo from a path that needs no url encoding', function (
     expect(file_exists($path))->toBeTrue()
         ->and(rawurlencode(basename($path)))->toBe(basename($path));
 });
+
+// ---- the about page ------------------------------------------------------
+
+it('shows both registration numbers on the about page', function () {
+    $html = $this->get(route('about-us'))->assertOk()->getContent();
+
+    expect($html)
+        ->toContain('7025720975')
+        ->toContain('1200019224')
+        ->toContain('الرقم الموحد للمنشأة')
+        ->toContain('رقم رخصة فال');
+});
+
+it('puts them above the introduction rather than below it', function () {
+    $html = $this->get(route('about-us'))->assertOk()->getContent();
+
+    expect(strpos($html, '1200019224'))->toBeLessThan(strpos($html, 'نفتخر بمسيرة حافلة'));
+});
+
+it('carries the fal logo on the about page too', function () {
+    expect($this->get(route('about-us'))->assertOk()->getContent())
+        ->toContain('img/fal.webp');
+});
