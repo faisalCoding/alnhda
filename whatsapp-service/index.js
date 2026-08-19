@@ -160,6 +160,17 @@ function getOrCreateSession(clientId) {
         }
     });
 
+    // message_create يشمل ما يرسله المستخدم نفسه، فيكفي أن يكتب في المجموعة
+    // ليلتقطها النظام دون انتظار رسالة من غيره.
+    client.on('message_create', (message) => {
+        try {
+            const chatId = message.fromMe ? message.to : message.from;
+            rememberGroup(clientId, chatId, message._data?.chat?.name || message._data?.chatName || null);
+        } catch (error) {
+            console.error(`[${clientId}] تعذر التقاط المجموعة:`, error.message);
+        }
+    });
+
     client.on('auth_failure', (message) => {
         console.error(`[${clientId}] فشلت المصادقة: ${message}`);
         failSession(sessionData, `فشلت المصادقة: ${message}`);
@@ -175,6 +186,39 @@ function getOrCreateSession(clientId) {
     sessions.set(clientId, sessionData);
 
     return sessionData;
+}
+
+/**
+ * قراءة قائمة المحادثات معطوبة مع بعض نسخ واتساب ويب، لكن حدث الرسالة يحمل
+ * معرّف المحادثة نصاً جاهزاً. فتُلتقط المجموعات مما يمرّ بها من رسائل بدل
+ * الاستعلام عن مخزن قد لا يكون مُهيّأ أصلاً.
+ */
+const seenGroups = new Map();
+const SEEN_GROUPS_LIMIT = 50;
+
+function rememberGroup(clientId, chatId, name) {
+    if (typeof chatId !== 'string' || !chatId.endsWith('@g.us')) {
+        return;
+    }
+
+    if (!seenGroups.has(clientId)) {
+        seenGroups.set(clientId, new Map());
+    }
+
+    const forClient = seenGroups.get(clientId);
+    const existing = forClient.get(chatId);
+
+    forClient.set(chatId, {
+        id: chatId,
+        // الاسم قد لا يصل مع كل رسالة، فلا يُمحى اسم عُرف سابقاً.
+        name: name || existing?.name || null,
+        lastSeenAt: Date.now(),
+    });
+
+    if (forClient.size > SEEN_GROUPS_LIMIT) {
+        const oldest = [...forClient.values()].sort((a, b) => a.lastSeenAt - b.lastSeenAt)[0];
+        forClient.delete(oldest.id);
+    }
 }
 
 const AUTH_DIR = path.join(__dirname, '.wwebjs_auth');
@@ -622,6 +666,15 @@ app.post('/send', async (req, res) => {
 
 // ── POST /acks ────────────────────────────────────────────────────────────────
 // يستعلم Laravel عن حالة تأكيد الرسائل التي ما زالت غير مؤكدة عنده.
+app.get('/seen-groups/:clientId', (req, res) => {
+    const forClient = seenGroups.get(req.params.clientId);
+    const groups = forClient
+        ? [...forClient.values()].sort((a, b) => b.lastSeenAt - a.lastSeenAt)
+        : [];
+
+    return res.json({ success: true, groups });
+});
+
 app.get('/groups/:clientId', async (req, res) => {
     const session = sessions.get(req.params.clientId);
 

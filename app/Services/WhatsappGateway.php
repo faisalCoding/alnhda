@@ -201,6 +201,28 @@ class WhatsappGateway
     }
 
     /**
+     * Groups a message has passed through on this session. Reading the chat
+     * list breaks against some WhatsApp Web builds; message events carry the
+     * chat id as plain text and keep working, so the gateway collects them.
+     *
+     * @return array{ok: bool, groups: list<array{id: string, name: ?string, lastSeenAt: int}>, error?: string}
+     */
+    public function seenGroups(string $clientId): array
+    {
+        try {
+            $response = $this->client(10)->get("{$this->baseUrl()}/seen-groups/{$clientId}");
+
+            if (! $response->successful()) {
+                return ['ok' => false, 'groups' => [], 'error' => (string) ($response->json('message') ?? 'تعذر قراءة المجموعات الملتقطة.')];
+            }
+
+            return ['ok' => true, 'groups' => $response->json('groups', [])];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'groups' => [], 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
      * Posts a harmless acknowledgement to the configured callback URL. The
      * endpoint ignores ids it does not know, so this proves DNS, TLS, routing,
      * the CSRF exemption and the shared key in one call — the whole path the

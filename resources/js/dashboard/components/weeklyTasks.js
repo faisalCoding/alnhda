@@ -226,6 +226,43 @@ export default function weeklyTasksPage() {
         candidates: [],
         resolving: false,
 
+        capturing: false,
+        captured: [],
+
+        /**
+         * Groups are picked up from messages passing through them, because
+         * reading the chat list is broken on this WhatsApp Web build.
+         */
+        async captureGroups() {
+            this.capturing = true;
+            this.groupsError = '';
+
+            try {
+                const payload = await request('GET', '/api/whatsapp/seen-groups');
+                this.captured = payload?.groups ?? [];
+
+                if (!payload?.ok) {
+                    this.groupsError = payload?.error ?? 'تعذر قراءة المجموعات الملتقطة.';
+                } else if (this.captured.length === 0) {
+                    this.groupsError = 'لم تُلتقط أي مجموعة بعد. أرسل رسالة في المجموعة المطلوبة ثم اضغط «التقاط» مجدداً.';
+                }
+            } catch (error) {
+                this.groupsError = error.message;
+            } finally {
+                this.capturing = false;
+            }
+        },
+
+        seenAgo(timestamp) {
+            const minutes = Math.round((Date.now() - timestamp) / 60000);
+
+            if (minutes < 1) {
+                return 'الآن';
+            }
+
+            return minutes < 60 ? `قبل ${minutes} دقيقة` : `قبل ${Math.round(minutes / 60)} ساعة`;
+        },
+
         /** Ask the gateway which group carries this name, and adopt its id. */
         async resolveGroup() {
             const name = this.groupSearch.trim();
@@ -260,9 +297,11 @@ export default function weeklyTasksPage() {
 
         chooseGroup(group) {
             this.settings.whatsapp_group_id = group.id;
-            this.settings.whatsapp_group_name = group.name;
-            this.groupSearch = group.name;
+            // A captured group may arrive without a name; the typed label stands in.
+            this.settings.whatsapp_group_name = group.name || this.groupSearch.trim() || group.id;
+            this.groupSearch = this.settings.whatsapp_group_name;
             this.candidates = [];
+            this.captured = [];
             this.groupsError = '';
         },
 

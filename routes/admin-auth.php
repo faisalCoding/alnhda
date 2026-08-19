@@ -122,6 +122,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('weekly-tasks', [WeeklyTaskController::class, 'week'])->name('weekly-tasks.index');
         Route::get('weekly-report-settings', [WeeklyTaskController::class, 'settings'])->name('weekly-report-settings.show');
         Route::get('weekly-tasks/preview', [WeeklyTaskController::class, 'preview'])->name('weekly-tasks.preview');
+        Route::get('whatsapp/seen-groups', [WeeklyTaskController::class, 'seenGroups'])->name('whatsapp.seen-groups');
 
         Route::middleware('idempotency')->group(function () {
             Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');

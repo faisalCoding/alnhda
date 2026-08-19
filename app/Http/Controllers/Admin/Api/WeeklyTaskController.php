@@ -170,6 +170,17 @@ class WeeklyTaskController extends Controller
     }
 
     /**
+     * The groups a message has recently passed through, newest first.
+     */
+    public function seenGroups(Request $request): JsonResponse
+    {
+        /** @var Admin $admin */
+        $admin = $request->user('admin');
+
+        return response()->json($this->gateway->seenGroups($this->gateway->clientIdFor($admin)));
+    }
+
+    /**
      * Translate a group name into the id WhatsApp actually addresses. An exact
      * name is adopted straight away; anything else comes back as candidates so
      * the admin can see what was meant rather than guess.

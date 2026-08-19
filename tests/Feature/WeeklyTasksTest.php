@@ -413,3 +413,52 @@ it('relays a gateway that cannot be reached', function () {
 it('keeps group resolution away from guests', function () {
     $this->postJson(weeklyApi('whatsapp/resolve-group'), ['name' => 'x'])->assertUnauthorized();
 });
+
+// ---- capturing the group from a message ----------------------------------
+
+it('lists the groups a message has passed through', function () {
+    $this->mock(WhatsappGateway::class, function ($mock) {
+        $mock->shouldReceive('clientIdFor')->andReturn('admin_1');
+        $mock->shouldReceive('seenGroups')->andReturn([
+            'ok' => true,
+            'groups' => [
+                ['id' => '120363@g.us', 'name' => 'فريق التسويق', 'lastSeenAt' => 1755600000000],
+                ['id' => '120364@g.us', 'name' => null, 'lastSeenAt' => 1755500000000],
+            ],
+        ]);
+    });
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(weeklyApi('whatsapp/seen-groups'))
+        ->assertOk()
+        ->assertJsonPath('groups.0.id', '120363@g.us')
+        ->assertJsonPath('groups.1.name', null);
+});
+
+it('relays why nothing could be captured', function () {
+    $this->mock(WhatsappGateway::class, function ($mock) {
+        $mock->shouldReceive('clientIdFor')->andReturn('admin_1');
+        $mock->shouldReceive('seenGroups')->andReturn(['ok' => false, 'groups' => [], 'error' => 'الخدمة متوقفة.']);
+    });
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(weeklyApi('whatsapp/seen-groups'))
+        ->assertOk()
+        ->assertJsonPath('ok', false)
+        ->assertJsonPath('error', 'الخدمة متوقفة.');
+});
+
+it('keeps captured groups away from guests', function () {
+    $this->getJson(weeklyApi('whatsapp/seen-groups'))->assertUnauthorized();
+});
+
+it('saves a captured group that arrived without a name', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->putJson(weeklyApi('weekly-report-settings'), [
+            'whatsapp_group_id' => '120363@g.us',
+            'whatsapp_group_name' => 'مهام الفريق',
+            'weekly_reports_enabled' => true,
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.is_ready', true);
+});

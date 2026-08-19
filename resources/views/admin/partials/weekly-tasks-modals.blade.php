@@ -132,12 +132,37 @@
             <div class="flex gap-2">
                 <input type="text" x-model="groupSearch" @keydown.enter.prevent="resolveGroup()"
                     placeholder="اكتب اسم المجموعة كما يظهر في واتساب" class="{{ $input }}">
-                <button type="button" @click="resolveGroup()" :disabled="resolving" class="{{ $primary }}"
-                    x-text="resolving ? '…' : 'تحقّق'"></button>
+                <button type="button" @click="resolveGroup()" :disabled="resolving" class="{{ $ghost }}"
+                    x-text="resolving ? '…' : 'بحث بالاسم'"></button>
             </div>
             <p class="mt-1.5 text-xs text-zinc-400">
-                واتساب يعنون المجموعات بمعرّف لا باسم، فيُبحث عن الاسم مرة واحدة ليُعتمد معرّفها.
+                هذا الاسم للعرض فقط. المعرّف الفعلي يُلتقط من رسالة تمرّ بالمجموعة.
             </p>
+
+            <div class="mt-3 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+                <p class="mb-1 text-sm font-bold">التقاط المجموعة</p>
+                <ol class="mb-3 list-decimal space-y-0.5 pr-4 text-xs text-zinc-500 dark:text-zinc-400">
+                    <li>افتح المجموعة في واتساب وأرسل فيها أي رسالة.</li>
+                    <li>ارجع هنا واضغط «التقاط».</li>
+                    <li>اختر المجموعة من القائمة التي تظهر.</li>
+                </ol>
+
+                <button type="button" @click="captureGroups()" :disabled="capturing" class="{{ $ghost }}"
+                    x-text="capturing ? 'جارٍ الالتقاط…' : 'التقاط'"></button>
+
+                <ul x-show="captured.length" x-cloak class="mt-2 space-y-1">
+                    <template x-for="group in captured" :key="group.id">
+                        <li>
+                            <button type="button" @click="chooseGroup(group)"
+                                class="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-right transition hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                                :class="settings.whatsapp_group_id === group.id && 'bg-primary-500/10'">
+                                <span class="min-w-0 flex-1 truncate text-sm" x-text="group.name || group.id"></span>
+                                <span class="shrink-0 text-xs text-zinc-400" x-text="seenAgo(group.lastSeenAt)"></span>
+                            </button>
+                        </li>
+                    </template>
+                </ul>
+            </div>
 
             <p x-show="groupsError" x-cloak
                 class="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-900/30 dark:text-amber-200"
