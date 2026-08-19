@@ -9,7 +9,11 @@ use App\Http\Controllers\Admin\Api\ProjectFileController;
 use App\Http\Controllers\Admin\Api\PropertyController;
 use App\Http\Controllers\Admin\Api\PropertyFileController;
 use App\Http\Controllers\Admin\Api\PropertyImageController;
+use App\Http\Controllers\Admin\Api\RevealPinController;
 use App\Http\Controllers\Admin\Api\SessionController;
+use App\Http\Controllers\Admin\Api\SocialPlatformController;
+use App\Http\Controllers\Admin\Api\SocialPlatformTaskController;
+use App\Http\Controllers\Admin\Api\TaskTemplateController;
 use App\Http\Controllers\Admin\Api\VisitorController;
 use App\Http\Controllers\Admin\Api\WhatsappController;
 use App\Http\Controllers\Admin\Auth\AuthenticatedSessionController;
@@ -34,6 +38,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::view('leads-dashboard', 'admin.leads')->name('leads-dashboard');
     Route::view('whatsapp-dashboard', 'admin.whatsapp')->name('whatsapp-dashboard');
     Route::view('whatsapp-messages', 'admin.whatsapp-messages')->name('whatsapp-messages');
+    Route::view('social-accounts', 'admin.social-accounts')->name('social-accounts');
 });
 
 Route::prefix('api')->name('panel.api.')->group(function () {
@@ -83,6 +88,28 @@ Route::prefix('api')->name('panel.api.')->group(function () {
             Route::post('projects/reorder', [ProjectController::class, 'reorder'])->name('projects.reorder');
 
             Route::delete('property-images/{image}', [PropertyImageController::class, 'destroy'])->name('property-images.destroy');
+        });
+
+        Route::get('social-platforms', [SocialPlatformController::class, 'index'])->name('social-platforms.index');
+        Route::get('reveal-pin', [RevealPinController::class, 'show'])->name('reveal-pin.show');
+        Route::put('reveal-pin', [RevealPinController::class, 'store'])->name('reveal-pin.store');
+        Route::post('social-platforms/{socialPlatform}/reveal', [RevealPinController::class, 'reveal'])->name('social-platforms.reveal');
+
+        Route::get('task-templates', [TaskTemplateController::class, 'index'])->name('task-templates.index');
+
+        Route::middleware('idempotency')->group(function () {
+            Route::post('social-platforms', [SocialPlatformController::class, 'store'])->name('social-platforms.store');
+            Route::put('social-platforms/{socialPlatform}', [SocialPlatformController::class, 'update'])->name('social-platforms.update');
+            Route::delete('social-platforms/{socialPlatform}', [SocialPlatformController::class, 'destroy'])->name('social-platforms.destroy');
+
+            Route::post('task-templates', [TaskTemplateController::class, 'store'])->name('task-templates.store');
+            Route::put('task-templates/{taskTemplate}', [TaskTemplateController::class, 'update'])->name('task-templates.update');
+            Route::delete('task-templates/{taskTemplate}', [TaskTemplateController::class, 'destroy'])->name('task-templates.destroy');
+
+            Route::post('social-platforms/{socialPlatform}/tasks', [SocialPlatformTaskController::class, 'store'])->name('social-platforms.tasks.store');
+            Route::post('social-platforms/{socialPlatform}/apply-templates', [SocialPlatformTaskController::class, 'applyTemplates'])->name('social-platforms.apply-templates');
+            Route::put('social-platform-tasks/{task}', [SocialPlatformTaskController::class, 'update'])->name('social-platform-tasks.update');
+            Route::delete('social-platform-tasks/{task}', [SocialPlatformTaskController::class, 'destroy'])->name('social-platform-tasks.destroy');
         });
 
         Route::post('projects/{project}/image', [ProjectFileController::class, 'storeImage'])->name('projects.image');
