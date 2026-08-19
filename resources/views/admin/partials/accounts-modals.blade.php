@@ -12,14 +12,21 @@
             </div>
 
             <div>
-                <label class="{{ $label }}">التصنيف</label>
-                <select x-model.number="form.account_category_id" class="{{ $input }}">
-                    <option value="">بلا تصنيف</option>
+                <label class="{{ $label }}">التصنيفات</label>
+                <div x-show="categories.length" class="flex flex-wrap gap-2">
                     <template x-for="category in categories" :key="category.id">
-                        <option :value="category.id" x-text="category.name"></option>
+                        <button type="button" @click="toggleFormCategory(category.id)"
+                            class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition"
+                            :class="form.category_ids.includes(category.id)
+                                ? classesFor(category.color).chip + ' ring-2 ' + classesFor(category.color).ring
+                                : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400'">
+                            <span class="h-1.5 w-1.5 rounded-full" :class="classesFor(category.color).dot"></span>
+                            <span x-text="category.name"></span>
+                        </button>
                     </template>
-                </select>
+                </div>
                 <p class="mt-1 text-xs text-zinc-400" x-show="!categories.length">أنشئ تصنيفاً من زر «التصنيفات» أولاً</p>
+                <p class="mt-1.5 text-xs text-zinc-400" x-show="categories.length">اختر تصنيفاً أو أكثر، أو اتركها كلها بلا تحديد.</p>
             </div>
 
             <div>

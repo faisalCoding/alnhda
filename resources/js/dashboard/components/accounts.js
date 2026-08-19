@@ -35,7 +35,7 @@ export default function accountsPage() {
 
         colors: CATEGORY_COLORS,
 
-        form: { id: null, account_category_id: '', name: '', identifier: '', url: '', password: '' },
+        form: { id: null, category_ids: [], name: '', identifier: '', url: '', password: '' },
         formErrors: {},
         showForm: false,
 
@@ -105,17 +105,20 @@ export default function accountsPage() {
             return COLOR_CLASSES[color] ?? COLOR_CLASSES.zinc;
         },
 
-        categoryOf(account) {
-            return account.category ?? null;
+        toggleFormCategory(categoryId) {
+            this.form.category_ids = this.form.category_ids.includes(categoryId)
+                ? this.form.category_ids.filter((id) => id !== categoryId)
+                : [...this.form.category_ids, categoryId];
         },
 
         get visible() {
             const term = this.search.trim();
 
             return this.accounts.filter((account) => {
+                const ids = account.category_ids ?? [];
                 const inCategory = this.activeCategory === 'all'
-                    || (this.activeCategory === 'none' && !account.account_category_id)
-                    || account.account_category_id === this.activeCategory;
+                    || (this.activeCategory === 'none' && ids.length === 0)
+                    || ids.includes(this.activeCategory);
 
                 const matches = term === ''
                     || `${account.name} ${account.identifier}`.includes(term);
@@ -130,10 +133,10 @@ export default function accountsPage() {
             }
 
             if (categoryId === 'none') {
-                return this.accounts.filter((account) => !account.account_category_id).length;
+                return this.accounts.filter((account) => (account.category_ids ?? []).length === 0).length;
             }
 
-            return this.accounts.filter((account) => account.account_category_id === categoryId).length;
+            return this.accounts.filter((account) => (account.category_ids ?? []).includes(categoryId)).length;
         },
 
         /** Tasks finished across everything currently on screen. */
@@ -170,7 +173,7 @@ export default function accountsPage() {
         openCreate() {
             this.form = {
                 id: null,
-                account_category_id: this.activeCategory !== 'all' && this.activeCategory !== 'none' ? this.activeCategory : '',
+                category_ids: this.activeCategory !== 'all' && this.activeCategory !== 'none' ? [this.activeCategory] : [],
                 name: '',
                 identifier: '',
                 url: '',
@@ -183,7 +186,7 @@ export default function accountsPage() {
         openEdit(account) {
             this.form = {
                 id: account.id,
-                account_category_id: account.account_category_id ?? '',
+                category_ids: [...(account.category_ids ?? [])],
                 name: account.name,
                 identifier: account.identifier,
                 url: account.url ?? '',
@@ -202,7 +205,7 @@ export default function accountsPage() {
                 name: this.form.name,
                 identifier: this.form.identifier,
                 url: this.form.url === '' ? null : this.form.url,
-                account_category_id: this.form.account_category_id === '' ? null : this.form.account_category_id,
+                category_ids: this.form.category_ids,
             };
 
             // An untouched password field on edit must not wipe the stored one.

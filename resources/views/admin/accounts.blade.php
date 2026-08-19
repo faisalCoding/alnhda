@@ -138,11 +138,11 @@
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-wrap items-center gap-2">
                                 <h2 class="truncate font-extrabold" x-text="account.name"></h2>
-                                <template x-if="account.category">
+                                <template x-for="category in account.categories" :key="category.id">
                                     <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold"
-                                        :class="classesFor(account.category.color).chip">
-                                        <span class="h-1.5 w-1.5 rounded-full" :class="classesFor(account.category.color).dot"></span>
-                                        <span x-text="account.category.name"></span>
+                                        :class="classesFor(category.color).chip">
+                                        <span class="h-1.5 w-1.5 rounded-full" :class="classesFor(category.color).dot"></span>
+                                        <span x-text="category.name"></span>
                                     </span>
                                 </template>
                             </div>

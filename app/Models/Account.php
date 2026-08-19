@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Account extends Model
@@ -13,7 +13,6 @@ class Account extends Model
     use HasFactory;
 
     protected $fillable = [
-        'account_category_id',
         'name',
         'identifier',
         'url',
@@ -44,11 +43,11 @@ class Account extends Model
     }
 
     /**
-     * @return BelongsTo<AccountCategory, $this>
+     * @return BelongsToMany<AccountCategory, $this>
      */
-    public function category(): BelongsTo
+    public function categories(): BelongsToMany
     {
-        return $this->belongsTo(AccountCategory::class, 'account_category_id');
+        return $this->belongsToMany(AccountCategory::class)->orderBy('sort_order')->orderBy('account_categories.id');
     }
 
     /**

@@ -17,7 +17,8 @@ class UpdateAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'account_category_id' => 'sometimes|nullable|integer|exists:account_categories,id',
+            'category_ids' => 'sometimes|nullable|array',
+            'category_ids.*' => 'integer|exists:account_categories,id',
             'name' => 'sometimes|required|string|max:255',
             'identifier' => 'sometimes|required|string|max:255',
             'url' => 'sometimes|nullable|url|max:2048',

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class AccountCategory extends Model
 {
@@ -37,10 +37,10 @@ class AccountCategory extends Model
     }
 
     /**
-     * @return HasMany<Account, $this>
+     * @return BelongsToMany<Account, $this>
      */
-    public function accounts(): HasMany
+    public function accounts(): BelongsToMany
     {
-        return $this->hasMany(Account::class);
+        return $this->belongsToMany(Account::class);
     }
 }

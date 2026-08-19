@@ -17,7 +17,8 @@ class StoreAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'account_category_id' => 'nullable|integer|exists:account_categories,id',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => 'integer|exists:account_categories,id',
             'name' => 'required|string|max:255',
             'identifier' => 'required|string|max:255',
             'url' => 'nullable|url|max:2048',

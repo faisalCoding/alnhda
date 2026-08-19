@@ -22,8 +22,8 @@ class AccountResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'account_category_id' => $this->account_category_id,
-            'category' => new AccountCategoryResource($this->whenLoaded('category')),
+            'category_ids' => $this->whenLoaded('categories', fn () => $this->categories->pluck('id')->all(), []),
+            'categories' => AccountCategoryResource::collection($this->whenLoaded('categories')),
             'name' => $this->name,
             'identifier' => $this->identifier,
             'url' => $this->url,

@@ -17,7 +17,7 @@ class AccountController extends Controller
     {
         return AccountResource::collection(
             Account::query()
-                ->with(['tasks', 'category'])
+                ->with(['tasks', 'categories'])
                 ->orderBy('sort_order')
                 ->orderBy('id')
                 ->get()
@@ -28,22 +28,25 @@ class AccountController extends Controller
     {
         $attributes = $request->validated();
         $applyTemplates = (bool) ($attributes['apply_templates'] ?? true);
-        unset($attributes['apply_templates']);
+        $categoryIds = $attributes['category_ids'] ?? [];
+        unset($attributes['apply_templates'], $attributes['category_ids']);
 
-        $platform = DB::transaction(function () use ($attributes, $applyTemplates): Account {
-            $platform = Account::query()->create([
+        $account = DB::transaction(function () use ($attributes, $applyTemplates, $categoryIds): Account {
+            $account = Account::query()->create([
                 ...$attributes,
                 'sort_order' => (int) Account::query()->max('sort_order') + 1,
             ]);
 
+            $account->categories()->sync($categoryIds);
+
             if ($applyTemplates) {
-                $platform->applyTaskTemplates();
+                $account->applyTaskTemplates();
             }
 
-            return $platform;
+            return $account;
         });
 
-        return (new AccountResource($platform->load('tasks')))
+        return (new AccountResource($account->load(['tasks', 'categories'])))
             ->response()
             ->setStatusCode(201);
     }
@@ -57,9 +60,14 @@ class AccountController extends Controller
             $attributes['password'] = null;
         }
 
+        if (array_key_exists('category_ids', $attributes)) {
+            $account->categories()->sync($attributes['category_ids'] ?? []);
+            unset($attributes['category_ids']);
+        }
+
         $account->update($attributes);
 
-        return new AccountResource($account->load(['tasks', 'category']));
+        return new AccountResource($account->load(['tasks', 'categories']));
     }
 
     public function destroy(Account $account): JsonResponse

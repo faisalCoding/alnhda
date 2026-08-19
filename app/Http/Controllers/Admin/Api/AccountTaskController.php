@@ -66,6 +66,6 @@ class AccountTaskController extends Controller
             ])->all()
         );
 
-        return new AccountResource($account->load(['tasks', 'category']));
+        return new AccountResource($account->load(['tasks', 'categories']));
     }
 }

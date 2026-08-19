@@ -282,20 +282,93 @@ it('refuses a colour outside the palette', function () {
         ->assertJsonValidationErrors('color');
 });
 
-it('sends the category alongside each account', function () {
+it('puts an account in several categories at once', function () {
+    $social = AccountCategory::factory()->create(['name' => 'تواصل اجتماعي', 'sort_order' => 1]);
+    $design = AccountCategory::factory()->create(['name' => 'أدوات تصميم', 'sort_order' => 2]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(apiUrl('accounts'), [
+            'name' => 'إنستغرام',
+            'identifier' => 'nahda',
+            'category_ids' => [$social->id, $design->id],
+        ])
+        ->assertCreated()
+        ->assertJsonCount(2, 'data.categories')
+        ->assertJsonPath('data.categories.0.name', 'تواصل اجتماعي')
+        ->assertJsonPath('data.categories.1.name', 'أدوات تصميم');
+});
+
+// This is the bug the page showed: the row was saved with its category but the
+// create response came back without the relation, so the new card rendered bare.
+it('returns the categories on the very response that creates the account', function () {
+    $category = AccountCategory::factory()->create(['name' => 'تواصل اجتماعي']);
+
+    $response = $this->actingAs($this->admin, 'admin')
+        ->postJson(apiUrl('accounts'), [
+            'name' => 'إنستغرام',
+            'identifier' => 'nahda',
+            'category_ids' => [$category->id],
+        ])->assertCreated();
+
+    expect($response->json('data.categories'))->toHaveCount(1)
+        ->and($response->json('data.category_ids'))->toBe([$category->id]);
+});
+
+it('sends the categories alongside each account in the listing', function () {
     $category = AccountCategory::factory()->create(['name' => 'أدوات تصميم', 'color' => 'sky']);
-    Account::factory()->create(['account_category_id' => $category->id]);
+    $account = Account::factory()->create();
+    $account->categories()->attach($category);
 
     $this->actingAs($this->admin, 'admin')
         ->getJson(apiUrl('accounts'))
         ->assertOk()
-        ->assertJsonPath('data.0.category.name', 'أدوات تصميم')
-        ->assertJsonPath('data.0.category.color', 'sky');
+        ->assertJsonPath('data.0.categories.0.name', 'أدوات تصميم')
+        ->assertJsonPath('data.0.categories.0.color', 'sky');
+});
+
+it('replaces the whole set of categories on edit', function () {
+    $first = AccountCategory::factory()->create();
+    $second = AccountCategory::factory()->create();
+    $third = AccountCategory::factory()->create();
+
+    $account = Account::factory()->create();
+    $account->categories()->attach([$first->id, $second->id]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->putJson(apiUrl('accounts/'.$account->id), ['category_ids' => [$third->id]])
+        ->assertOk();
+
+    expect($account->fresh()->categories->pluck('id')->all())->toBe([$third->id]);
+});
+
+it('strips every category when an empty set is sent', function () {
+    $category = AccountCategory::factory()->create();
+    $account = Account::factory()->create();
+    $account->categories()->attach($category);
+
+    $this->actingAs($this->admin, 'admin')
+        ->putJson(apiUrl('accounts/'.$account->id), ['category_ids' => []])
+        ->assertOk();
+
+    expect($account->fresh()->categories)->toBeEmpty();
+});
+
+it('leaves the categories alone when an edit does not mention them', function () {
+    $category = AccountCategory::factory()->create();
+    $account = Account::factory()->create();
+    $account->categories()->attach($category);
+
+    $this->actingAs($this->admin, 'admin')
+        ->putJson(apiUrl('accounts/'.$account->id), ['name' => 'اسم جديد'])
+        ->assertOk();
+
+    expect($account->fresh()->categories->pluck('id')->all())->toBe([$category->id]);
 });
 
 it('counts how many accounts sit in each category', function () {
     $category = AccountCategory::factory()->create();
-    Account::factory()->count(3)->create(['account_category_id' => $category->id]);
+
+    Account::factory()->count(3)->create()->each(fn ($account) => $account->categories()->attach($category));
 
     $this->actingAs($this->admin, 'admin')
         ->getJson(apiUrl('account-categories'))
@@ -305,45 +378,34 @@ it('counts how many accounts sit in each category', function () {
 
 it('keeps the accounts when their category is deleted', function () {
     $category = AccountCategory::factory()->create();
-    $account = Account::factory()->create(['account_category_id' => $category->id]);
+    $account = Account::factory()->create();
+    $account->categories()->attach($category);
 
     $this->actingAs($this->admin, 'admin')
         ->deleteJson(apiUrl('account-categories/'.$category->id))
         ->assertOk();
 
     expect(Account::query()->count())->toBe(1)
-        ->and($account->fresh()->account_category_id)->toBeNull();
-});
-
-it('assigns a category when an account is created', function () {
-    $category = AccountCategory::factory()->create();
-
-    $this->actingAs($this->admin, 'admin')
-        ->postJson(apiUrl('accounts'), [
-            'name' => 'إنستغرام',
-            'identifier' => 'nahda',
-            'account_category_id' => $category->id,
-        ])
-        ->assertCreated()
-        ->assertJsonPath('data.account_category_id', $category->id);
+        ->and($account->fresh()->categories)->toBeEmpty();
 });
 
 it('refuses an account pointed at a category that does not exist', function () {
     $this->actingAs($this->admin, 'admin')
-        ->postJson(apiUrl('accounts'), ['name' => 'منصة', 'identifier' => 'x', 'account_category_id' => 9999])
+        ->postJson(apiUrl('accounts'), ['name' => 'منصة', 'identifier' => 'x', 'category_ids' => [9999]])
         ->assertStatus(422)
-        ->assertJsonValidationErrors('account_category_id');
+        ->assertJsonValidationErrors('category_ids.0');
 });
 
-it('lets an account be moved out of every category', function () {
+it('drops the pivot rows when the account itself goes', function () {
     $category = AccountCategory::factory()->create();
-    $account = Account::factory()->create(['account_category_id' => $category->id]);
+    $account = Account::factory()->create();
+    $account->categories()->attach($category);
 
     $this->actingAs($this->admin, 'admin')
-        ->putJson(apiUrl('accounts/'.$account->id), ['account_category_id' => null])
+        ->deleteJson(apiUrl('accounts/'.$account->id))
         ->assertOk();
 
-    expect($account->fresh()->account_category_id)->toBeNull();
+    expect(DB::table('account_account_category')->count())->toBe(0);
 });
 
 // ---- the one hour reveal window ------------------------------------------
