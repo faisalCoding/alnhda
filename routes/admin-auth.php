@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\Admin\Api\ArticleController;
 use App\Http\Controllers\Admin\Api\ArticleFileController;
+use App\Http\Controllers\Admin\Api\BacklinkController;
 use App\Http\Controllers\Admin\Api\DashboardController;
 use App\Http\Controllers\Admin\Api\LeadController;
+use App\Http\Controllers\Admin\Api\MarketingChecklistController;
+use App\Http\Controllers\Admin\Api\MarketingMethodController;
 use App\Http\Controllers\Admin\Api\ProjectController;
 use App\Http\Controllers\Admin\Api\ProjectFileController;
 use App\Http\Controllers\Admin\Api\PropertyController;
@@ -13,7 +16,9 @@ use App\Http\Controllers\Admin\Api\RevealPinController;
 use App\Http\Controllers\Admin\Api\SessionController;
 use App\Http\Controllers\Admin\Api\SocialPlatformController;
 use App\Http\Controllers\Admin\Api\SocialPlatformTaskController;
+use App\Http\Controllers\Admin\Api\SubscriptionController;
 use App\Http\Controllers\Admin\Api\TaskTemplateController;
+use App\Http\Controllers\Admin\Api\UsefulLinkController;
 use App\Http\Controllers\Admin\Api\VisitorController;
 use App\Http\Controllers\Admin\Api\WhatsappController;
 use App\Http\Controllers\Admin\Auth\AuthenticatedSessionController;
@@ -39,6 +44,10 @@ Route::middleware('auth:admin')->group(function () {
     Route::view('whatsapp-dashboard', 'admin.whatsapp')->name('whatsapp-dashboard');
     Route::view('whatsapp-messages', 'admin.whatsapp-messages')->name('whatsapp-messages');
     Route::view('social-accounts', 'admin.social-accounts')->name('social-accounts');
+    Route::view('subscriptions', 'admin.subscriptions')->name('subscriptions');
+    Route::view('useful-links', 'admin.useful-links')->name('useful-links');
+    Route::view('backlinks', 'admin.backlinks')->name('backlinks');
+    Route::view('marketing-tools', 'admin.marketing-tools')->name('marketing-tools');
 });
 
 Route::prefix('api')->name('panel.api.')->group(function () {
@@ -97,6 +106,13 @@ Route::prefix('api')->name('panel.api.')->group(function () {
 
         Route::get('task-templates', [TaskTemplateController::class, 'index'])->name('task-templates.index');
 
+        Route::get('subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
+        Route::post('subscriptions/{subscription}/reveal', [RevealPinController::class, 'revealPaymentAccount'])->name('subscriptions.reveal');
+        Route::get('useful-links', [UsefulLinkController::class, 'index'])->name('useful-links.index');
+        Route::get('backlinks', [BacklinkController::class, 'index'])->name('backlinks.index');
+        Route::get('marketing-methods', [MarketingMethodController::class, 'index'])->name('marketing-methods.index');
+        Route::get('marketing-checklists', [MarketingChecklistController::class, 'index'])->name('marketing-checklists.index');
+
         Route::middleware('idempotency')->group(function () {
             Route::post('social-platforms', [SocialPlatformController::class, 'store'])->name('social-platforms.store');
             Route::put('social-platforms/{socialPlatform}', [SocialPlatformController::class, 'update'])->name('social-platforms.update');
@@ -110,6 +126,30 @@ Route::prefix('api')->name('panel.api.')->group(function () {
             Route::post('social-platforms/{socialPlatform}/apply-templates', [SocialPlatformTaskController::class, 'applyTemplates'])->name('social-platforms.apply-templates');
             Route::put('social-platform-tasks/{task}', [SocialPlatformTaskController::class, 'update'])->name('social-platform-tasks.update');
             Route::delete('social-platform-tasks/{task}', [SocialPlatformTaskController::class, 'destroy'])->name('social-platform-tasks.destroy');
+
+            Route::post('subscriptions', [SubscriptionController::class, 'store'])->name('subscriptions.store');
+            Route::put('subscriptions/{subscription}', [SubscriptionController::class, 'update'])->name('subscriptions.update');
+            Route::delete('subscriptions/{subscription}', [SubscriptionController::class, 'destroy'])->name('subscriptions.destroy');
+
+            Route::post('useful-links', [UsefulLinkController::class, 'store'])->name('useful-links.store');
+            Route::put('useful-links/{usefulLink}', [UsefulLinkController::class, 'update'])->name('useful-links.update');
+            Route::delete('useful-links/{usefulLink}', [UsefulLinkController::class, 'destroy'])->name('useful-links.destroy');
+
+            Route::post('backlinks', [BacklinkController::class, 'store'])->name('backlinks.store');
+            Route::put('backlinks/{backlink}', [BacklinkController::class, 'update'])->name('backlinks.update');
+            Route::delete('backlinks/{backlink}', [BacklinkController::class, 'destroy'])->name('backlinks.destroy');
+
+            Route::post('marketing-methods', [MarketingMethodController::class, 'store'])->name('marketing-methods.store');
+            Route::put('marketing-methods/{marketingMethod}', [MarketingMethodController::class, 'update'])->name('marketing-methods.update');
+            Route::delete('marketing-methods/{marketingMethod}', [MarketingMethodController::class, 'destroy'])->name('marketing-methods.destroy');
+
+            Route::post('marketing-checklists', [MarketingChecklistController::class, 'store'])->name('marketing-checklists.store');
+            Route::put('marketing-checklists/{marketingChecklist}', [MarketingChecklistController::class, 'update'])->name('marketing-checklists.update');
+            Route::delete('marketing-checklists/{marketingChecklist}', [MarketingChecklistController::class, 'destroy'])->name('marketing-checklists.destroy');
+            Route::post('marketing-checklists/{marketingChecklist}/methods', [MarketingChecklistController::class, 'addMethods'])->name('marketing-checklists.methods');
+            Route::post('marketing-checklists/{marketingChecklist}/items', [MarketingChecklistController::class, 'storeItem'])->name('marketing-checklists.items.store');
+            Route::put('marketing-checklist-items/{item}', [MarketingChecklistController::class, 'updateItem'])->name('marketing-checklist-items.update');
+            Route::delete('marketing-checklist-items/{item}', [MarketingChecklistController::class, 'destroyItem'])->name('marketing-checklist-items.destroy');
         });
 
         Route::post('projects/{project}/image', [ProjectFileController::class, 'storeImage'])->name('projects.image');

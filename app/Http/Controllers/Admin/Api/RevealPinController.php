@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\RevealPasswordRequest;
 use App\Http\Requests\Admin\SetRevealPinRequest;
 use App\Models\Admin;
 use App\Models\SocialPlatform;
+use App\Models\Subscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -43,6 +44,21 @@ class RevealPinController extends Controller
 
     public function reveal(RevealPasswordRequest $request, SocialPlatform $socialPlatform): JsonResponse
     {
+        return $this->guarded($request, 'social_platform', $socialPlatform->id, fn (): ?string => $socialPlatform->password);
+    }
+
+    public function revealPaymentAccount(RevealPasswordRequest $request, Subscription $subscription): JsonResponse
+    {
+        return $this->guarded($request, 'subscription', $subscription->id, fn (): ?string => $subscription->payment_account);
+    }
+
+    /**
+     * Check the pin under a strict attempt limit, then hand over the secret.
+     *
+     * @param  \Closure(): ?string  $secret
+     */
+    private function guarded(RevealPasswordRequest $request, string $subject, int $subjectId, \Closure $secret): JsonResponse
+    {
         $admin = $this->admin();
 
         if (blank($admin->reveal_pin)) {
@@ -76,15 +92,16 @@ class RevealPinController extends Controller
 
         RateLimiter::clear($key);
 
-        Log::info('social platform password revealed', [
+        Log::info('secret revealed', [
             'admin_id' => $admin->id,
-            'social_platform_id' => $socialPlatform->id,
+            'subject' => $subject,
+            'subject_id' => $subjectId,
             'ip' => $request->ip(),
         ]);
 
         return response()->json(['data' => [
-            'id' => $socialPlatform->id,
-            'password' => $socialPlatform->password,
+            'id' => $subjectId,
+            'secret' => $secret(),
         ]]);
     }
 

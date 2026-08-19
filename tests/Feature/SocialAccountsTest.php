@@ -104,7 +104,7 @@ it('hands over the password once the right pin is given', function () {
     $this->actingAs($this->admin, 'admin')
         ->postJson(apiUrl('social-platforms/'.$platform->id.'/reveal'), ['pin' => '1234'])
         ->assertOk()
-        ->assertJsonPath('data.password', 'TopSecret!23');
+        ->assertJsonPath('data.secret', 'TopSecret!23');
 });
 
 it('withholds the password when the pin is wrong', function () {

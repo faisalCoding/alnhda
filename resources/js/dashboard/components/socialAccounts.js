@@ -149,7 +149,7 @@ export default function socialAccountsPage() {
                     pin: this.pinPrompt.value,
                 });
 
-                this.revealed[this.pinPrompt.platformId] = payload.data.password;
+                this.revealed[this.pinPrompt.platformId] = payload.data.secret;
                 this.scheduleHide(this.pinPrompt.platformId);
                 this.pinPrompt.open = false;
             } catch (error) {
