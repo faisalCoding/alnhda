@@ -121,6 +121,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('marketing-checklists', [MarketingChecklistController::class, 'index'])->name('marketing-checklists.index');
 
         Route::get('employees', [WeeklyTaskController::class, 'employees'])->name('employees.index');
+        Route::get('weekly-task-categories', [WeeklyTaskController::class, 'categories'])->name('weekly-task-categories.index');
         Route::get('weekly-task-templates', [WeeklyTaskController::class, 'templates'])->name('weekly-task-templates.index');
         Route::get('weekly-tasks', [WeeklyTaskController::class, 'week'])->name('weekly-tasks.index');
         Route::get('weekly-report-settings', [WeeklyTaskController::class, 'settings'])->name('weekly-report-settings.show');
@@ -176,6 +177,10 @@ Route::prefix('api')->name('panel.api.')->group(function () {
             Route::post('employees', [WeeklyTaskController::class, 'storeEmployee'])->name('employees.store');
             Route::put('employees/{employee}', [WeeklyTaskController::class, 'updateEmployee'])->name('employees.update');
             Route::delete('employees/{employee}', [WeeklyTaskController::class, 'destroyEmployee'])->name('employees.destroy');
+
+            Route::post('weekly-task-categories', [WeeklyTaskController::class, 'storeCategory'])->name('weekly-task-categories.store');
+            Route::put('weekly-task-categories/{category}', [WeeklyTaskController::class, 'updateCategory'])->name('weekly-task-categories.update');
+            Route::delete('weekly-task-categories/{category}', [WeeklyTaskController::class, 'destroyCategory'])->name('weekly-task-categories.destroy');
 
             Route::post('weekly-task-templates', [WeeklyTaskController::class, 'storeTemplate'])->name('weekly-task-templates.store');
             Route::delete('weekly-task-templates/{template}', [WeeklyTaskController::class, 'destroyTemplate'])->name('weekly-task-templates.destroy');

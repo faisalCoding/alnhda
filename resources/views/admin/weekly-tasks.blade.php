@@ -56,6 +56,11 @@
                 <span class="rounded-full bg-zinc-200 px-1.5 text-xs dark:bg-zinc-700" x-text="templates.length"></span>
             </button>
 
+            <button type="button" @click="showCategories = true" class="{{ $ghost }}">
+                التصنيفات
+                <span class="rounded-full bg-zinc-200 px-1.5 text-xs dark:bg-zinc-700" x-text="categories.length"></span>
+            </button>
+
             <button type="button" @click="showSettings = true" class="{{ $ghost }}">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
@@ -112,22 +117,54 @@
                         </div>
                     </div>
 
-                    <ul class="space-y-0.5 px-5 py-3">
-                        <template x-for="item in list.items" :key="item.id">
-                            <li class="group flex items-center gap-3 rounded-lg px-2 py-1.5 transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60">
-                                <input type="checkbox" :checked="item.is_done" @change="toggleItem(list, item)"
-                                    class="h-4 w-4 shrink-0 rounded border-zinc-300 text-primary-500 focus:ring-primary-500 dark:border-zinc-600">
-                                <span class="flex-1 text-sm" :class="item.is_done && 'text-zinc-400 line-through'" x-text="item.title"></span>
-                                <button type="button" @click="removeItem(list, item)"
-                                    class="shrink-0 text-xs font-bold text-red-500 opacity-0 transition group-hover:opacity-100">حذف</button>
-                            </li>
+                    <div class="px-5 py-3">
+                        <template x-for="group in groupsFor(list)" :key="group.key">
+                            <section class="mb-1 last:mb-0">
+                                <p x-show="group.name" class="mb-1 flex items-center gap-1.5 px-2 pt-1.5">
+                                    <span class="h-2 w-2 shrink-0 rounded-full" :class="classesFor(group.color).dot"></span>
+                                    <span class="text-xs font-extrabold text-zinc-500 dark:text-zinc-400" x-text="group.name"></span>
+                                    <span class="text-[11px] text-zinc-400"
+                                        x-text="'· ' + group.items.filter(i => i.is_done).length + '/' + group.items.length"></span>
+                                </p>
+
+                                <ul class="space-y-0.5">
+                                    <template x-for="item in group.items" :key="item.id">
+                                        <li class="group flex items-center gap-3 rounded-lg px-2 py-1.5 transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60">
+                                            <input type="checkbox" :checked="item.is_done" @change="toggleItem(list, item)"
+                                                class="h-4 w-4 shrink-0 rounded border-zinc-300 text-primary-500 focus:ring-primary-500 dark:border-zinc-600">
+                                            <span class="flex-1 text-sm" :class="item.is_done && 'text-zinc-400 line-through'" x-text="item.title"></span>
+
+                                            <select x-show="categories.length" :value="item.weekly_task_category_id ?? ''"
+                                                @change="moveItem(list, item, $event.target.value)"
+                                                title="نقل المهمة إلى تصنيف آخر"
+                                                class="shrink-0 rounded-lg border-0 bg-transparent py-0 text-[11px] text-zinc-400 opacity-0 transition focus:opacity-100 group-hover:opacity-100 dark:text-zinc-500">
+                                                <option value="">بلا تصنيف</option>
+                                                <template x-for="category in categories" :key="category.id">
+                                                    <option :value="category.id" x-text="category.name"></option>
+                                                </template>
+                                            </select>
+
+                                            <button type="button" @click="removeItem(list, item)"
+                                                class="shrink-0 text-xs font-bold text-red-500 opacity-0 transition group-hover:opacity-100">حذف</button>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </section>
                         </template>
-                        <li x-show="!list.items.length" x-cloak class="px-2 py-3 text-sm text-zinc-400">لا توجد مهام</li>
-                    </ul>
+
+                        <p x-show="!list.items.length" x-cloak class="px-2 py-3 text-sm text-zinc-400">لا توجد مهام</p>
+                    </div>
 
                     <footer class="border-t border-zinc-100 px-5 py-3 dark:border-zinc-800">
                         <form @submit.prevent="addItem(list)" class="flex gap-2">
                             <input type="text" x-model="newItem[list.id]" placeholder="مهمة إضافية لهذا الأسبوع…" class="{{ $input }}">
+                            <select x-show="categories.length" x-model.number="newItemCategory[list.id]"
+                                class="w-32 shrink-0 rounded-xl border border-zinc-300 bg-white px-2 py-2.5 text-xs outline-none focus:border-primary-500 dark:border-zinc-700 dark:bg-zinc-800">
+                                <option value="">بلا تصنيف</option>
+                                <template x-for="category in categories" :key="category.id">
+                                    <option :value="category.id" x-text="category.name"></option>
+                                </template>
+                            </select>
                             <button type="submit" class="{{ $ghost }}">إضافة</button>
                         </form>
                     </footer>

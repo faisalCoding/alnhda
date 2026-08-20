@@ -1,10 +1,12 @@
 import { ApiError, request } from '../api';
 import { uuid } from '../ids';
+import { CATEGORY_COLORS, COLOR_CLASSES } from './accounts';
 
 export default function weeklyTasksPage() {
     return {
         employees: [],
         templates: [],
+        categories: [],
         lists: [],
         settings: { whatsapp_group_id: null, whatsapp_group_name: null, weekly_reports_enabled: false, is_ready: false },
         groupsError: '',
@@ -18,18 +20,34 @@ export default function weeklyTasksPage() {
         employeeErrors: {},
         showEmployees: false,
 
-        templateForm: { title: '', employee_id: '' },
+        templateForm: { title: '', employee_id: '', weekly_task_category_id: '' },
         templateErrors: {},
         showTemplates: false,
+
+        colors: CATEGORY_COLORS,
+        categoryForm: { id: null, name: '', color: 'emerald' },
+        categoryErrors: {},
+        showCategories: false,
 
         showSettings: false,
         preview: { open: false, kind: 'opening', message: '', busy: false },
 
         newItem: {},
+        newItemCategory: {},
 
         async init() {
-            await Promise.all([this.loadEmployees(), this.loadTemplates(), this.loadWeek(), this.loadSettings()]);
+            await Promise.all([
+                this.loadEmployees(),
+                this.loadTemplates(),
+                this.loadCategories(),
+                this.loadWeek(),
+                this.loadSettings(),
+            ]);
             this.loading = false;
+        },
+
+        classesFor(color) {
+            return COLOR_CLASSES[color] ?? COLOR_CLASSES.zinc;
         },
 
         async loadEmployees() {
@@ -45,6 +63,14 @@ export default function weeklyTasksPage() {
                 this.templates = (await request('GET', '/api/weekly-task-templates'))?.data ?? [];
             } catch {
                 this.templates = [];
+            }
+        },
+
+        async loadCategories() {
+            try {
+                this.categories = (await request('GET', '/api/weekly-task-categories'))?.data ?? [];
+            } catch {
+                this.categories = [];
             }
         },
 
@@ -104,13 +130,73 @@ export default function weeklyTasksPage() {
                 return;
             }
 
+            const categoryId = this.newItemCategory[list.id] ?? '';
+
             try {
-                const payload = await request('POST', `/api/weekly-tasks/${list.id}/items`, { title }, { idempotencyKey: uuid() });
+                const payload = await request('POST', `/api/weekly-tasks/${list.id}/items`, {
+                    title,
+                    weekly_task_category_id: categoryId === '' ? null : categoryId,
+                }, { idempotencyKey: uuid() });
+
                 list.items = [...list.items, payload.data];
                 this.newItem[list.id] = '';
             } catch (error) {
                 this.error = error.message;
             }
+        },
+
+        /** Re-file a task without retyping it. */
+        async moveItem(list, item, categoryId) {
+            const previous = { id: item.weekly_task_category_id, category: item.category };
+            const chosen = this.categories.find((entry) => entry.id === Number(categoryId)) ?? null;
+
+            item.weekly_task_category_id = chosen?.id ?? null;
+            item.category = chosen;
+
+            try {
+                await request('PUT', `/api/weekly-task-items/${item.id}`, {
+                    weekly_task_category_id: chosen?.id ?? null,
+                }, { idempotencyKey: uuid() });
+            } catch (error) {
+                item.weekly_task_category_id = previous.id;
+                item.category = previous.category;
+                this.error = error.message;
+            }
+        },
+
+        /**
+         * The tasks under their category heading, in the order the categories
+         * are arranged, with anything unfiled last — the same shape the WhatsApp
+         * message takes, so the panel and the message never disagree.
+         */
+        groupsFor(list) {
+            const items = list.items ?? [];
+
+            if (items.every((item) => !item.category)) {
+                return items.length ? [{ key: 'none', name: '', color: 'zinc', items }] : [];
+            }
+
+            const order = (item) => (item.category ? item.category.sort_order : Number.MAX_SAFE_INTEGER);
+            const groups = new Map();
+
+            [...items]
+                .sort((a, b) => order(a) - order(b) || (a.category?.id ?? 0) - (b.category?.id ?? 0) || a.sort_order - b.sort_order)
+                .forEach((item) => {
+                    const key = item.category?.id ?? 'none';
+
+                    if (!groups.has(key)) {
+                        groups.set(key, {
+                            key,
+                            name: item.category?.name ?? 'أخرى',
+                            color: item.category?.color ?? 'zinc',
+                            items: [],
+                        });
+                    }
+
+                    groups.get(key).items.push(item);
+                });
+
+            return [...groups.values()];
         },
 
         async removeItem(list, item) {
@@ -191,6 +277,7 @@ export default function weeklyTasksPage() {
 
         // ---- templates ------------------------------------------------------
 
+        /** One task per line, so a whole week goes in with a single paste. */
         async addTemplate() {
             const title = this.templateForm.title.trim();
 
@@ -204,19 +291,116 @@ export default function weeklyTasksPage() {
                 const payload = await request('POST', '/api/weekly-task-templates', {
                     title,
                     employee_id: this.templateForm.employee_id === '' ? null : this.templateForm.employee_id,
+                    weekly_task_category_id: this.templateForm.weekly_task_category_id === ''
+                        ? null
+                        : this.templateForm.weekly_task_category_id,
                 }, { idempotencyKey: uuid() });
 
-                this.templates = [...this.templates, payload.data];
+                this.templates = [...this.templates, ...payload.data];
                 this.templateForm.title = '';
+                await this.loadCategories();
             } catch (error) {
                 this.templateErrors = error instanceof ApiError ? error.errors : {};
             }
+        },
+
+        get pendingTemplateCount() {
+            return this.templateForm.title
+                .split(/\r?\n/)
+                .map((line) => line.trim())
+                .filter((line) => line !== '')
+                .length;
+        },
+
+        /** Templates under their heading, so the modal reads like the week does. */
+        get groupedTemplates() {
+            const groups = new Map();
+
+            this.templates.forEach((template) => {
+                const key = template.weekly_task_category_id ?? 'none';
+
+                if (!groups.has(key)) {
+                    const category = this.categories.find((entry) => entry.id === template.weekly_task_category_id);
+
+                    groups.set(key, {
+                        key,
+                        name: category?.name ?? (template.weekly_task_category_id ? '—' : 'بلا تصنيف'),
+                        color: category?.color ?? 'zinc',
+                        sort: category?.sort_order ?? Number.MAX_SAFE_INTEGER,
+                        items: [],
+                    });
+                }
+
+                groups.get(key).items.push(template);
+            });
+
+            return [...groups.values()].sort((a, b) => a.sort - b.sort);
         },
 
         async removeTemplate(template) {
             try {
                 await request('DELETE', `/api/weekly-task-templates/${template.id}`, null, { idempotencyKey: uuid() });
                 this.templates = this.templates.filter((item) => item.id !== template.id);
+            } catch (error) {
+                this.error = error.message;
+            }
+        },
+
+        // ---- categories -----------------------------------------------------
+
+        openCategoryCreate() {
+            this.categoryForm = { id: null, name: '', color: 'emerald' };
+            this.categoryErrors = {};
+        },
+
+        editCategory(category) {
+            this.categoryForm = { id: category.id, name: category.name, color: category.color };
+            this.categoryErrors = {};
+        },
+
+        async saveCategory() {
+            const name = this.categoryForm.name.trim();
+
+            if (name === '') {
+                return;
+            }
+
+            this.categoryErrors = {};
+            const isUpdate = Boolean(this.categoryForm.id);
+
+            try {
+                const payload = isUpdate
+                    ? await request('PUT', `/api/weekly-task-categories/${this.categoryForm.id}`, {
+                        name,
+                        color: this.categoryForm.color,
+                    }, { idempotencyKey: uuid() })
+                    : await request('POST', '/api/weekly-task-categories', {
+                        name,
+                        color: this.categoryForm.color,
+                    }, { idempotencyKey: uuid() });
+
+                const saved = payload.data;
+                this.categories = isUpdate
+                    ? this.categories.map((entry) => (entry.id === saved.id ? saved : entry))
+                    : [...this.categories, saved];
+
+                this.openCategoryCreate();
+                await Promise.all([this.loadTemplates(), this.loadWeek()]);
+            } catch (error) {
+                this.categoryErrors = error instanceof ApiError ? error.errors : {};
+            }
+        },
+
+        /** The tasks survive; they simply lose their heading. */
+        async removeCategory(category) {
+            if (!confirm(`حذف تصنيف «${category.name}»؟ المهام تبقى كما هي بلا تصنيف.`)) {
+                return;
+            }
+
+            try {
+                await request('DELETE', `/api/weekly-task-categories/${category.id}`, null, { idempotencyKey: uuid() });
+                this.categories = this.categories.filter((entry) => entry.id !== category.id);
+                await Promise.all([this.loadTemplates(), this.loadWeek()]);
             } catch (error) {
                 this.error = error.message;
             }

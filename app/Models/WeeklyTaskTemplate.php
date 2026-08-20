@@ -13,6 +13,7 @@ class WeeklyTaskTemplate extends Model
 
     protected $fillable = [
         'employee_id',
+        'weekly_task_category_id',
         'title',
         'sort_order',
     ];
@@ -35,5 +36,15 @@ class WeeklyTaskTemplate extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    /**
+     * Null means the task is filed under no heading of its own.
+     *
+     * @return BelongsTo<WeeklyTaskCategory, $this>
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(WeeklyTaskCategory::class, 'weekly_task_category_id');
     }
 }

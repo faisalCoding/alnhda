@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreEmployeeRequest;
+use App\Http\Requests\Admin\StoreWeeklyTaskCategoryRequest;
 use App\Http\Requests\Admin\StoreWeeklyTaskItemRequest;
 use App\Http\Requests\Admin\StoreWeeklyTaskTemplateRequest;
 use App\Http\Requests\Admin\UpdateEmployeeRequest;
 use App\Http\Requests\Admin\UpdateWeeklyReportSettingsRequest;
+use App\Http\Requests\Admin\UpdateWeeklyTaskCategoryRequest;
 use App\Http\Requests\Admin\UpdateWeeklyTaskItemRequest;
 use App\Http\Resources\Admin\EmployeeResource;
+use App\Http\Resources\Admin\WeeklyTaskCategoryResource;
 use App\Http\Resources\Admin\WeeklyTaskItemResource;
 use App\Http\Resources\Admin\WeeklyTaskListResource;
 use App\Http\Resources\Admin\WeeklyTaskTemplateResource;
@@ -17,6 +20,7 @@ use App\Models\Admin;
 use App\Models\AppSettings;
 use App\Models\Employee;
 use App\Models\WeeklyReportSend;
+use App\Models\WeeklyTaskCategory;
 use App\Models\WeeklyTaskItem;
 use App\Models\WeeklyTaskList;
 use App\Models\WeeklyTaskTemplate;
@@ -25,6 +29,7 @@ use App\Services\WhatsappGateway;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 class WeeklyTaskController extends Controller
 {
@@ -71,23 +76,81 @@ class WeeklyTaskController extends Controller
         return response()->json(['data' => ['id' => $id, 'deleted' => true]]);
     }
 
+    // ---- categories ------------------------------------------------------
+
+    public function categories(): AnonymousResourceCollection
+    {
+        return WeeklyTaskCategoryResource::collection(
+            WeeklyTaskCategory::query()
+                ->withCount('templates')
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get()
+        );
+    }
+
+    public function storeCategory(StoreWeeklyTaskCategoryRequest $request): JsonResponse
+    {
+        $category = WeeklyTaskCategory::query()->create([
+            ...$request->validated(),
+            'color' => $request->validated('color') ?? WeeklyTaskCategory::COLORS[0],
+            'sort_order' => (int) WeeklyTaskCategory::query()->max('sort_order') + 1,
+        ]);
+
+        return (new WeeklyTaskCategoryResource($category->loadCount('templates')))
+            ->response()
+            ->setStatusCode(201);
+    }
+
+    public function updateCategory(UpdateWeeklyTaskCategoryRequest $request, WeeklyTaskCategory $category): WeeklyTaskCategoryResource
+    {
+        $category->update($request->validated());
+
+        return new WeeklyTaskCategoryResource($category->loadCount('templates'));
+    }
+
+    /**
+     * Deleting a category leaves its tasks in place, merely unfiled — including
+     * the ones already sitting in an open week.
+     */
+    public function destroyCategory(WeeklyTaskCategory $category): JsonResponse
+    {
+        $id = $category->id;
+        $category->delete();
+
+        return response()->json(['data' => ['id' => $id, 'deleted' => true]]);
+    }
+
     // ---- templates -------------------------------------------------------
 
     public function templates(): AnonymousResourceCollection
     {
         return WeeklyTaskTemplateResource::collection(
-            WeeklyTaskTemplate::query()->with('employee')->orderBy('sort_order')->orderBy('id')->get()
+            WeeklyTaskTemplate::query()->with(['employee', 'category'])->orderBy('sort_order')->orderBy('id')->get()
         );
     }
 
+    /**
+     * Takes one task per line, so a whole week can be pasted in at once, and
+     * always answers with a collection however many lines arrived.
+     */
     public function storeTemplate(StoreWeeklyTaskTemplateRequest $request): JsonResponse
     {
-        $template = WeeklyTaskTemplate::query()->create([
-            ...$request->validated(),
-            'sort_order' => (int) WeeklyTaskTemplate::query()->max('sort_order') + 1,
-        ]);
+        $order = (int) WeeklyTaskTemplate::query()->max('sort_order');
+        $created = collect();
 
-        return (new WeeklyTaskTemplateResource($template->load('employee')))
+        DB::transaction(function () use ($request, &$order, $created): void {
+            foreach ($request->titles() as $title) {
+                $created->push(WeeklyTaskTemplate::query()->create([
+                    'title' => $title,
+                    'employee_id' => $request->validated('employee_id'),
+                    'weekly_task_category_id' => $request->validated('weekly_task_category_id'),
+                    'sort_order' => ++$order,
+                ]));
+            }
+        });
+
+        return WeeklyTaskTemplateResource::collection($created->each->load(['employee', 'category']))
             ->response()
             ->setStatusCode(201);
     }
@@ -123,7 +186,7 @@ class WeeklyTaskController extends Controller
             'sort_order' => (int) $list->items()->max('sort_order') + 1,
         ]);
 
-        return (new WeeklyTaskItemResource($item))->response()->setStatusCode(201);
+        return (new WeeklyTaskItemResource($item->load('category')))->response()->setStatusCode(201);
     }
 
     public function updateItem(UpdateWeeklyTaskItemRequest $request, WeeklyTaskItem $item): WeeklyTaskItemResource
@@ -136,7 +199,7 @@ class WeeklyTaskController extends Controller
 
         $item->update($attributes);
 
-        return new WeeklyTaskItemResource($item);
+        return new WeeklyTaskItemResource($item->load('category'));
     }
 
     public function destroyItem(WeeklyTaskItem $item): JsonResponse

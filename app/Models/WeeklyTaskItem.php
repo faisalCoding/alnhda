@@ -13,6 +13,7 @@ class WeeklyTaskItem extends Model
 
     protected $fillable = [
         'weekly_task_list_id',
+        'weekly_task_category_id',
         'title',
         'is_done',
         'completed_at',
@@ -37,5 +38,13 @@ class WeeklyTaskItem extends Model
     public function list(): BelongsTo
     {
         return $this->belongsTo(WeeklyTaskList::class, 'weekly_task_list_id');
+    }
+
+    /**
+     * @return BelongsTo<WeeklyTaskCategory, $this>
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(WeeklyTaskCategory::class, 'weekly_task_category_id');
     }
 }

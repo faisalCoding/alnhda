@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\WeeklyTaskCategory;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class UpdateWeeklyTaskItemRequest extends FormRequest
+class UpdateWeeklyTaskCategoryRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -17,9 +19,8 @@ class UpdateWeeklyTaskItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'sometimes|required|string|max:255',
-            'is_done' => 'sometimes|boolean',
-            'weekly_task_category_id' => 'sometimes|nullable|integer|exists:weekly_task_categories,id',
+            'name' => 'required|string|max:60',
+            'color' => ['nullable', 'string', Rule::in(WeeklyTaskCategory::COLORS)],
         ];
     }
 
@@ -29,7 +30,8 @@ class UpdateWeeklyTaskItemRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'title.required' => 'نص المهمة مطلوب.',
+            'name.required' => 'اسم التصنيف مطلوب.',
+            'color.in' => 'اختر لوناً من الألوان المتاحة.',
         ];
     }
 }

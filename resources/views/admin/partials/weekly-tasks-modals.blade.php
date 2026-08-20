@@ -74,25 +74,45 @@
             تُنسخ إلى قوائم الأسبوع عند التوليد. مهمة بلا موظف محدد تذهب للجميع.
         </p>
 
-        <ul class="mb-4 max-h-56 space-y-2 overflow-y-auto">
-            <template x-for="template in templates" :key="template.id">
-                <li class="flex items-center gap-3 rounded-xl border border-zinc-200 px-3.5 py-2.5 dark:border-zinc-800">
-                    <span class="flex-1 text-sm" x-text="template.title"></span>
-                    <span class="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
-                        x-text="template.employee_name ?? 'للجميع'"></span>
-                    <button type="button" @click="removeTemplate(template)"
-                        class="shrink-0 text-xs font-bold text-red-500 hover:underline">حذف</button>
-                </li>
+        <div class="mb-4 max-h-56 space-y-3 overflow-y-auto">
+            <template x-for="group in groupedTemplates" :key="group.key">
+                <section>
+                    <p class="mb-1.5 flex items-center gap-1.5">
+                        <span class="h-2 w-2 shrink-0 rounded-full" :class="classesFor(group.color).dot"></span>
+                        <span class="text-xs font-extrabold text-zinc-500 dark:text-zinc-400" x-text="group.name"></span>
+                    </p>
+
+                    <ul class="space-y-2">
+                        <template x-for="template in group.items" :key="template.id">
+                            <li class="flex items-center gap-3 rounded-xl border border-zinc-200 px-3.5 py-2.5 dark:border-zinc-800">
+                                <span class="min-w-0 flex-1 truncate text-sm" x-text="template.title"></span>
+                                <span class="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                                    x-text="template.employee_name ?? 'للجميع'"></span>
+                                <button type="button" @click="removeTemplate(template)"
+                                    class="shrink-0 text-xs font-bold text-red-500 hover:underline">حذف</button>
+                            </li>
+                        </template>
+                    </ul>
+                </section>
             </template>
-            <li x-show="!templates.length" x-cloak
+
+            <p x-show="!templates.length" x-cloak
                 class="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center text-sm text-zinc-400 dark:border-zinc-700">
                 لا توجد مهام نموذجية بعد
-            </li>
-        </ul>
+            </p>
+        </div>
 
         <form @submit.prevent="addTemplate()" class="space-y-3">
-            <input type="text" x-model="templateForm.title" placeholder="مهمة أسبوعية، مثل: نشر ٣ منشورات" class="{{ $input }}">
-            <p class="{{ $error }}" x-show="templateErrors.title" x-text="templateErrors.title?.[0]"></p>
+            <div>
+                <textarea x-model="templateForm.title" rows="3" class="{{ $input }}"
+                    placeholder="مهمة في كل سطر، مثل:&#10;نشر ٣ منشورات&#10;متابعة العملاء المحتملين"></textarea>
+                <div class="mt-1 flex items-center justify-between">
+                    <p class="text-xs text-zinc-400">اكتب أو الصق عدة مهام دفعة واحدة — مهمة في كل سطر.</p>
+                    <p x-show="pendingTemplateCount > 1" x-cloak class="text-xs font-bold text-primary-600 dark:text-primary-300"
+                        x-text="pendingTemplateCount + ' مهام'"></p>
+                </div>
+                <p class="{{ $error }}" x-show="templateErrors.title" x-text="templateErrors.title?.[0]"></p>
+            </div>
 
             <div class="flex gap-2">
                 <select x-model.number="templateForm.employee_id" class="{{ $input }}" :disabled="!employees.length">
@@ -101,8 +121,22 @@
                         <option :value="employee.id" x-text="employee.name"></option>
                     </template>
                 </select>
+
+                <select x-model.number="templateForm.weekly_task_category_id" class="{{ $input }}">
+                    <option value="">بلا تصنيف</option>
+                    <template x-for="category in categories" :key="category.id">
+                        <option :value="category.id" x-text="category.name"></option>
+                    </template>
+                </select>
+
                 <button type="submit" class="{{ $primary }}">إضافة</button>
             </div>
+
+            <p x-show="!categories.length" x-cloak class="text-xs text-zinc-400">
+                لتقسيم المهام إلى مجموعات أنشئ
+                <button type="button" @click="showTemplates = false; showCategories = true"
+                    class="font-bold text-primary-600 underline hover:no-underline dark:text-primary-300">تصنيفاً أولاً</button>.
+            </p>
 
             {{-- Without this the dropdown just reads "لكل الموظفين" and looks broken. --}}
             <p x-show="!employees.length" x-cloak class="text-xs text-zinc-400">
@@ -114,6 +148,63 @@
 
         <div class="mt-5 flex justify-end">
             <button type="button" @click="showTemplates = false" class="{{ $ghost }}">إغلاق</button>
+        </div>
+    </div>
+</div>
+
+{{-- Categories --}}
+<div x-show="showCategories" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    x-transition.opacity @click.self="showCategories = false" @keydown.escape.window="showCategories = false">
+    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-zinc-900" x-trap.noscroll="showCategories">
+        <h2 class="mb-1 text-lg font-extrabold">تصنيفات المهام</h2>
+        <p class="mb-5 text-sm text-zinc-500 dark:text-zinc-400">
+            تقسّم مهام الأسبوع إلى مجموعات، وتظهر بعناوينها في القائمة وفي رسالة الواتساب.
+        </p>
+
+        <ul class="mb-5 max-h-56 space-y-2 overflow-y-auto">
+            <template x-for="category in categories" :key="category.id">
+                <li class="flex items-center gap-3 rounded-xl border border-zinc-200 px-3.5 py-2.5 dark:border-zinc-800">
+                    <span class="h-3 w-3 shrink-0 rounded-full" :class="classesFor(category.color).dot"></span>
+                    <span class="min-w-0 flex-1 truncate text-sm font-bold" x-text="category.name"></span>
+                    <span class="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                        x-text="(category.templates_count ?? 0) + ' مهمة'"></span>
+                    <button type="button" @click="editCategory(category)"
+                        class="shrink-0 text-xs font-bold text-primary-600 hover:underline dark:text-primary-300">تعديل</button>
+                    <button type="button" @click="removeCategory(category)"
+                        class="shrink-0 text-xs font-bold text-red-500 hover:underline">حذف</button>
+                </li>
+            </template>
+            <li x-show="!categories.length" x-cloak
+                class="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center text-sm text-zinc-400 dark:border-zinc-700">
+                لا توجد تصنيفات بعد
+            </li>
+        </ul>
+
+        <form @submit.prevent="saveCategory()" class="space-y-3 rounded-xl bg-zinc-50 p-4 dark:bg-zinc-800/50">
+            <p class="text-sm font-bold" x-text="categoryForm.id ? 'تعديل التصنيف' : 'تصنيف جديد'"></p>
+
+            <div>
+                <input type="text" x-model="categoryForm.name" placeholder="اسم التصنيف، مثل: التسويق" class="{{ $input }}">
+                <p class="{{ $error }}" x-show="categoryErrors.name" x-text="categoryErrors.name?.[0]"></p>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <template x-for="color in colors" :key="color">
+                    <button type="button" @click="categoryForm.color = color"
+                        class="h-7 w-7 rounded-full ring-offset-2 transition dark:ring-offset-zinc-800"
+                        :class="[classesFor(color).dot, categoryForm.color === color ? 'ring-2 ' + classesFor(color).ring : '']"
+                        :aria-label="color"></button>
+                </template>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="button" x-show="categoryForm.id" @click="openCategoryCreate()" class="{{ $ghost }}">إلغاء التعديل</button>
+                <button type="submit" class="{{ $primary }}" x-text="categoryForm.id ? 'حفظ' : 'إضافة'"></button>
+            </div>
+        </form>
+
+        <div class="mt-5 flex justify-end">
+            <button type="button" @click="showCategories = false" class="{{ $ghost }}">إغلاق</button>
         </div>
     </div>
 </div>

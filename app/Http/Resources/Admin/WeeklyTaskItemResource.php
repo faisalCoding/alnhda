@@ -18,6 +18,13 @@ class WeeklyTaskItemResource extends JsonResource
         return [
             'id' => $this->id,
             'weekly_task_list_id' => $this->weekly_task_list_id,
+            'weekly_task_category_id' => $this->weekly_task_category_id,
+            'category' => $this->whenLoaded('category', fn () => $this->category === null ? null : [
+                'id' => $this->category->id,
+                'name' => $this->category->name,
+                'color' => $this->category->color,
+                'sort_order' => $this->category->sort_order,
+            ]),
             'title' => $this->title,
             'is_done' => $this->is_done,
             'completed_at' => $this->completed_at?->toISOString(),

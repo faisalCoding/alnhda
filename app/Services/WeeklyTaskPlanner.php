@@ -62,6 +62,7 @@ class WeeklyTaskPlanner
                     ->reject(fn ($template): bool => $present->contains($template->title))
                     ->map(fn ($template): array => [
                         'title' => $template->title,
+                        'weekly_task_category_id' => $template->weekly_task_category_id,
                         'sort_order' => $template->sort_order,
                     ])
                     ->all();
@@ -90,12 +91,43 @@ class WeeklyTaskPlanner
     }
 
     /**
+     * Group the items under their category heading, in the order the categories
+     * are arranged, with anything uncategorised last.
+     *
+     * A list with no categories at all comes back under a single empty heading,
+     * which reads exactly as it did before categories existed.
+     *
+     * @param  Collection<int, \App\Models\WeeklyTaskItem>  $items
+     * @return Collection<string, Collection<int, \App\Models\WeeklyTaskItem>>
+     */
+    private function byCategory(Collection $items): Collection
+    {
+        if ($items->every(fn ($item): bool => $item->category === null)) {
+            return collect(['' => $items]);
+        }
+
+        // Uncategorised sinks below every category, whatever its order. Note
+        // that sortBy with an array takes comparators, not key extractors.
+        $rank = fn ($item): array => $item->category === null
+            ? [PHP_INT_MAX, PHP_INT_MAX]
+            : [$item->category->sort_order, $item->category->id];
+
+        return $items
+            ->sortBy([
+                fn ($a, $b): int => $rank($a) <=> $rank($b),
+                fn ($a, $b): int => $a->sort_order <=> $b->sort_order,
+                fn ($a, $b): int => $a->id <=> $b->id,
+            ])
+            ->groupBy(fn ($item): string => $item->category->name ?? 'أخرى');
+    }
+
+    /**
      * @return Collection<int, WeeklyTaskList>
      */
     public function listsForWeek(CarbonInterface $date): Collection
     {
         return WeeklyTaskList::query()
-            ->with(['employee', 'items'])
+            ->with(['employee', 'items.category'])
             ->whereDate('week_start', WeeklyTaskList::weekStartFor($date)->toDateString())
             ->whereHas('employee', fn ($query) => $query->where('is_active', true))
             ->get()
@@ -123,9 +155,16 @@ class WeeklyTaskPlanner
             }
 
             $lines[] = '*'.$list->employee->name.'*';
+            $number = 0;
 
-            foreach ($list->items as $index => $item) {
-                $lines[] = ($index + 1).'. '.$item->title;
+            foreach ($this->byCategory($list->items) as $heading => $items) {
+                if ($heading !== '') {
+                    $lines[] = '◾ '.$heading;
+                }
+
+                foreach ($items as $item) {
+                    $lines[] = (++$number).'. '.$item->title;
+                }
             }
 
             $lines[] = '';
@@ -157,18 +196,20 @@ class WeeklyTaskPlanner
             }
 
             $done = $list->items->where('is_done', true);
-            $pending = $list->items->where('is_done', false);
             $totalDone += $done->count();
             $totalAll += $list->items->count();
 
             $lines[] = '*'.$list->employee->name.'* — '.$done->count().' من '.$list->items->count();
 
-            foreach ($done as $item) {
-                $lines[] = '✅ '.$item->title;
-            }
+            foreach ($this->byCategory($list->items) as $heading => $items) {
+                if ($heading !== '') {
+                    $lines[] = '◾ '.$heading;
+                }
 
-            foreach ($pending as $item) {
-                $lines[] = '⬜ '.$item->title;
+                // Done first within the heading, so the week reads as progress.
+                foreach ($items->sortByDesc('is_done') as $item) {
+                    $lines[] = ($item->is_done ? '✅ ' : '⬜ ').$item->title;
+                }
             }
 
             $lines[] = '';

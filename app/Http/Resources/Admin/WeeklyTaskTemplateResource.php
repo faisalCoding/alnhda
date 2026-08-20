@@ -19,6 +19,9 @@ class WeeklyTaskTemplateResource extends JsonResource
             'id' => $this->id,
             'employee_id' => $this->employee_id,
             'employee_name' => $this->whenLoaded('employee', fn () => $this->employee?->name),
+            'weekly_task_category_id' => $this->weekly_task_category_id,
+            'category_name' => $this->whenLoaded('category', fn () => $this->category?->name),
+            'category_color' => $this->whenLoaded('category', fn () => $this->category?->color),
             'title' => $this->title,
             'sort_order' => $this->sort_order,
         ];

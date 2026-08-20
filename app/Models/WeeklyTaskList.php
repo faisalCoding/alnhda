@@ -55,6 +55,6 @@ class WeeklyTaskList extends Model
      */
     public function items(): HasMany
     {
-        return $this->hasMany(WeeklyTaskItem::class)->orderBy('sort_order')->orderBy('id');
+        return $this->hasMany(WeeklyTaskItem::class)->with('category')->orderBy('sort_order')->orderBy('id');
     }
 }

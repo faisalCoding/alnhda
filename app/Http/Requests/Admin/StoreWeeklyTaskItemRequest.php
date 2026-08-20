@@ -18,6 +18,7 @@ class StoreWeeklyTaskItemRequest extends FormRequest
     {
         return [
             'title' => 'required|string|max:255',
+            'weekly_task_category_id' => 'nullable|integer|exists:weekly_task_categories,id',
         ];
     }
 
