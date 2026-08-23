@@ -7,6 +7,8 @@ const {
     isLoadingStalled,
     resolveStalledSession,
     sweepStalledSessions,
+    storageProbeOptions,
+    STORAGE_SAFE_FIELDS,
     LOADING_STALL_SECONDS,
 } = require('./index');
 
@@ -152,4 +154,40 @@ test('المسح الدوري يحسم المتوقفة ولا يمس الجلس
     assert.equal(stalled.status, 'error');
     assert.equal(syncing.status, 'loading');
     assert.equal(ready.status, 'ready');
+});
+
+// ── حدود فحص القاعدة ─────────────────────────────────────────────────────────
+// المرور على مخزن الرسائل يجري داخل الصفحة التي تُرسل منها الرسائل، فحدٌّ مفقود
+// هنا يعني تجميدها لا بطء الفحص فقط.
+
+test('فحص القاعدة يبدأ من مخزن الرسائل بحدود معقولة', () => {
+    const options = storageProbeOptions({});
+
+    assert.equal(options.store, 'message');
+    assert.equal(options.limit, 3);
+    assert.equal(options.scan, 400);
+    assert.equal(options.id, null);
+    assert.ok(options.safeFields.includes('ack'), 'حقل التأكيد يجب أن يُكشف، فهو المقصود بالفحص');
+});
+
+test('فحص القاعدة يقصّ الأرقام الخارجة عن الحدود ويتجاهل غير الرقمية', () => {
+    assert.equal(storageProbeOptions({ scan: '999999' }).scan, 5000);
+    assert.equal(storageProbeOptions({ scan: '0' }).scan, 1);
+    assert.equal(storageProbeOptions({ limit: '500' }).limit, 20);
+    assert.equal(storageProbeOptions({ limit: 'كثير' }).limit, 3);
+    assert.equal(storageProbeOptions({ scan: '' }).scan, 400);
+});
+
+test('فحص القاعدة يقبل مخزناً ومعرّفاً محددين، ويعتبر الفارغ غياباً', () => {
+    const options = storageProbeOptions({ store: 'chat', id: ' true_123@g.us_ABC ' });
+
+    assert.equal(options.store, 'chat');
+    assert.equal(options.id, 'true_123@g.us_ABC');
+    assert.equal(storageProbeOptions({ id: '   ' }).id, null);
+});
+
+test('الحقول المكشوفة تعريفية ولا تشمل نص الرسالة', () => {
+    for (const field of ['body', 'caption', 'quotedMsg', 'notifyName']) {
+        assert.ok(!STORAGE_SAFE_FIELDS.includes(field), `${field} يجب أن يبقى محجوباً`);
+    }
 });

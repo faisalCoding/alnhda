@@ -776,6 +776,209 @@ app.get('/groups/:clientId', async (req, res) => {
     }
 });
 
+// ── GET /storage/:clientId ────────────────────────────────────────────────────
+// فحص شكل قاعدة واتساب الداخلية قبل البناء عليها. طبقة النماذج المحقونة تنكسر
+// على بعض البناءات، وتنكسر معها استعادة معرّف الرسالة وتتبّع تأكيدها — وكلاهما
+// موجود في هذه القاعدة، المستقلة عن الحقن. لكن أسماء الحقول تختلف بين
+// البناءات، والتخمين هنا ينتج فشلاً صامتاً آخر، فتُقرأ كما هي أولاً.
+//
+// المحتوى محجوب: تُكشف قيم الحقول التعريفية وحدها (معرّف، تأكيد، وقت، نوع)،
+// وما عداها يُختصر إلى نوعه وحجمه. أسماء الحقول كلها تظهر — هي المطلوب.
+const STORAGE_SAFE_FIELDS = [
+    'id', '_serialized', 'fromMe', 'remote', 'participant', 'self', 'chatId',
+    'ack', 'ackTs', 'isNewMsg', 'star', 'type', 'subtype', 'isGroupMsg',
+    't', 'timestamp', 'invis',
+];
+
+/**
+ * حدود الفحص. openCursor على مخزن رسائل قد يمشي على عشرات الآلاف من الصفوف،
+ * وتحميلها كلها يجمّد الصفحة التي تُرسل منها الرسائل.
+ *
+ * @param {Record<string, unknown>} query
+ */
+function storageProbeOptions(query = {}) {
+    const clamp = (value, fallback, min, max) => {
+        const parsed = parseInt(value, 10);
+
+        return Number.isNaN(parsed) ? fallback : Math.min(Math.max(parsed, min), max);
+    };
+
+    const id = query.id === undefined || query.id === null ? null : String(query.id).trim();
+
+    return {
+        store: query.store ? String(query.store) : 'message',
+        limit: clamp(query.limit, 3, 1, 20),
+        scan: clamp(query.scan, 400, 1, 5000),
+        id: id === '' ? null : id,
+        safeFields: STORAGE_SAFE_FIELDS,
+    };
+}
+
+/**
+ * تُسلسَل إلى صفحة puppeteer، فلا تصل إلى أي شيء خارج وسيطها.
+ */
+async function probeStorage(options) {
+    const safe = new Set(options.safeFields);
+    const report = { databases: null, database: 'model-storage', stores: [], meta: null, count: null, scanned: 0, rows: [], notes: [] };
+
+    try {
+        if (typeof indexedDB.databases === 'function') {
+            report.databases = (await indexedDB.databases()).map((entry) => entry.name);
+        }
+    } catch (error) {
+        report.notes.push('تعذر سرد القواعد: ' + error.message);
+    }
+
+    let db;
+
+    try {
+        db = await new Promise((resolve, reject) => {
+            const request = indexedDB.open('model-storage');
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error || new Error('فشل الفتح'));
+            request.onblocked = () => reject(new Error('القاعدة مشغولة'));
+        });
+    } catch (error) {
+        report.notes.push('تعذر فتح model-storage: ' + error.message);
+
+        return report;
+    }
+
+    report.stores = [...db.objectStoreNames];
+
+    if (!report.stores.includes(options.store)) {
+        report.notes.push('المخزن "' + options.store + '" غير موجود في هذه القاعدة.');
+        db.close();
+
+        return report;
+    }
+
+    // كل استعلام في معاملة خاصة به: المعاملة تُغلق حالما يخلو دورها من الطلبات،
+    // فطلب ثانٍ بعد await على الأول يرتطم بمعاملة ميتة.
+    const storeIn = () => db.transaction(options.store, 'readonly').objectStore(options.store);
+
+    const first = storeIn();
+    report.meta = { keyPath: first.keyPath, autoIncrement: first.autoIncrement, indexes: [...first.indexNames] };
+
+    report.count = await new Promise((resolve) => {
+        const request = storeIn().count();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => resolve(null);
+    });
+
+    let collected;
+
+    try {
+        collected = await new Promise((resolve, reject) => {
+            const rows = [];
+            const request = storeIn().openCursor(null, 'prev');
+
+            request.onsuccess = () => {
+                const cursor = request.result;
+
+                if (!cursor || rows.length >= options.scan) {
+                    resolve(rows);
+
+                    return;
+                }
+
+                rows.push({ key: cursor.key, value: cursor.value });
+                cursor.continue();
+            };
+
+            request.onerror = () => reject(request.error || new Error('فشل المرور'));
+        });
+    } catch (error) {
+        report.notes.push('تعذر المرور على الصفوف: ' + error.message);
+        db.close();
+
+        return report;
+    }
+
+    report.scanned = collected.length;
+
+    const shorten = (value) => {
+        if (value === null) { return '<null>'; }
+        if (Array.isArray(value)) { return '<مصفوفة، ' + value.length + ' عنصرًا>'; }
+        if (typeof value === 'string') { return '<نص، ' + value.length + ' محرفًا>'; }
+        if (typeof value === 'object') { return '<كائن: ' + Object.keys(value).join('، ') + '>'; }
+
+        return '<' + typeof value + '>';
+    };
+
+    const reveal = (value, depth) => {
+        if (value === null || typeof value !== 'object') { return value; }
+        if (depth <= 0) { return shorten(value); }
+        if (Array.isArray(value)) { return value.slice(0, 5).map((entry) => reveal(entry, depth - 1)); }
+
+        const out = {};
+
+        for (const [name, entry] of Object.entries(value)) {
+            out[name] = safe.has(name) ? reveal(entry, depth - 1) : shorten(entry);
+        }
+
+        return out;
+    };
+
+    const idOf = (row) => {
+        const id = row.value ? row.value.id : null;
+
+        if (typeof id === 'string') { return id; }
+        if (id && typeof id._serialized === 'string') { return id._serialized; }
+        if (typeof row.key === 'string') { return row.key; }
+
+        return null;
+    };
+
+    const stampOf = (row) => Number((row.value && (row.value.t ?? row.value.timestamp)) ?? 0) || 0;
+
+    let chosen = collected;
+
+    if (options.id) {
+        chosen = collected.filter((row) => {
+            const id = idOf(row);
+
+            return id !== null && id.includes(options.id);
+        });
+
+        if (chosen.length === 0) {
+            report.notes.push('لم يظهر المعرّف المطلوب ضمن آخر ' + collected.length + ' صف. جرّب رفع scan.');
+        }
+    }
+
+    report.rows = chosen
+        .sort((a, b) => stampOf(b) - stampOf(a))
+        .slice(0, options.limit)
+        .map((row) => ({
+            key: typeof row.key === 'object' && row.key !== null ? shorten(row.key) : row.key,
+            fields: Object.fromEntries(
+                Object.entries(row.value || {}).map(([name, value]) => [name, safe.has(name) ? reveal(value, 2) : shorten(value)])
+            ),
+        }));
+
+    db.close();
+
+    return report;
+}
+
+app.get('/storage/:clientId', async (req, res) => {
+    const session = sessions.get(req.params.clientId);
+
+    if (!session || session.status !== 'ready') {
+        return res.status(503).json({ success: false, message: `الجلسة [${req.params.clientId}] غير جاهزة بعد.` });
+    }
+
+    try {
+        const report = await session.client.pupPage.evaluate(probeStorage, storageProbeOptions(req.query));
+
+        return res.json({ success: true, ...report });
+    } catch (error) {
+        console.error(`[${req.params.clientId}] تعذر فحص القاعدة:`, error.message);
+
+        return res.status(500).json({ success: false, message: `تعذر فحص القاعدة: ${error.message}` });
+    }
+});
+
 app.post('/acks', (req, res) => {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
 
@@ -925,5 +1128,7 @@ module.exports = {
     resolveStalledSession,
     sweepStalledSessions,
     extractMessageId,
+    storageProbeOptions,
+    STORAGE_SAFE_FIELDS,
     LOADING_STALL_SECONDS,
 };

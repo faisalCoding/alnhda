@@ -1,6 +1,7 @@
 /.phpunit.cache
 /node_modules
 /whatsapp-service/node_modules
+/.wwebjs_auth
 /whatsapp-service/.wwebjs_auth
 /whatsapp-service/.wwebjs_cache
 /whatsapp-service/node.log

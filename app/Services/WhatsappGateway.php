@@ -274,6 +274,47 @@ class WhatsappGateway
         }
     }
 
+    /**
+     * Reads the shape of WhatsApp's own IndexedDB on the linked session. The
+     * injected model layer breaks against some builds, taking message id
+     * recovery and delivery tracking with it; both live in this database, which
+     * the injection cannot touch. Field names differ between builds, so they are
+     * read before anything is built on them. Message content is not returned.
+     *
+     * @param  array{store?: string, limit?: int, scan?: int, id?: string}  $options
+     * @return array{ok: bool, report?: array<string, mixed>, error?: string}
+     */
+    public function storage(string $clientId, array $options = []): array
+    {
+        $query = array_filter(
+            [
+                'store' => $options['store'] ?? null,
+                'limit' => $options['limit'] ?? null,
+                'scan' => $options['scan'] ?? null,
+                'id' => $options['id'] ?? null,
+            ],
+            fn ($value) => $value !== null && $value !== ''
+        );
+
+        try {
+            $response = $this->client(60)->get("{$this->baseUrl()}/storage/{$clientId}", $query);
+
+            if ($response->notFound()) {
+                // The probe shipped after the running process started; without
+                // this it reads as a missing session rather than a stale build.
+                return ['ok' => false, 'error' => 'الخدمة تعمل بنسخة سابقة لا تعرف هذا الفحص — شغّل: php artisan whatsapp:restart'];
+            }
+
+            if (! $response->successful()) {
+                return ['ok' => false, 'error' => (string) ($response->json('message') ?? 'تعذر فحص القاعدة.')];
+            }
+
+            return ['ok' => true, 'report' => (array) $response->json()];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => $e->getMessage()];
+        }
+    }
+
     private function post(string $path): bool
     {
         try {
