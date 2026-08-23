@@ -266,12 +266,14 @@ function extractMessageId(message) {
 
 /**
  * يبحث عن الرسالة التي أُرسلت للتو في سجل المحادثة. يُستخدم فقط حين تعجز
- * sendMessage عن إرجاع نموذجها، فبدونه تفقد الرسالة تتبّع الاستلام نهائياً.
- * الرسالة قد تحتاج لحظة لتظهر، لذا نحاول أكثر من مرة.
+ * sendMessage عن إرجاع نموذجها وتعجز قاعدة واتساب عن إظهارها. يمرّ بطبقة
+ * النماذج المحقونة، وهي المكسورة على بعض البناءات، فيبقى آخر الملاذات لا أولها.
  */
-async function recoverMessageId(client, chatId, body, attempts = 3) {
-    for (let attempt = 0; attempt < attempts; attempt++) {
-        await new Promise((resolve) => setTimeout(resolve, 800));
+async function recoverMessageId(client, chatId, body, deadline) {
+    // الشرط بالمهلة لا بعدد المحاولات: العدد لا يقول شيئاً عن الوقت المستهلك
+    // حين تكون كل محاولة رهينة متصفح بطيء أو خادم مخنوق.
+    while (Date.now() + RECOVERY_ATTEMPT_MS < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, RECOVERY_ATTEMPT_MS));
 
         try {
             const chat = await client.getChatById(chatId);
@@ -290,6 +292,176 @@ async function recoverMessageId(client, chatId, body, attempts = 3) {
             }
         } catch (error) {
             console.error(`[${chatId}] فشلت محاولة استعادة المعرّف:`, error.message);
+        }
+    }
+
+    return null;
+}
+
+/**
+ * ميزانية استعادة المعرّف كاملةً. Laravel ينتظر ردّ الإرسال 15 ثانية، وتجاوزها
+ * يسجّل رسالةً **واصلة** على أنها فاشلة — وهذا أسوأ من فقد المعرّف. فتتوقف
+ * الاستعادة عند هذا الحد مهما بقي أمامها من محاولات.
+ */
+const RECOVERY_BUDGET_MS = 8000;
+
+/**
+ * واتساب يكتب الرسالة إلى قاعدته كتابةً كسولة، وتوقيتها غير مضمون. الفواصل
+ * متصاعدة كي لا تُستهلك الميزانية كلها في أول محاولة قبل أن تُكتب أصلاً.
+ */
+const STORAGE_RETRY_DELAYS_MS = [300, 700, 1500, 2500];
+
+// سقف المرور على مخزن الرسائل: المرور يجري داخل الصفحة التي تُرسل منها.
+const STORAGE_SCAN_LIMIT = 500;
+
+// فاصل محاولة الاستعادة عبر سجل المحادثة، ويُحسب من الميزانية قبل الانتظار.
+const RECOVERY_ATTEMPT_MS = 800;
+
+/**
+ * تُسلسَل إلى صفحة puppeteer، فلا تصل إلى شيء خارج وسيطها. تقرأ قاعدة واتساب
+ * الدائمة مباشرة، ولا تمسّ طبقة النماذج المحقونة التي تنكسر على بعض البناءات.
+ */
+async function findStoredMessage(options) {
+    let db;
+
+    try {
+        db = await new Promise((resolve, reject) => {
+            const request = indexedDB.open('model-storage');
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error || new Error('فشل الفتح'));
+        });
+    } catch (error) {
+        return { candidates: [], note: 'تعذر فتح القاعدة: ' + error.message };
+    }
+
+    if (!db.objectStoreNames.contains('message')) {
+        const stores = [...db.objectStoreNames];
+        db.close();
+
+        return { candidates: [], note: 'لا يوجد مخزن message — الموجود: ' + stores.join('، ') };
+    }
+
+    let rows;
+
+    try {
+        rows = await new Promise((resolve, reject) => {
+            const collected = [];
+            const request = db.transaction('message', 'readonly').objectStore('message').openCursor(null, 'prev');
+
+            request.onsuccess = () => {
+                const cursor = request.result;
+
+                if (!cursor || collected.length >= options.scan) {
+                    resolve(collected);
+
+                    return;
+                }
+
+                collected.push({ key: cursor.key, value: cursor.value });
+                cursor.continue();
+            };
+
+            request.onerror = () => reject(request.error || new Error('فشل المرور'));
+        });
+    } catch (error) {
+        db.close();
+
+        return { candidates: [], note: 'تعذر المرور على الرسائل: ' + error.message };
+    }
+
+    db.close();
+
+    const candidates = [];
+
+    for (const row of rows) {
+        const raw = row.value || {};
+
+        const id = typeof raw.id === 'string'
+            ? raw.id
+            : (raw.id && typeof raw.id._serialized === 'string'
+                ? raw.id._serialized
+                : (typeof row.key === 'string' ? row.key : null));
+
+        if (id === null || !id.includes(options.chatId)) {
+            continue;
+        }
+
+        // شكل المعرّف نفسه يحمل الاتجاه: true_ للصادر. يُقرأ من الحقل إن وُجد.
+        const fromMe = raw.id && typeof raw.id.fromMe === 'boolean' ? raw.id.fromMe : id.startsWith('true_');
+
+        if (!fromMe) {
+            continue;
+        }
+
+        // نافذة زمنية بدل مطابقة النص وحدها: النص قد يتكرر حرفياً عند إعادة
+        // الإرسال، أما لحظة الإرسال فلا. الصفوف بلا ختم وقت تُترك للفرز.
+        const stamp = Number(raw.t ?? raw.timestamp ?? 0) || 0;
+
+        if (stamp !== 0 && stamp < options.since) {
+            continue;
+        }
+
+        candidates.push({ id, t: stamp, bodyMatches: raw.body === options.body });
+    }
+
+    return { candidates, scanned: rows.length };
+}
+
+/**
+ * أفضل مرشّح: مطابقة النص ترجّح، ثم الأحدث. تُفصل عن القراءة لتُختبر وحدها —
+ * القراءة تحتاج متصفحاً، وهذا الاختيار هو ما يقرر أي رسالة نتتبّع.
+ *
+ * @param {Array<{id: string, t: number, bodyMatches: boolean}>} candidates
+ */
+function chooseStoredMessage(candidates) {
+    if (!Array.isArray(candidates) || candidates.length === 0) {
+        return null;
+    }
+
+    const matching = candidates.filter((candidate) => candidate.bodyMatches);
+    const pool = matching.length > 0 ? matching : candidates;
+
+    return pool.reduce((best, candidate) => (best === null || candidate.t > best.t ? candidate : best), null);
+}
+
+/**
+ * يستعيد المعرّف من قاعدة واتساب الدائمة. مستقل تماماً عن الحقن، فهو المسار
+ * الوحيد الباقي على البناءات التي تنكسر فيها getChats وأحداث الرسائل معاً.
+ */
+async function recoverMessageIdFromStorage(client, chatId, body, since, deadline) {
+    for (const delay of STORAGE_RETRY_DELAYS_MS) {
+        if (Date.now() + delay >= deadline) {
+            break;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, delay));
+
+        try {
+            const found = await client.pupPage.evaluate(findStoredMessage, {
+                chatId,
+                body,
+                since,
+                scan: STORAGE_SCAN_LIMIT,
+            });
+
+            if (found.note) {
+                console.error(`[${chatId}] قاعدة واتساب: ${found.note}`);
+
+                return null;
+            }
+
+            const chosen = chooseStoredMessage(found.candidates);
+
+            if (chosen) {
+                console.log(
+                    `[${chatId}] استُعيد المعرّف من قاعدة واتساب (مرّ على ${found.scanned} صفاً، ` +
+                    `${found.candidates.length} مرشحاً، مطابقة النص: ${chosen.bodyMatches ? 'نعم' : 'لا'}).`
+                );
+
+                return chosen.id;
+            }
+        } catch (error) {
+            console.error(`[${chatId}] فشلت قراءة قاعدة واتساب:`, error.message);
         }
     }
 
@@ -636,19 +808,32 @@ app.post('/send', async (req, res) => {
     try {
         // المجموعات لها لاحقة g.us@ ومعرّفها ليس رقم هاتف، فيُمرَّر كما هو.
         const chatId = groupId ? groupId : `${phone}@c.us`;
+
+        // يُلتقط قبل الإرسال: هو الحدّ الذي يفصل رسالتنا عمّا سبقها في المحادثة،
+        // وطرحُ ثوانٍ يستوعب فرق ساعة المتصفح عن ساعة الخادم.
+        const since = Math.floor(Date.now() / 1000) - 5;
+
         const sent = await session.client.sendMessage(chatId, message);
 
         // sendMessage قد تُرجع undefined رغم وصول الرسالة: نموذج الرسالة يُسلسل
         // عبر puppeteer وقد يسقط في الطريق. اعتبارها فشلاً يكذب على المستخدم،
-        // فنكتفي بفقدان التتبّع ونحاول استعادة المعرّف من المحادثة.
+        // فنكتفي بفقدان التتبّع ونحاول استعادة المعرّف من مصدرين بالترتيب.
         let messageId = extractMessageId(sent);
 
         if (!messageId) {
             console.error(
-                `[${clientId}] لم يصل معرّف من sendMessage (شكل id: ${JSON.stringify(sent?.id ?? null)}) — محاولة استعادته من المحادثة.`
+                `[${clientId}] لم يصل معرّف من sendMessage (شكل id: ${JSON.stringify(sent?.id ?? null)}) — محاولة استعادته من قاعدة واتساب ثم من سجلّ المحادثة.`
             );
 
-            messageId = await recoverMessageId(session.client, chatId, message);
+            // الميزانية تبدأ بعد الإرسال: ما استغرقه الإرسال نفسه ليس منها.
+            const deadline = Date.now() + RECOVERY_BUDGET_MS;
+
+            // القاعدة أولاً: لا تمرّ بطبقة النماذج، فتنجح حيث يفشل سجلّ المحادثة.
+            messageId = await recoverMessageIdFromStorage(session.client, chatId, message, since, deadline);
+
+            if (!messageId) {
+                messageId = await recoverMessageId(session.client, chatId, message, deadline);
+            }
         }
 
         if (messageId) {
@@ -1128,6 +1313,9 @@ module.exports = {
     resolveStalledSession,
     sweepStalledSessions,
     extractMessageId,
+    chooseStoredMessage,
+    recoverMessageId,
+    RECOVERY_BUDGET_MS,
     storageProbeOptions,
     STORAGE_SAFE_FIELDS,
     LOADING_STALL_SECONDS,

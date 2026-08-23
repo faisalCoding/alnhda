@@ -7,6 +7,9 @@ const {
     isLoadingStalled,
     resolveStalledSession,
     sweepStalledSessions,
+    chooseStoredMessage,
+    recoverMessageId,
+    RECOVERY_BUDGET_MS,
     storageProbeOptions,
     STORAGE_SAFE_FIELDS,
     LOADING_STALL_SECONDS,
@@ -190,4 +193,76 @@ test('الحقول المكشوفة تعريفية ولا تشمل نص الرس
     for (const field of ['body', 'caption', 'quotedMsg', 'notifyName']) {
         assert.ok(!STORAGE_SAFE_FIELDS.includes(field), `${field} يجب أن يبقى محجوباً`);
     }
+});
+
+// ── اختيار الرسالة من قاعدة واتساب ───────────────────────────────────────────
+// هذا الاختيار هو ما يقرر أي رسالة نتتبّع تأكيدها. خطؤه لا يظهر كعطل، بل
+// كتأكيد يُنسب إلى الرسالة الخطأ — وهو أسوأ من غياب التأكيد.
+
+test('لا مرشّح يعني لا معرّف', () => {
+    assert.equal(chooseStoredMessage([]), null);
+    assert.equal(chooseStoredMessage(null), null);
+    assert.equal(chooseStoredMessage(undefined), null);
+});
+
+test('مطابقة النص ترجّح على الأحدث', () => {
+    const chosen = chooseStoredMessage([
+        { id: 'مطابقة', t: 100, bodyMatches: true },
+        { id: 'أحدث', t: 200, bodyMatches: false },
+    ]);
+
+    assert.equal(chosen.id, 'مطابقة');
+});
+
+test('بين المتطابقات يفوز الأحدث', () => {
+    const chosen = chooseStoredMessage([
+        { id: 'قديمة', t: 100, bodyMatches: true },
+        { id: 'حديثة', t: 300, bodyMatches: true },
+        { id: 'أحدث بلا مطابقة', t: 900, bodyMatches: false },
+    ]);
+
+    assert.equal(chosen.id, 'حديثة');
+});
+
+test('بلا أي مطابقة نصية يُؤخذ الأحدث', () => {
+    const chosen = chooseStoredMessage([
+        { id: 'أ', t: 100, bodyMatches: false },
+        { id: 'ب', t: 400, bodyMatches: false },
+    ]);
+
+    assert.equal(chosen.id, 'ب');
+});
+
+test('الصفوف بلا ختم وقت لا تُسقط الاختيار', () => {
+    const chosen = chooseStoredMessage([{ id: 'وحيدة', t: 0, bodyMatches: false }]);
+
+    assert.equal(chosen.id, 'وحيدة');
+});
+
+// ── ميزانية الاستعادة ────────────────────────────────────────────────────────
+// تجاوزها يجعل Laravel يسجّل رسالة واصلة على أنها فاشلة، وهو أسوأ من فقد
+// المعرّف — فالتوقف عند الحد سلوك مقصود لا تقصير.
+
+test('الاستعادة من سجلّ المحادثة لا تبدأ بعد نفاد المهلة', async () => {
+    let touched = false;
+    const client = { getChatById: async () => { touched = true; return {}; } };
+
+    const id = await recoverMessageId(client, '966500000000@c.us', 'مرحبا', Date.now() - 1);
+
+    assert.equal(id, null);
+    assert.equal(touched, false, 'لا يجوز لمس متصفح لا وقت لانتظاره');
+});
+
+test('الاستعادة تتوقف داخل الميزانية ولا تتجاوزها', async () => {
+    const client = { getChatById: async () => ({ fetchMessages: async () => [] }) };
+    const started = Date.now();
+
+    const id = await recoverMessageId(client, 'محادثة', 'مرحبا', started + 2000);
+
+    assert.equal(id, null);
+    assert.ok(Date.now() - started <= 2500, 'تجاوزت الميزانية الممنوحة لها');
+});
+
+test('ميزانية الاستعادة تبقى دون مهلة Laravel', () => {
+    assert.ok(RECOVERY_BUDGET_MS < 15000, 'الميزانية يجب أن تنتهي قبل أن يستسلم Laravel');
 });
