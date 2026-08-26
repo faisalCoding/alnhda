@@ -1,37 +1,7 @@
 @php
-    $organizationSchema = [
-        '@context' => 'https://schema.org',
-        '@type' => 'RealEstateAgent',
-        'name' => 'كيان النهضة العقارية',
-        'url' => url('/'),
-        'logo' => asset('img/KNicon.png'),
-        'image' => asset('img/KNicon.png'),
-        'telephone' => '+966564364261',
-        'email' => 'info@kayanalnhda.com',
-        'identifier' => [
-            [
-                '@type' => 'PropertyValue',
-                'name' => 'الرقم الموحد للمنشأة',
-                'value' => '7025720975',
-            ],
-            [
-                '@type' => 'PropertyValue',
-                'name' => 'رخصة فال من الهيئة العامة للعقار',
-                'value' => '1200019224',
-            ],
-        ],
-        'address' => [
-            '@type' => 'PostalAddress',
-            'addressLocality' => 'جدة',
-            'addressCountry' => 'SA',
-        ],
-        'sameAs' => [
-            'https://www.youtube.com/@KayanAlnhda',
-            'https://www.instagram.com/nahda_realestate/',
-        ],
-    ];
+    $siteGraph = app(\App\Services\SiteSchema::class)->graph($seo);
 @endphp
 
 <script type="application/ld+json">
-    {!! json_encode($organizationSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+    {!! json_encode($siteGraph, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
 </script>

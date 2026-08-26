@@ -250,6 +250,14 @@ it('publishes both company registration numbers in the organization json-ld', fu
         ->and($identifiers->pluck('name')->filter()->all())->toHaveCount(2);
 });
 
+/**
+ * كل عقدة في الصفحة على مستوى واحد.
+ *
+ * العقد العامة تُنشر مجمّعة في @graph واحد بدل بلوك لكل نوع، فتُفرد هنا
+ * لتبقى الاختبارات تسأل عن الأنواع لا عن طريقة تغليفها.
+ *
+ * @return array<int, array<string, mixed>>
+ */
 function extractJsonLd(string $html): array
 {
     preg_match_all('/<script type="application\/ld\+json">(.*?)<\/script>/s', $html, $matches);
@@ -257,6 +265,7 @@ function extractJsonLd(string $html): array
     return collect($matches[1])
         ->map(fn (string $json): ?array => json_decode(trim($json), true))
         ->filter()
+        ->flatMap(fn (array $block): array => $block['@graph'] ?? [$block])
         ->values()
         ->all();
 }
