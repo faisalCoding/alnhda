@@ -1,9 +1,5 @@
 @extends('layouts.guest')
 
-@section('title', 'مشاريعنا العقارية - فلل وشقق للبيع في جدة')
-@section('description', 'تصفح مشاريع كيان النهضة العقارية السكنية في جدة — فلل وشقق بمواصفات عصرية وضمانات شاملة. اكتشف المشروع المناسب لك الآن.')
-
-
 @section('main')
     <div id="projects" class="bg-[#f5fdf5] pb-10  w-full flex text-center flex-col flex-1">
         <h1 class="text-3xl font-bold text-[#49A035] my-20">إكتشف مشاريعنا المتميزة</h1>

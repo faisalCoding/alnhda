@@ -23,6 +23,38 @@ class ImageService
      * @param  int  $quality
      * @return string Relpath of the saved image
      */
+    /**
+     * The width and height every link preview is built around. WhatsApp,
+     * Facebook and LinkedIn all show a wide banner at roughly 1.91:1 and fall
+     * back to a small square thumbnail for anything else, so the ratio is
+     * forced rather than suggested.
+     */
+    public const SOCIAL_WIDTH = 1200;
+
+    public const SOCIAL_HEIGHT = 630;
+
+    /**
+     * Prepares an image for link previews.
+     *
+     * Cropped to fill rather than scaled to fit: an image that keeps its own
+     * ratio is exactly what loses the banner. Encoded as JPEG because WhatsApp
+     * does not reliably render webp in a preview, whatever the browser does.
+     *
+     * @param  mixed  $file
+     * @return string Relative path of the saved image
+     */
+    public static function uploadSocialImage($file, string $folder = 'seo'): string
+    {
+        $filename = Str::random(40).'.jpg';
+        $path = $folder.'/'.$filename;
+
+        $image = Image::decode($file)->cover(self::SOCIAL_WIDTH, self::SOCIAL_HEIGHT);
+
+        Storage::disk('public')->put($path, (string) $image->encode(new JpegEncoder(quality: 85)));
+
+        return $path;
+    }
+
     public static function uploadAndProcess($file, $folder = 'uploads', $width = null, $height = null, $format = 'webp', $quality = 87)
     {
         // Generate a unique filename

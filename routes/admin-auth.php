@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\Api\PropertyController;
 use App\Http\Controllers\Admin\Api\PropertyFileController;
 use App\Http\Controllers\Admin\Api\PropertyImageController;
 use App\Http\Controllers\Admin\Api\RevealPinController;
+use App\Http\Controllers\Admin\Api\SeoController;
 use App\Http\Controllers\Admin\Api\SessionController;
 use App\Http\Controllers\Admin\Api\SubscriptionController;
 use App\Http\Controllers\Admin\Api\TaskTemplateController;
@@ -53,6 +54,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::view('marketing-tools', 'admin.marketing-tools')->name('marketing-tools');
     Route::view('weekly-tasks', 'admin.weekly-tasks')->name('weekly-tasks');
     Route::view('advertising-licences', 'admin.advertising-licences')->name('advertising-licences');
+    Route::view('seo', 'admin.seo')->name('seo');
 });
 
 Route::prefix('api')->name('panel.api.')->group(function () {
@@ -72,6 +74,13 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('articles', [ArticleController::class, 'index'])->name('articles.index');
         Route::get('visitors', [VisitorController::class, 'index'])->name('visitors.index');
         Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
+
+        Route::get('seo', [SeoController::class, 'index'])->name('seo.index');
+        Route::put('seo/defaults', [SeoController::class, 'updateDefaults'])->name('seo.defaults.update');
+        Route::put('seo/pages/{routeName}', [SeoController::class, 'updatePage'])->name('seo.pages.update');
+        Route::get('seo/records', [SeoController::class, 'records'])->name('seo.records');
+        Route::put('seo/records/{type}/{id}', [SeoController::class, 'updateRecord'])->name('seo.records.update');
+        Route::post('seo/image', [SeoController::class, 'uploadImage'])->name('seo.image');
 
         Route::get('whatsapp/status', [WhatsappController::class, 'status'])->name('whatsapp.status');
         Route::post('whatsapp/disconnect', [WhatsappController::class, 'disconnect'])->name('whatsapp.disconnect');

@@ -6,7 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
-    <title>@hasSection('title')@yield('title') | @endif{{ config('app.name', 'كيان النهضة العقارية') }}</title>
+    {{-- الأولوية: تخصيص محفوظ في اللوحة، ثم ما تقوله الصفحة عن نفسها، ثم الافتراضي العام. --}}
+    @php
+        $seo = app(\App\Services\SeoResolver::class)->forCurrentRoute([
+            'title' => trim($__env->yieldContent('title')),
+            'description' => trim($__env->yieldContent('description')),
+            'image' => trim($__env->yieldContent('image')),
+            'og_type' => trim($__env->yieldContent('og_type')),
+        ]);
+        $seoImage = $seo->image;
+    @endphp
+
+    <title>@if ($seo->title){{ $seo->title }} | @endif{{ config('app.name', 'كيان النهضة العقارية') }}</title>
     <link rel="icon" type="image/png" href="{{ asset('img/KNicon.png') }}">
     <link rel="shortcut icon" href="{{ asset('img/KNicon.png') }}">
     <link rel="canonical" href="{{ url()->current() }}">
@@ -14,23 +25,34 @@
 
 
     {{-- 2. الوصف --}}
-    {{-- الوصف الافتراضي الذي قدمته --}}
-    <meta name="description" content="@yield('description', 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية. اكتشف مشاريعنا الآن!')">
+    <meta name="description" content="{{ $seo->description ?: 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية. اكتشف مشاريعنا الآن!' }}">
+
+    @if ($seo->noindex)
+        {{-- استُثنيت هذه الصفحة من الفهرسة من لوحة التحكم. --}}
+        <meta name="robots" content="noindex, nofollow">
+    @endif
 
     {{-- 3. Open Graph (للواتساب وفيسبوك) --}}
     <meta property="og:site_name" content="كيان النهضة العقارية" />
-    <meta property="og:title" content="@yield('title', 'كيان النهضة العقارية')" />
-    <meta property="og:description" content="@yield('description', 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية. اكتشف مشاريعنا الآن!')" />
-    <meta property="og:image" content="@yield('image', asset('img/KNicon.png'))" />
-    <meta property="og:type" content="@yield('og_type', 'website')" />
+    <meta property="og:title" content="{{ $seo->title ?: 'كيان النهضة العقارية' }}" />
+    <meta property="og:description" content="{{ $seo->description ?: 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية. اكتشف مشاريعنا الآن!' }}" />
+    <meta property="og:image" content="{{ $seoImage }}" />
+    <meta property="og:image:secure_url" content="{{ $seoImage }}" />
+    @if ($seo->imageWidth())
+        {{-- واتساب وفيسبوك يقرران «لافتة عريضة أم مربّع صغير» من هذين الرقمين قبل تحميل الصورة. --}}
+        <meta property="og:image:width" content="{{ $seo->imageWidth() }}" />
+        <meta property="og:image:height" content="{{ $seo->imageHeight() }}" />
+    @endif
+    <meta property="og:image:alt" content="{{ $seo->title ?: 'كيان النهضة العقارية' }}" />
+    <meta property="og:type" content="{{ $seo->type }}" />
     <meta property="og:url" content="{{ url()->current() }}" />
     <meta property="og:locale" content="ar_SA" />
 
     {{-- 4. Twitter Card --}}
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="@yield('title', 'كيان النهضة العقارية')" />
-    <meta name="twitter:description" content="@yield('description', 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية. اكتشف مشاريعنا الآن!')" />
-    <meta name="twitter:image" content="@yield('image', asset('img/KNicon.png'))" />
+    <meta name="twitter:title" content="{{ $seo->title ?: 'كيان النهضة العقارية' }}" />
+    <meta name="twitter:description" content="{{ $seo->description ?: 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية. اكتشف مشاريعنا الآن!' }}" />
+    <meta name="twitter:image" content="{{ $seoImage }}" />
 
     {{-- Preload Hero Image for LCP Optimization --}}
     @if (request()->routeIs('home') || request()->path() == '/')

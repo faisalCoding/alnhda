@@ -1,22 +1,13 @@
 @extends('layouts.guest')
 
-@section('title', implode(' - ', array_filter([$properties->name, $properties->type, $properties->project?->name])))
-
 @php
-    $unitDescriptionParts = array_filter([
-        $properties->type ? $properties->name . ' - ' . $properties->type : $properties->name,
-        $properties->project?->location ? 'في ' . $properties->project->location : null,
-        $properties->rooms ? $properties->rooms . ' غرف' : null,
-        $properties->bathrooms ? $properties->bathrooms . ' دورات مياه' : null,
-        $properties->area ? 'بمساحة ' . $properties->area . ' م²' : null,
-        $properties->status ?: null,
-    ]);
-    $unitDescription = \Illuminate\Support\Str::limit(implode('، ', $unitDescriptionParts) . '.', 155);
+    $seoAuto = app(\App\Services\SeoRecordDefaults::class)->for($properties);
+    $unitDescription = $seoAuto['description'];
 @endphp
 
-@section('description', $unitDescription)
-
-@section('image', $properties->propertiesImages->first() ? asset('storage/' . $properties->propertiesImages->first()->url) : asset('img/KNicon.png'))
+@section('title', $seoAuto['title'])
+@section('description', $seoAuto['description'])
+@section('image', $seoAuto['image'])
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/swiper-bundle.min.css') }}" />

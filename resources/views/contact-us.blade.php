@@ -1,10 +1,5 @@
 @extends('layouts.guest')
 
-@section('title', 'تواصل معنا')
-@section('description',
-    'تواصل مع كيان النهضة العقارية للاستفسار عن مشاريعنا وخدماتنا في جدة، المملكة العربية
-    السعودية.')
-
 @section('main')
     <div class="bg-gray-50 min-h-screen rtl" dir="rtl">
         {{-- Hero Section --}}

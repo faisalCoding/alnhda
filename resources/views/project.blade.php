@@ -1,10 +1,12 @@
 @extends('layouts.guest')
 
-@section('title', $project->name . ' - مشروع سكني في جدة')
+@php
+    $seoAuto = app(\App\Services\SeoRecordDefaults::class)->for($project);
+@endphp
 
-@section('description', \Illuminate\Support\Str::limit(strip_tags($project->description), 155))
-
-@section('image', $project->image_url ? asset('storage/' . $project->image_url) : asset('img/KNicon.png'))
+@section('title', $seoAuto['title'])
+@section('description', $seoAuto['description'])
+@section('image', $seoAuto['image'])
 
 @push('jsonld')
     @php

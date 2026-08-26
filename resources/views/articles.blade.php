@@ -1,9 +1,5 @@
 @extends('layouts.guest')
 
-@section('title', 'مقالات ونصائح عقارية')
-@section('description', 'مقالات ونصائح من خبراء كيان النهضة العقارية حول شراء الفلل والشقق والاستثمار العقاري وأحدث اتجاهات السوق العقاري في السعودية.')
-
-
 @section('main')
 
     <div class="bg-[#f5fdf5] w-full flex flex-col justify-center grow flex-1">

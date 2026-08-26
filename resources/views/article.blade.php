@@ -1,20 +1,14 @@
 @extends('layouts.guest')
 
-@section('title', $article->title)
-
-@section('description', \Illuminate\Support\Str::limit(strip_tags($article->content), 155))
-
 @php
-    $ogImage = $article->image_article ?? 'img/article.webp';
-    $ogImageUrl = filter_var($ogImage, FILTER_VALIDATE_URL)
-        ? $ogImage
-        : (\Illuminate\Support\Str::contains($ogImage, ['articles/', 'uploads/', 'blogs/'])
-            ? asset('storage/' . $ogImage)
-            : asset(str_replace('\\', '', $ogImage)));
+    $seoAuto = app(\App\Services\SeoRecordDefaults::class)->for($article);
+    $ogImageUrl = $seoAuto['image'];
 @endphp
 
-@section('image', $ogImageUrl)
-@section('og_type', 'article')
+@section('title', $seoAuto['title'])
+@section('description', $seoAuto['description'])
+@section('image', $seoAuto['image'])
+@section('og_type', $seoAuto['og_type'])
 
 @push('jsonld')
     @php

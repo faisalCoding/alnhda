@@ -10,6 +10,9 @@ class AppSettings extends Model
         'whatsapp_group_id',
         'whatsapp_group_name',
         'weekly_reports_enabled',
+        'seo_default_title',
+        'seo_default_description',
+        'seo_default_image_path',
     ];
 
     /**

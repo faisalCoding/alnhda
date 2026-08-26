@@ -1,9 +1,5 @@
 @extends('layouts.guest')
 
-@section('title', 'من نحن')
-@section('description', 'كيان النهضة العقارية - خبرة 40 عاماً في التطوير العقاري والهندسة المعمارية في المملكة العربية
-    السعودية.')
-
 @section('main')
     <div class="bg-gray-50 min-h-screen rtl" dir="rtl">
         {{-- Hero Section --}}

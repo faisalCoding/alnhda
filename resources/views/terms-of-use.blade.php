@@ -1,8 +1,5 @@
 @extends('layouts.guest')
 
-@section('title', 'شروط الاستخدام')
-@section('description', 'شروط استخدام موقع كيان النهضة العقارية: الملكية الفكرية للمحتوى، وضوابط استخدام الموقع، ودقة معلومات المشاريع، وروابط الطرف الثالث، وإخلاء المسؤولية.')
-
 @section('main')
     <div class="bg-gray-50 min-h-screen rtl" dir="rtl">
         {{-- Hero Section --}}

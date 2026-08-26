@@ -22,7 +22,11 @@ export async function request(method, url, body = null, { idempotencyKey = null 
         'X-Requested-With': 'XMLHttpRequest',
     };
 
-    if (body !== null) {
+    // FormData يمرّ كما هو: تحديد Content-Type يدوياً يمحو حدّ الأجزاء الذي
+    // يولّده المتصفح، فيصل الطلب إلى الخادم بلا ملف.
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+
+    if (body !== null && !isFormData) {
         headers['Content-Type'] = 'application/json';
     }
 
@@ -37,7 +41,7 @@ export async function request(method, url, body = null, { idempotencyKey = null 
             method,
             headers,
             credentials: 'same-origin',
-            body: body === null ? undefined : JSON.stringify(body),
+            body: body === null ? undefined : (isFormData ? body : JSON.stringify(body)),
         });
     } catch {
         throw new ApiError(0, 'تعذر الاتصال بالخادم');
