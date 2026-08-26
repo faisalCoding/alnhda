@@ -92,6 +92,42 @@
                     </div>
                 </div>
 
+                {{-- أيقونة الموقع --}}
+                <div x-show="tab === 'defaults'" x-cloak class="{{ $card }}">
+                    <p class="mb-1 text-sm font-bold">أيقونة الموقع</p>
+                    <p class="mb-4 text-xs text-zinc-400">
+                        تظهر في تبويب المتصفح، وبجانب الموقع في نتائج البحث، وعلى شاشة الجوال عند حفظ الموقع كاختصار.
+                    </p>
+
+                    <div class="flex flex-wrap items-center gap-5">
+                        {{-- محاكاة تبويب المتصفح --}}
+                        <div class="rounded-t-lg bg-zinc-200 px-2 pt-2 dark:bg-zinc-800">
+                            <div class="flex w-52 items-center gap-2 rounded-t-lg bg-white px-3 py-2 dark:bg-zinc-950">
+                                <img :src="defaults.favicon_url" alt="" class="h-4 w-4 shrink-0 rounded-sm object-cover">
+                                <span class="truncate text-xs text-zinc-600 dark:text-zinc-300">{{ config('app.name') }}</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="{{ $ghost }} cursor-pointer">
+                                <span x-text="faviconUploading ? 'جارٍ الرفع…' : (defaults.favicon_is_custom ? 'استبدال الأيقونة' : 'رفع أيقونة')"></span>
+                                <input type="file" accept="image/png,image/jpeg,image/webp" class="hidden"
+                                    @change="uploadFavicon($event)">
+                            </label>
+
+                            <p class="text-xs text-zinc-400" x-show="!defaults.favicon_is_custom" x-cloak>
+                                الأيقونة المرفقة مع الموقع مستخدمة حاليًا.
+                            </p>
+                        </div>
+                    </div>
+
+                    <p class="mt-4 text-xs leading-relaxed text-zinc-400">
+                        ارفع صورة مربّعة؛ تُقصّ إلى <span x-text="defaults.favicon_size + '×' + defaults.favicon_size"></span> وتُحفظ PNG —
+                        جوجل لا يعرض أيقونة غير مربّعة، ويشترط أن يكون ضلعها من مضاعفات ٤٨.
+                        تُحفظ فور الرفع دون الحاجة لزر الحفظ، وقد يستغرق ظهورها في نتائج البحث أيامًا.
+                    </p>
+                </div>
+
                 {{-- المحرّر --}}
                 <div x-show="target" x-cloak class="{{ $card }} space-y-4">
                     <div class="flex items-center justify-between gap-2">

@@ -24,6 +24,45 @@ class ImageService
      * @return string Relpath of the saved image
      */
     /**
+     * Google will only show a favicon that is square with a side that is a
+     * multiple of 48, so the tab icon is built at 192 rather than a rounder
+     * looking number. Apple wants 180 for a home-screen shortcut.
+     */
+    public const FAVICON_SIZE = 192;
+
+    public const APPLE_ICON_SIZE = 180;
+
+    /**
+     * Prepares the site icon.
+     *
+     * PNG throughout, and cropped square: a browser will letterbox a
+     * non-square icon into the tab, and Google skips it outright. The random
+     * name matters more here than elsewhere — browsers cache a favicon hard,
+     * and a fresh URL is the only reliable way past it.
+     *
+     * @param  mixed  $file
+     * @return array{favicon_path: string, apple_touch_icon_path: string}
+     */
+    public static function uploadFavicon($file, string $folder = 'seo/icons'): array
+    {
+        $base = Str::random(40);
+
+        $save = function (int $size) use ($file, $folder, $base): string {
+            $path = $folder.'/'.$base.'-'.$size.'.png';
+            $image = Image::decode($file)->cover($size, $size);
+
+            Storage::disk('public')->put($path, (string) $image->encode(new PngEncoder));
+
+            return $path;
+        };
+
+        return [
+            'favicon_path' => $save(self::FAVICON_SIZE),
+            'apple_touch_icon_path' => $save(self::APPLE_ICON_SIZE),
+        ];
+    }
+
+    /**
      * The width and height every link preview is built around. WhatsApp,
      * Facebook and LinkedIn all show a wide banner at roughly 1.91:1 and fall
      * back to a small square thumbnail for anything else, so the ratio is

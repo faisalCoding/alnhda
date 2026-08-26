@@ -13,6 +13,8 @@ class AppSettings extends Model
         'seo_default_title',
         'seo_default_description',
         'seo_default_image_path',
+        'favicon_path',
+        'apple_touch_icon_path',
     ];
 
     /**
@@ -32,6 +34,23 @@ class AppSettings extends Model
     public static function current(): self
     {
         return static::query()->firstOrCreate([]);
+    }
+
+    /**
+     * The tab icon, or the bundled one until somebody uploads their own.
+     */
+    public function faviconUrl(): string
+    {
+        return blank($this->favicon_path)
+            ? asset('img/KNicon.png')
+            : asset('storage/'.ltrim($this->favicon_path, '/'));
+    }
+
+    public function appleTouchIconUrl(): string
+    {
+        return blank($this->apple_touch_icon_path)
+            ? asset('img/KNicon.png')
+            : asset('storage/'.ltrim($this->apple_touch_icon_path, '/'));
     }
 
     public function weeklyReportsAreReady(): bool

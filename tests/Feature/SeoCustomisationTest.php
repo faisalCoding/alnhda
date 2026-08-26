@@ -223,3 +223,77 @@ it('renders the panel page with its component mounted', function () {
 it('turns guests away from the panel page', function () {
     $this->get(panelUrl('/seo'))->assertRedirect();
 });
+
+// ── أيقونة الموقع ────────────────────────────────────────────────────────────
+
+it('serves the bundled icon until one is uploaded', function () {
+    $html = $this->get(route('welcome'))->assertOk()->getContent();
+
+    expect($html)->toContain('img/KNicon.png')
+        ->and($html)->toContain('rel="apple-touch-icon"');
+});
+
+it('builds the icon at the sizes a tab and a search result need', function () {
+    Storage::fake('public');
+
+    $data = $this->actingAs($this->admin, 'admin')
+        ->postJson(panelUrl('/api/seo/favicon'), ['favicon' => UploadedFile::fake()->image('logo.png', 700, 500)])
+        ->assertCreated()
+        ->json('data');
+
+    expect($data['favicon_is_custom'])->toBeTrue()
+        ->and($data['favicon_size'])->toBe(192);
+
+    $settings = AppSettings::current()->fresh();
+
+    Storage::disk('public')->assertExists($settings->favicon_path);
+    Storage::disk('public')->assertExists($settings->apple_touch_icon_path);
+
+    // مربّعة، وضلعها من مضاعفات ٤٨ — وإلا تجاهلها جوجل.
+    expect(getimagesizefromstring(Storage::disk('public')->get($settings->favicon_path)))
+        ->toMatchArray([0 => 192, 1 => 192])
+        ->and(192 % 48)->toBe(0)
+        ->and(getimagesizefromstring(Storage::disk('public')->get($settings->apple_touch_icon_path)))
+        ->toMatchArray([0 => 180, 1 => 180]);
+});
+
+it('serves the uploaded icon on the public site once it is set', function () {
+    Storage::fake('public');
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelUrl('/api/seo/favicon'), ['favicon' => UploadedFile::fake()->image('logo.png', 400, 400)])
+        ->assertCreated();
+
+    $path = AppSettings::current()->fresh()->favicon_path;
+    $html = $this->get(route('welcome'))->assertOk()->getContent();
+
+    preg_match('/<link rel="icon"[^>]*>/', $html, $iconTag);
+
+    // الأيقونة المرفقة تبقى احتياطي صورة المشاركة، فالتأكيد على وسم الأيقونة
+    // وحده لا على الصفحة كلها.
+    expect($iconTag[0] ?? '')->toContain($path)
+        ->and($iconTag[0] ?? '')->not->toContain('KNicon');
+});
+
+it('shows the same icon inside the panel', function () {
+    Storage::fake('public');
+
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelUrl('/api/seo/favicon'), ['favicon' => UploadedFile::fake()->image('logo.png', 400, 400)])
+        ->assertCreated();
+
+    $path = AppSettings::current()->fresh()->favicon_path;
+
+    expect($this->actingAs($this->admin, 'admin')->get(panelUrl('/seo'))->getContent())->toContain($path);
+});
+
+it('refuses a favicon that is not an image', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(panelUrl('/api/seo/favicon'), ['favicon' => UploadedFile::fake()->create('icon.svg', 4)])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('favicon');
+});
+
+it('keeps guests away from the favicon endpoint', function () {
+    $this->postJson(panelUrl('/api/seo/favicon'), [])->assertUnauthorized();
+});

@@ -25,6 +25,7 @@ export default function seoPage() {
         loading: true,
         saving: false,
         uploading: false,
+        faviconUploading: false,
         error: '',
         saved: false,
         formErrors: {},
@@ -229,6 +230,34 @@ export default function seoPage() {
             }
 
             this.uploading = false;
+            event.target.value = '';
+        },
+
+        /**
+         * الأيقونة تُحفظ فور رفعها لا مع بقية النموذج: هي إعداد قائم بذاته،
+         * وربطها بزر «حفظ» يجعل رفعها بلا أثر حتى يُضغط.
+         */
+        async uploadFavicon(event) {
+            const file = event.target.files?.[0];
+
+            if (!file) {
+                return;
+            }
+
+            this.faviconUploading = true;
+            this.resetFeedback();
+
+            const body = new FormData();
+            body.append('favicon', file);
+
+            try {
+                this.defaults = (await request('POST', '/api/seo/favicon', body))?.data ?? this.defaults;
+                this.saved = true;
+            } catch (e) {
+                this.error = e.errors?.favicon?.[0] ?? e.message;
+            }
+
+            this.faviconUploading = false;
             event.target.value = '';
         },
 

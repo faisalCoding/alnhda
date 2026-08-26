@@ -18,10 +18,8 @@
     @endphp
 
     <title>@if ($seo->title){{ $seo->title }} | @endif{{ config('app.name', 'كيان النهضة العقارية') }}</title>
-    <link rel="icon" type="image/png" href="{{ asset('img/KNicon.png') }}">
-    <link rel="shortcut icon" href="{{ asset('img/KNicon.png') }}">
+    @include('partials.favicon')
     <link rel="canonical" href="{{ url()->current() }}">
-    <link rel="apple-touch-icon" href="{{ asset('img/KNicon.png') }}">
 
 
     {{-- 2. الوصف --}}

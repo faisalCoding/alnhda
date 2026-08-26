@@ -3,8 +3,7 @@
 <meta name="robots" content="noindex, nofollow" />
 
 <title>{{ $title ?? config('app.name') }}</title>
-<link rel="icon" type="image/png" href="{{ asset('img/KNicon.png') }}">
-<link rel="shortcut icon" href="{{ asset('img/KNicon.png') }}">
+@include('partials.favicon')
 
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />

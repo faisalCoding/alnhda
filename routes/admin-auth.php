@@ -81,6 +81,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('seo/records', [SeoController::class, 'records'])->name('seo.records');
         Route::put('seo/records/{type}/{id}', [SeoController::class, 'updateRecord'])->name('seo.records.update');
         Route::post('seo/image', [SeoController::class, 'uploadImage'])->name('seo.image');
+        Route::post('seo/favicon', [SeoController::class, 'uploadFavicon'])->name('seo.favicon');
 
         Route::get('whatsapp/status', [WhatsappController::class, 'status'])->name('whatsapp.status');
         Route::post('whatsapp/disconnect', [WhatsappController::class, 'disconnect'])->name('whatsapp.disconnect');

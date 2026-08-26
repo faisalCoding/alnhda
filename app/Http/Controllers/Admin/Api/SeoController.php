@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateSeoDefaultsRequest;
 use App\Http\Requests\Admin\UpdateSeoPageRequest;
 use App\Http\Requests\Admin\UpdateSeoRecordRequest;
+use App\Http\Requests\Admin\UploadFaviconRequest;
 use App\Http\Requests\Admin\UploadSeoImageRequest;
 use App\Models\AppSettings;
 use App\Models\Article;
@@ -75,12 +76,7 @@ class SeoController extends Controller
 
         return response()->json([
             'data' => [
-                'defaults' => [
-                    'seo_default_title' => $settings->seo_default_title,
-                    'seo_default_description' => $settings->seo_default_description,
-                    'seo_default_image_path' => $settings->seo_default_image_path,
-                    'seo_default_image_url' => $this->imageUrl($settings->seo_default_image_path),
-                ],
+                'defaults' => $this->defaultsPayload($settings),
                 'pages' => $pages,
                 'social_size' => [ImageService::SOCIAL_WIDTH, ImageService::SOCIAL_HEIGHT],
                 'site_name' => config('app.name'),
@@ -93,12 +89,7 @@ class SeoController extends Controller
         $settings = AppSettings::current();
         $settings->fill($request->validated())->save();
 
-        return response()->json(['data' => [
-            'seo_default_title' => $settings->seo_default_title,
-            'seo_default_description' => $settings->seo_default_description,
-            'seo_default_image_path' => $settings->seo_default_image_path,
-            'seo_default_image_url' => $this->imageUrl($settings->seo_default_image_path),
-        ]]);
+        return response()->json(['data' => $this->defaultsPayload($settings)]);
     }
 
     public function updatePage(UpdateSeoPageRequest $request, string $routeName): JsonResponse
@@ -189,6 +180,35 @@ class SeoController extends Controller
                 'height' => ImageService::SOCIAL_HEIGHT,
             ],
         ], 201);
+    }
+
+    /**
+     * Replaces the site icon everywhere it appears — the browser tab, the
+     * search result, and an iOS home screen — from one square upload.
+     */
+    public function uploadFavicon(UploadFaviconRequest $request): JsonResponse
+    {
+        $settings = AppSettings::current();
+        $settings->fill(ImageService::uploadFavicon($request->file('favicon')))->save();
+
+        return response()->json(['data' => $this->defaultsPayload($settings)], 201);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function defaultsPayload(AppSettings $settings): array
+    {
+        return [
+            'seo_default_title' => $settings->seo_default_title,
+            'seo_default_description' => $settings->seo_default_description,
+            'seo_default_image_path' => $settings->seo_default_image_path,
+            'seo_default_image_url' => $this->imageUrl($settings->seo_default_image_path),
+            'favicon_path' => $settings->favicon_path,
+            'favicon_url' => $settings->faviconUrl(),
+            'favicon_is_custom' => filled($settings->favicon_path),
+            'favicon_size' => ImageService::FAVICON_SIZE,
+        ];
     }
 
     /**
