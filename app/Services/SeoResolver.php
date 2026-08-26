@@ -57,6 +57,11 @@ class SeoResolver
             $settings->seo_default_description,
         ]);
 
+        $keywords = $this->firstFilled([
+            $override instanceof SeoMeta ? $override->keywords : null,
+            $settings->seo_keywords,
+        ]);
+
         $image = $this->firstFilled([
             $this->storageUrl($override?->image_path),
             $fromPage['image'] ?? null,
@@ -74,6 +79,9 @@ class SeoResolver
         return new ResolvedSeo(
             title: $title,
             description: $description,
+            keywords: $keywords,
+            author: $settings->seo_author,
+            themeColor: $settings->seo_theme_color,
             image: $image,
             imageSize: $image === null ? null : $this->imageSize($image),
             type: $type,

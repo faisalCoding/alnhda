@@ -14,6 +14,9 @@ final readonly class ResolvedSeo
     public function __construct(
         public ?string $title,
         public ?string $description,
+        public ?string $keywords,
+        public ?string $author,
+        public ?string $themeColor,
         public ?string $image,
         public ?array $imageSize,
         public string $type,

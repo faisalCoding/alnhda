@@ -20,6 +20,7 @@ class SeoMeta extends Model
     protected $fillable = [
         'title',
         'description',
+        'keywords',
         'image_path',
         'noindex',
     ];
@@ -47,6 +48,7 @@ class SeoMeta extends Model
     {
         return blank($this->title)
             && blank($this->description)
+            && blank($this->keywords)
             && blank($this->image_path)
             && ! $this->noindex;
     }

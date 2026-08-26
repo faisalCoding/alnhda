@@ -25,9 +25,25 @@
     {{-- 2. الوصف --}}
     <meta name="description" content="{{ $seo->description ?: 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية. اكتشف مشاريعنا الآن!' }}">
 
+    @if ($seo->keywords)
+        <meta name="keywords" content="{{ $seo->keywords }}">
+    @endif
+
+    @if ($seo->author)
+        <meta name="author" content="{{ $seo->author }}">
+    @endif
+
     @if ($seo->noindex)
         {{-- استُثنيت هذه الصفحة من الفهرسة من لوحة التحكم. --}}
         <meta name="robots" content="noindex, nofollow">
+    @else
+        {{-- max-image-preview:large يسمح لجوجل بعرض صور المشاريع كبيرة في
+             النتائج بدل مصغّر، وهو ما يصنع الفارق لموقع يبيع بالصورة. --}}
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    @endif
+
+    @if ($seo->themeColor)
+        <meta name="theme-color" content="{{ $seo->themeColor }}">
     @endif
 
     {{-- 3. Open Graph (للواتساب وفيسبوك) --}}
@@ -51,6 +67,7 @@
     <meta name="twitter:title" content="{{ $seo->title ?: 'كيان النهضة العقارية' }}" />
     <meta name="twitter:description" content="{{ $seo->description ?: 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية. اكتشف مشاريعنا الآن!' }}" />
     <meta name="twitter:image" content="{{ $seoImage }}" />
+    <meta name="twitter:image:alt" content="{{ $seo->title ?: 'كيان النهضة العقارية' }}" />
 
     {{-- Preload Hero Image for LCP Optimization --}}
     @if (request()->routeIs('home') || request()->path() == '/')
