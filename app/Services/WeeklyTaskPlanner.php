@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Employee;
+use App\Models\WeeklyTaskItem;
 use App\Models\WeeklyTaskList;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -87,6 +88,91 @@ class WeeklyTaskPlanner
             'topped_up' => $toppedUp,
             'added' => $added,
             'week_start' => $weekStart->toDateString(),
+        ];
+    }
+
+    /**
+     * Move what an employee did not finish in one week into the week that
+     * follows, creating that week's list where it does not exist yet.
+     *
+     * The original is left where it is: the week that has passed is a record of
+     * what was owed and what got done, and emptying it after the fact would
+     * make every past week look finished.
+     *
+     * Nothing is duplicated — a title already present in the next week is
+     * skipped, which is what keeps a carried task and the template that
+     * produces it every week from arriving twice.
+     *
+     * @return array{carried: int, employees: int, from: string, to: string}
+     */
+    public function carryForwardFrom(CarbonInterface $date): array
+    {
+        $from = WeeklyTaskList::weekStartFor($date);
+        $to = $from->copy()->addWeek();
+
+        $sources = WeeklyTaskList::query()
+            ->with(['items', 'employee'])
+            ->whereDate('week_start', $from->toDateString())
+            ->whereHas('employee', fn ($query) => $query->where('is_active', true))
+            ->get();
+
+        $carried = 0;
+        $employees = 0;
+
+        foreach ($sources as $source) {
+            $outstanding = $source->items->where('is_done', false);
+
+            if ($outstanding->isEmpty()) {
+                continue;
+            }
+
+            $moved = 0;
+
+            DB::transaction(function () use ($source, $outstanding, $from, $to, &$moved): void {
+                // whereDate لا المطابقة المباشرة: العمود يُخزَّن بوقت، فالمقارنة
+                // بتاريخ مجرّد لا تجد الصفّ الموجود ثم ترتطم بقيد التفرّد.
+                $target = WeeklyTaskList::query()
+                    ->where('employee_id', $source->employee_id)
+                    ->whereDate('week_start', $to->toDateString())
+                    ->first()
+                    ?? WeeklyTaskList::query()->create([
+                        'employee_id' => $source->employee_id,
+                        'week_start' => $to->toDateString(),
+                    ]);
+
+                $present = $target->items()->pluck('title');
+                $nextOrder = (int) $target->items()->max('sort_order');
+
+                $rows = $outstanding
+                    ->reject(fn (WeeklyTaskItem $item): bool => $present->contains($item->title))
+                    ->values()
+                    ->map(fn (WeeklyTaskItem $item, int $index): array => [
+                        'title' => $item->title,
+                        'weekly_task_category_id' => $item->weekly_task_category_id,
+                        'sort_order' => $nextOrder + $index + 1,
+                        // A task outstanding for weeks keeps naming the week it
+                        // was first owed in, not merely the one before this.
+                        'carried_from' => $item->carried_from?->toDateString() ?? $from->toDateString(),
+                    ])
+                    ->all();
+
+                if ($rows !== []) {
+                    $target->items()->createMany($rows);
+                    $moved = count($rows);
+                }
+            });
+
+            if ($moved > 0) {
+                $carried += $moved;
+                $employees++;
+            }
+        }
+
+        return [
+            'carried' => $carried,
+            'employees' => $employees,
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
         ];
     }
 

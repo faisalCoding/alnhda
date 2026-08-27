@@ -179,6 +179,16 @@ class WeeklyTaskController extends Controller
         return response()->json(['data' => $this->planner->generateFor($date)]);
     }
 
+    /**
+     * Moves what was not finished in the given week into the one after it.
+     */
+    public function carryForward(Request $request): JsonResponse
+    {
+        $date = $request->filled('date') ? now()->parse($request->string('date')->toString()) : now();
+
+        return response()->json(['data' => $this->planner->carryForwardFrom($date)]);
+    }
+
     public function storeItem(StoreWeeklyTaskItemRequest $request, WeeklyTaskList $list): JsonResponse
     {
         $item = $list->items()->create([

@@ -18,6 +18,7 @@ class WeeklyTaskItem extends Model
         'is_done',
         'completed_at',
         'sort_order',
+        'carried_from',
     ];
 
     /**
@@ -29,6 +30,7 @@ class WeeklyTaskItem extends Model
             'is_done' => 'boolean',
             'completed_at' => 'datetime',
             'sort_order' => 'integer',
+            'carried_from' => 'date',
         ];
     }
 

@@ -29,6 +29,7 @@ class WeeklyTaskItemResource extends JsonResource
             'is_done' => $this->is_done,
             'completed_at' => $this->completed_at?->toISOString(),
             'sort_order' => $this->sort_order,
+            'carried_from' => $this->carried_from?->toDateString(),
         ];
     }
 }

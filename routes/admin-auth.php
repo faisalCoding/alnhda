@@ -196,6 +196,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
             Route::delete('weekly-task-templates/{template}', [WeeklyTaskController::class, 'destroyTemplate'])->name('weekly-task-templates.destroy');
 
             Route::post('weekly-tasks/generate', [WeeklyTaskController::class, 'generate'])->name('weekly-tasks.generate');
+            Route::post('weekly-tasks/carry-forward', [WeeklyTaskController::class, 'carryForward'])->name('weekly-tasks.carry-forward');
             Route::post('weekly-tasks/{list}/items', [WeeklyTaskController::class, 'storeItem'])->name('weekly-tasks.items.store');
             Route::put('weekly-task-items/{item}', [WeeklyTaskController::class, 'updateItem'])->name('weekly-task-items.update');
             Route::delete('weekly-task-items/{item}', [WeeklyTaskController::class, 'destroyItem'])->name('weekly-task-items.destroy');

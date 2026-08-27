@@ -46,6 +46,14 @@
                 توليد قوائم الأسبوع
             </button>
 
+            <button type="button" @click="carryForward()" :disabled="busy" class="{{ $ghost }}"
+                title="ينقل ما لم يُنجَز في الأسبوع الماضي إلى قوائم هذا الأسبوع، دون المساس بسجلّ الأسبوع الماضي">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+                </svg>
+                ترحيل متأخّرات الأسبوع الماضي
+            </button>
+
             <button type="button" @click="showEmployees = true" class="{{ $ghost }}">
                 الموظفون
                 <span class="rounded-full bg-zinc-200 px-1.5 text-xs dark:bg-zinc-700" x-text="employees.length"></span>
@@ -133,6 +141,11 @@
                                             <input type="checkbox" :checked="item.is_done" @change="toggleItem(list, item)"
                                                 class="h-4 w-4 shrink-0 rounded border-zinc-300 text-primary-500 focus:ring-primary-500 dark:border-zinc-600">
                                             <span class="flex-1 text-sm" :class="item.is_done && 'text-zinc-400 line-through'" x-text="item.title"></span>
+
+                                            {{-- مهمة مرحّلة: الأسبوع الذي استُحقّت فيه أولاً، لا الذي سبق هذا. --}}
+                                            <span x-show="item.carried_from" x-cloak
+                                                :title="'لم تُنجَز في أسبوع ' + item.carried_from"
+                                                class="shrink-0 rounded-lg bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">مُرحَّلة</span>
 
                                             <select x-show="categories.length" :value="item.weekly_task_category_id ?? ''"
                                                 @change="moveItem(list, item, $event.target.value)"

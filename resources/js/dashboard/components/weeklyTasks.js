@@ -111,6 +111,40 @@ export default function weeklyTasksPage() {
             }
         },
 
+        /**
+         * يسحب متأخّرات الأسبوع الماضي إلى الأسبوع الحالي. يُمرَّر تاريخ من
+         * الأسبوع الماضي — والخادم يردّه إلى سبته — بدل حساب بداية الأسبوع هنا،
+         * فحدّ الأسبوع تعريف واحد يجب أن يبقى في مكان واحد.
+         */
+        async carryForward() {
+            this.busy = true;
+            this.notice = '';
+
+            const lastWeek = new Date();
+            lastWeek.setDate(lastWeek.getDate() - 7);
+
+            try {
+                const payload = await request(
+                    'POST',
+                    '/api/weekly-tasks/carry-forward',
+                    { date: lastWeek.toISOString().slice(0, 10) },
+                    { idempotencyKey: uuid() }
+                );
+
+                const { carried, employees } = payload.data;
+
+                this.notice = carried === 0
+                    ? 'لا متأخّرات في الأسبوع الماضي — أو أنها مُرحَّلة بالفعل.'
+                    : `رُحّلت ${carried} مهمة لـ ${employees} موظفًا.`;
+
+                await this.loadWeek();
+            } catch (error) {
+                this.error = error.message;
+            } finally {
+                this.busy = false;
+            }
+        },
+
         async toggleItem(list, item) {
             const next = !item.is_done;
             item.is_done = next;
