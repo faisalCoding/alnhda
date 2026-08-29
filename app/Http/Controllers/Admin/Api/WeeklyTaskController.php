@@ -374,6 +374,18 @@ class WeeklyTaskController extends Controller
             return response()->json(['message' => 'فعّل التقارير واختر مجموعة أولاً.'], 422);
         }
 
+        $weekStart = WeeklyTaskList::weekStartFor(now())->toDateString();
+        $sentAt = WeeklyReportSend::sentAt($weekStart, $kind);
+
+        // قبل الإرسال لا بعده: حارسٌ يُستشار بعد خروج الرسالة لا يحرس شيئاً.
+        if ($sentAt !== null && ! $request->boolean('force')) {
+            return response()->json([
+                'message' => 'أُرسل هذا التقرير لأسبوع '.$weekStart.' بالفعل ('.$sentAt->format('Y-m-d H:i').').',
+                'already_sent' => true,
+                'sent_at' => $sentAt->toIso8601String(),
+            ], 409);
+        }
+
         $message = $kind === 'closing'
             ? $this->planner->closingMessage(now())
             : $this->planner->openingMessage(now());
@@ -396,11 +408,8 @@ class WeeklyTaskController extends Controller
         }
 
         // Recorded so the scheduled run does not repeat what was just sent by hand.
-        WeeklyReportSend::query()->updateOrCreate(
-            ['week_start' => WeeklyTaskList::weekStartFor(now())->toDateString(), 'kind' => $kind],
-            ['sent_at' => now()],
-        );
+        WeeklyReportSend::record($weekStart, $kind);
 
-        return response()->json(['data' => ['sent' => true]]);
+        return response()->json(['data' => ['sent' => true, 'resent' => $sentAt !== null]]);
     }
 }

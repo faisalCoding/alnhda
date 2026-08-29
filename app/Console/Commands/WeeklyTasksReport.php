@@ -98,10 +98,7 @@ class WeeklyTasksReport extends Command
             return self::FAILURE;
         }
 
-        WeeklyReportSend::query()->updateOrCreate(
-            ['week_start' => $weekStart, 'kind' => $kind],
-            ['sent_at' => now()],
-        );
+        WeeklyReportSend::record($weekStart, $kind);
 
         $this->info('أُرسلت الرسالة إلى '.($settings->whatsapp_group_name ?? 'المجموعة المحددة').'.');
 

@@ -637,8 +637,10 @@ export default function weeklyTasksPage() {
         },
 
         /** Send now rather than waiting for Saturday or Thursday. */
-        async sendNow(kind) {
-            if (!confirm(kind === 'opening' ? 'إرسال مهام الأسبوع إلى المجموعة الآن؟' : 'إرسال ملخص الإنجاز إلى المجموعة الآن؟')) {
+        async sendNow(kind, force = false) {
+            const asking = kind === 'opening' ? 'إرسال مهام الأسبوع إلى المجموعة الآن؟' : 'إرسال ملخص الإنجاز إلى المجموعة الآن؟';
+
+            if (!force && !confirm(asking)) {
                 return;
             }
 
@@ -647,9 +649,22 @@ export default function weeklyTasksPage() {
             this.notice = '';
 
             try {
-                await request('POST', '/api/weekly-tasks/send', { kind }, { idempotencyKey: uuid() });
-                this.notice = 'أُرسلت الرسالة إلى ' + (this.settings.whatsapp_group_name ?? 'المجموعة') + '.';
+                await request('POST', '/api/weekly-tasks/send', { kind, force }, { idempotencyKey: uuid() });
+                this.notice = (force ? 'أُعيد إرسال الرسالة إلى ' : 'أُرسلت الرسالة إلى ')
+                    + (this.settings.whatsapp_group_name ?? 'المجموعة') + '.';
             } catch (error) {
+                // 409 يعني أن التقرير خرج من قبل. الرسالة لم تُرسل هذه المرة،
+                // فإعادة المحاولة قرار واعٍ لا نقرة ثانية.
+                if (error.status === 409) {
+                    this.busy = false;
+
+                    if (confirm(error.message + '\n\nهل تريد إرساله مرة أخرى إلى المجموعة؟')) {
+                        await this.sendNow(kind, true);
+                    }
+
+                    return;
+                }
+
                 this.error = error.message;
             } finally {
                 this.busy = false;
