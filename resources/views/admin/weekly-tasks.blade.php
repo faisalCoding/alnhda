@@ -185,6 +185,88 @@
             </template>
         </div>
 
+        {{-- ── الأسابيع الماضية ──────────────────────────────────────────────
+             سجلّ للقراءة لا للتحرير: تأشير مهمة في أسبوع انقضى يزوّر ما جرى
+             فيه. مطويّة افتراضياً لأن الصفحة عن أسبوع اليوم أولاً. --}}
+        <section x-show="!historyLoading && history.length" x-cloak class="space-y-3 pt-4">
+            <div class="flex items-center gap-3">
+                <h2 class="text-sm font-extrabold text-zinc-500 dark:text-zinc-400">الأسابيع الماضية</h2>
+                <span class="h-px flex-1 bg-zinc-200 dark:bg-zinc-800"></span>
+                <span class="text-xs text-zinc-400" x-text="history.length + ' أسبوع'"></span>
+            </div>
+
+            <template x-for="week in history" :key="week.week_start">
+                <section class="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+                    <button type="button" @click="toggleWeek(week.week_start)"
+                        class="flex w-full items-center gap-4 p-4 text-right transition hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+                        <svg class="h-4 w-4 shrink-0 text-zinc-400 transition-transform"
+                            :class="isWeekOpen(week.week_start) && '-rotate-90'"
+                            fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                        </svg>
+
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-extrabold" x-text="'أسبوع ' + week.week_start"></p>
+                            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                                <div class="h-full rounded-full transition-all duration-500"
+                                    :class="percentOf(week.done, week.total) === 100 ? 'bg-emerald-500' : 'bg-primary-500'"
+                                    :style="`width: ${percentOf(week.done, week.total)}%`"></div>
+                            </div>
+                        </div>
+
+                        <div class="shrink-0 text-left">
+                            <p class="text-sm font-extrabold"
+                                :class="percentOf(week.done, week.total) === 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-300'"
+                                x-text="percentOf(week.done, week.total) + '%'"></p>
+                            <p class="text-[11px] text-zinc-400" x-text="'أنجز ' + week.done + ' من ' + week.total"></p>
+                        </div>
+                    </button>
+
+                    <div x-show="isWeekOpen(week.week_start)" x-transition.opacity x-cloak
+                        class="border-t border-zinc-100 dark:border-zinc-800">
+                        <template x-for="list in week.lists" :key="list.id">
+                            <div class="border-b border-zinc-100 px-5 py-4 last:border-0 dark:border-zinc-800">
+                                <div class="mb-2 flex items-center gap-3">
+                                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-500/15 text-[11px] font-bold text-primary-600 dark:text-primary-300"
+                                        x-text="list.employee?.name?.slice(0, 1) ?? '؟'"></span>
+                                    <span class="min-w-0 flex-1 truncate text-sm font-bold" x-text="list.employee?.name"></span>
+                                    <span class="shrink-0 text-xs font-bold text-zinc-500 dark:text-zinc-400"
+                                        x-text="`${progress(list).done} / ${progress(list).total}`"></span>
+                                </div>
+
+                                <div class="mb-3 h-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                                    <div class="h-full rounded-full"
+                                        :class="progress(list).percent === 100 ? 'bg-emerald-500' : 'bg-primary-500'"
+                                        :style="`width: ${progress(list).percent}%`"></div>
+                                </div>
+
+                                <template x-for="group in groupsFor(list)" :key="group.key">
+                                    <div class="mb-2 last:mb-0">
+                                        <p x-show="group.name" class="mb-1 flex items-center gap-1.5">
+                                            <span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="classesFor(group.color).dot"></span>
+                                            <span class="text-[11px] font-extrabold text-zinc-500 dark:text-zinc-400" x-text="group.name"></span>
+                                        </p>
+                                        <ul class="space-y-0.5">
+                                            <template x-for="item in group.items" :key="item.id">
+                                                <li class="flex items-center gap-2 text-xs">
+                                                    <span class="shrink-0" :class="item.is_done ? 'text-emerald-500' : 'text-zinc-300 dark:text-zinc-600'"
+                                                        x-text="item.is_done ? '✓' : '○'"></span>
+                                                    <span :class="item.is_done ? 'text-zinc-400 line-through' : 'text-zinc-600 dark:text-zinc-300'"
+                                                        x-text="item.title"></span>
+                                                    <span x-show="item.carried_from" x-cloak
+                                                        class="shrink-0 rounded bg-amber-100 px-1.5 text-[10px] font-bold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">مُرحَّلة</span>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </section>
+            </template>
+        </section>
+
         @include('admin.partials.weekly-tasks-modals', ['input' => $input, 'label' => $label, 'error' => $error, 'ghost' => $ghost, 'primary' => $primary])
     </div>
 @endsection

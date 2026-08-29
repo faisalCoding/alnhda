@@ -135,6 +135,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('weekly-task-templates', [WeeklyTaskController::class, 'templates'])->name('weekly-task-templates.index');
         Route::get('weekly-tasks', [WeeklyTaskController::class, 'week'])->name('weekly-tasks.index');
         Route::get('weekly-report-settings', [WeeklyTaskController::class, 'settings'])->name('weekly-report-settings.show');
+        Route::get('weekly-tasks/history', [WeeklyTaskController::class, 'history'])->name('weekly-tasks.history');
         Route::get('weekly-tasks/preview', [WeeklyTaskController::class, 'preview'])->name('weekly-tasks.preview');
         Route::get('whatsapp/seen-groups', [WeeklyTaskController::class, 'seenGroups'])->name('whatsapp.seen-groups');
 

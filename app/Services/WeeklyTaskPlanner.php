@@ -92,6 +92,41 @@ class WeeklyTaskPlanner
     }
 
     /**
+     * Weeks already gone, newest first — the record the page's own week cannot
+     * show, since it only ever asks for today's.
+     *
+     * Capped rather than unbounded: the archive grows by one week forever, and
+     * a page that loads all of it gets slower every Saturday.
+     *
+     * @return Collection<int, array{week_start: string, done: int, total: int, lists: Collection<int, WeeklyTaskList>}>
+     */
+    public function pastWeeks(CarbonInterface $date, int $weeks = 8): Collection
+    {
+        $currentWeek = WeeklyTaskList::weekStartFor($date);
+        $earliest = $currentWeek->copy()->subWeeks($weeks);
+
+        return WeeklyTaskList::query()
+            ->with(['employee', 'items.category'])
+            ->whereDate('week_start', '<', $currentWeek->toDateString())
+            ->whereDate('week_start', '>=', $earliest->toDateString())
+            ->whereHas('employee', fn ($query) => $query->where('is_active', true))
+            ->get()
+            ->groupBy(fn (WeeklyTaskList $list): string => $list->week_start->toDateString())
+            ->map(function (Collection $lists, string $weekStart): array {
+                $items = $lists->flatMap->items;
+
+                return [
+                    'week_start' => $weekStart,
+                    'done' => $items->where('is_done', true)->count(),
+                    'total' => $items->count(),
+                    'lists' => $lists->sortBy(fn (WeeklyTaskList $list): int => $list->employee->sort_order)->values(),
+                ];
+            })
+            ->sortKeysDesc()
+            ->values();
+    }
+
+    /**
      * Move what an employee did not finish in one week into the week that
      * follows, creating that week's list where it does not exist yet.
      *

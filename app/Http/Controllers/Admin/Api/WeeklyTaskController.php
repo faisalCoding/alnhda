@@ -180,6 +180,23 @@ class WeeklyTaskController extends Controller
     }
 
     /**
+     * The weeks behind this one, for the archive at the foot of the page.
+     */
+    public function history(Request $request): JsonResponse
+    {
+        $weeks = max(1, min(52, (int) $request->query('weeks', 8)));
+
+        $past = $this->planner->pastWeeks(now(), $weeks)->map(fn (array $week): array => [
+            'week_start' => $week['week_start'],
+            'done' => $week['done'],
+            'total' => $week['total'],
+            'lists' => WeeklyTaskListResource::collection($week['lists'])->resolve($request),
+        ]);
+
+        return response()->json(['data' => $past]);
+    }
+
+    /**
      * Moves what was not finished in the given week into the one after it.
      */
     public function carryForward(Request $request): JsonResponse

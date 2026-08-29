@@ -8,6 +8,9 @@ export default function weeklyTasksPage() {
         templates: [],
         categories: [],
         lists: [],
+        history: [],
+        historyLoading: true,
+        openWeeks: [],
         settings: { whatsapp_group_id: null, whatsapp_group_name: null, weekly_reports_enabled: false, is_ready: false },
         groupsError: '',
 
@@ -42,6 +45,7 @@ export default function weeklyTasksPage() {
                 this.loadCategories(),
                 this.loadWeek(),
                 this.loadSettings(),
+                this.loadHistory(),
             ]);
             this.loading = false;
         },
@@ -80,6 +84,35 @@ export default function weeklyTasksPage() {
             } catch (error) {
                 this.error = error.message;
             }
+        },
+
+        /**
+         * أسابيع مضت. تُحمَّل مرة واحدة مع الصفحة لأن الكروت مطويّة، فلا شيء
+         * منها يُرسم قبل أن يفتحها أحد.
+         */
+        async loadHistory() {
+            try {
+                this.history = (await request('GET', '/api/weekly-tasks/history'))?.data ?? [];
+            } catch {
+                // الأرشيف ملحق بالصفحة لا أساسها: فشله لا يجوز أن يُخفي أسبوع اليوم.
+                this.history = [];
+            }
+
+            this.historyLoading = false;
+        },
+
+        toggleWeek(weekStart) {
+            this.openWeeks = this.openWeeks.includes(weekStart)
+                ? this.openWeeks.filter((open) => open !== weekStart)
+                : [...this.openWeeks, weekStart];
+        },
+
+        isWeekOpen(weekStart) {
+            return this.openWeeks.includes(weekStart);
+        },
+
+        percentOf(done, total) {
+            return total === 0 ? 0 : Math.round((done / total) * 100);
         },
 
         async loadSettings() {
@@ -137,7 +170,7 @@ export default function weeklyTasksPage() {
                     ? 'لا متأخّرات في الأسبوع الماضي — أو أنها مُرحَّلة بالفعل.'
                     : `رُحّلت ${carried} مهمة لـ ${employees} موظفًا.`;
 
-                await this.loadWeek();
+                await Promise.all([this.loadWeek(), this.loadHistory()]);
             } catch (error) {
                 this.error = error.message;
             } finally {
