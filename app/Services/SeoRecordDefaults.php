@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Article;
+use App\Models\CollectionPage;
 use App\Models\Project;
 use App\Models\Properties;
 use Illuminate\Database\Eloquent\Model;
@@ -32,6 +33,7 @@ class SeoRecordDefaults
             $record instanceof Project => $this->forProject($record),
             $record instanceof Article => $this->forArticle($record),
             $record instanceof Properties => $this->forUnit($record),
+            $record instanceof CollectionPage => $this->forCollection($record),
             default => ['title' => null, 'description' => null, 'image' => null, 'og_type' => 'website'],
         };
     }
@@ -65,6 +67,24 @@ class SeoRecordDefaults
                     ? asset('storage/'.$image)
                     : asset(str_replace('\\', '', $image))),
             'og_type' => 'article',
+        ];
+    }
+
+    /**
+     * A collection page owns no image of its own; the first record it gathers
+     * is what a shared link should show.
+     *
+     * @return array{title: ?string, description: ?string, image: ?string, og_type: string}
+     */
+    private function forCollection(CollectionPage $collection): array
+    {
+        $first = $collection->items->first(fn (object $entry): bool => $entry->item !== null);
+
+        return [
+            'title' => $collection->title,
+            'description' => Str::limit(strip_tags((string) $collection->description), self::DESCRIPTION_LIMIT),
+            'image' => $first === null ? asset('img/KNicon.png') : $this->for($first->item)['image'],
+            'og_type' => 'website',
         ];
     }
 

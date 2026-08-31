@@ -56,6 +56,15 @@
 @endforeach
 @endif
 
+@if ($collections->isNotEmpty())
+## صفحات مجمّعة
+
+صفحات جمعت فيها الشركة مشاريع ووحدات ومقالات تخصّ موضوعًا واحدًا.
+@foreach ($collections as $collection)
+- [{{ $collection->title }}]({{ route('collection', $collection) }}): {{ $summarise($collection->description, 120) }}
+@endforeach
+@endif
+
 ## الفهارس
 
 - [كل المشاريع]({{ route('projects') }}): صفحة تجمع مشاريع الشركة.

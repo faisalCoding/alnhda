@@ -3,12 +3,13 @@ import { tempId } from './ids';
 import * as storage from './storage';
 import { enqueue, hasPendingFor, pendingDeleteIds } from './sync';
 
-const ENTITIES = ['projects', 'properties', 'articles', 'visitors', 'leads'];
+const ENTITIES = ['projects', 'properties', 'articles', 'collections', 'visitors', 'leads'];
 
 export const dataStore = {
     projects: storage.load('entities.projects', []),
     properties: storage.load('entities.properties', []),
     articles: storage.load('entities.articles', []),
+    collections: storage.load('entities.collections', []),
     visitors: storage.load('entities.visitors', []),
     leads: storage.load('entities.leads', []),
     stats: storage.load('entities.stats', null),

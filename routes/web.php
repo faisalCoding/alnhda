@@ -2,6 +2,7 @@
 
 use App\Livewire\ControlBoard;
 use App\Models\Article;
+use App\Models\CollectionPage;
 use App\Models\Project;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
@@ -44,6 +45,14 @@ Route::domain(config('app.domain'))->group(function () {
         return view('article', ['article' => $article]);
     })->name('article');
 
+    Route::get('collections/{collection:slug}', function (CollectionPage $collection) {
+        return view('collection', [
+            'collection' => $collection->load(['items.item' => function ($morphTo) {
+                $morphTo->morphWith([\App\Models\Properties::class => ['project', 'propertiesImages']]);
+            }]),
+        ]);
+    })->name('collection');
+
     Route::get('properties/{properties}', function (\App\Models\Properties $properties) {
         return view('properties', ['properties' => $properties]);
     })->name('properties');
@@ -71,6 +80,7 @@ Route::domain(config('app.domain'))->group(function () {
             'projects' => $projects,
             'properties' => $properties,
             'articles' => $articles,
+            'collections' => CollectionPage::indexable()->get(),
         ])->header('Content-Type', 'text/xml');
     })->name('sitemap');
 
@@ -80,6 +90,7 @@ Route::domain(config('app.domain'))->group(function () {
                 'projects' => Project::ordered()->get(),
                 'properties' => \App\Models\Properties::all(),
                 'articles' => Article::latest()->get(),
+                'collections' => CollectionPage::indexable()->latest()->get(),
             ])
             ->header('Content-Type', 'text/plain; charset=utf-8');
     })->name('llms');

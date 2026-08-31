@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert';
 
-import { isAbsoluteUrl } from './validation.js';
+import { isAbsoluteUrl, isValidSlug, toSlug } from './validation.js';
 
 /**
  * The cases that matter are the ones a user actually types into the map field
@@ -42,4 +42,27 @@ test('rejects schemes that are not web links', () => {
 test('rejects values that are not strings', () => {
     assert.equal(isAbsoluteUrl(null), false);
     assert.equal(isAbsoluteUrl(undefined), false);
+});
+
+test('accepts an address written in arabic with dashes', () => {
+    assert.equal(isValidSlug('شقق-جاهزة-للتسليم'), true);
+    assert.equal(isValidSlug('offers2026'), true);
+    assert.equal(isValidSlug('شقق'), true);
+});
+
+test('rejects an address that would not survive being pasted', () => {
+    for (const value of ['شقق جاهزة', 'شقق/جاهزة', 'شقق?x=1', '-شقق', 'شقق-', 'شقق--جاهزة', '']) {
+        assert.equal(isValidSlug(value), false, value);
+    }
+});
+
+test('offers an address built from the title', () => {
+    assert.equal(toSlug('شقق جاهزة للتسليم'), 'شقق-جاهزة-للتسليم');
+    assert.equal(toSlug('  عروض 2026!  '), 'عروض-2026');
+    assert.equal(toSlug('شقق — جاهزة'), 'شقق-جاهزة');
+});
+
+test('offers nothing for a title that carries no letters', () => {
+    assert.equal(toSlug('؟؟؟'), '');
+    assert.equal(toSlug(''), '');
 });

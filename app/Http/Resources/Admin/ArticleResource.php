@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Admin;
 
 use App\Http\Resources\Admin\Concerns\ResolvesPublicUrl;
+use App\Services\LinkTargets;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -23,6 +24,11 @@ class ArticleResource extends JsonResource
             'content' => $this->content,
             'image_article' => $this->image_article,
             'image_full_url' => $this->publicUrl($this->image_article),
+            'cta_label' => $this->cta_label,
+            'cta_target_type' => LinkTargets::keyFor($this->ctaTarget),
+            'cta_target_id' => $this->ctaTarget?->getKey(),
+            'cta_target_name' => LinkTargets::nameFor($this->ctaTarget),
+            'cta_url' => LinkTargets::urlFor($this->ctaTarget),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

@@ -23,3 +23,24 @@ export function isAbsoluteUrl(value) {
         return false;
     }
 }
+
+/**
+ * Mirrors the `slug` rule on a collection page: letters or digits, in groups
+ * separated by single dashes, with no spaces and nothing at either end. Arabic
+ * counts as letters — a page's address is written in the language it is read in.
+ */
+export function isValidSlug(value) {
+    return /^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u.test(String(value ?? ''));
+}
+
+/**
+ * Turns a typed title into an address the rule above accepts, so an admin is
+ * offered something usable instead of being corrected after the fact.
+ */
+export function toSlug(text) {
+    return String(text ?? '')
+        .replace(/[^\p{L}\p{N}\s-]/gu, '')
+        .trim()
+        .replace(/[\s-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}

@@ -31,6 +31,7 @@ class SeoResolver
         'project' => 'project',
         'article' => 'article',
         'properties' => 'properties',
+        'collection' => 'collection',
     ];
 
     /**

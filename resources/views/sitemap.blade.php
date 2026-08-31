@@ -82,4 +82,15 @@
             <priority>0.8</priority>
         </url>
     @endforeach
+
+    {{-- Collection pages an admin composed. A page switched to noindex asks to
+         be left out, so it never reaches this list. --}}
+    @foreach ($collections as $collection)
+        <url>
+            <loc>{{ route('collection', $collection) }}</loc>
+            <lastmod>{{ $collection->updated_at->toAtomString() }}</lastmod>
+            <changefreq>weekly</changefreq>
+            <priority>0.7</priority>
+        </url>
+    @endforeach
 </urlset>

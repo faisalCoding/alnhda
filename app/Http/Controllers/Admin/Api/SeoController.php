@@ -9,12 +9,10 @@ use App\Http\Requests\Admin\UpdateSeoRecordRequest;
 use App\Http\Requests\Admin\UploadFaviconRequest;
 use App\Http\Requests\Admin\UploadSeoImageRequest;
 use App\Models\AppSettings;
-use App\Models\Article;
-use App\Models\Project;
-use App\Models\Properties;
 use App\Models\SeoMeta;
 use App\Models\SeoPage;
 use App\Services\ImageService;
+use App\Services\LinkTargets;
 use App\Services\SeoPageDefaults;
 use App\Services\SeoRecordDefaults;
 use Illuminate\Database\Eloquent\Model;
@@ -28,15 +26,13 @@ use Illuminate\Http\Request;
 class SeoController extends Controller
 {
     /**
-     * Record types an override may be attached to.
+     * Record types an override may be attached to — the same registry the rest
+     * of the site links through, so a record can never be linkable here and
+     * unknown there.
      *
      * @var array<string, class-string<Model>>
      */
-    private const TYPES = [
-        'project' => Project::class,
-        'article' => Article::class,
-        'properties' => Properties::class,
-    ];
+    private const TYPES = LinkTargets::TYPES;
 
     public function __construct(
         private readonly SeoRecordDefaults $recordDefaults,
@@ -131,9 +127,13 @@ class SeoController extends Controller
         $search = trim((string) $request->query('search', ''));
 
         $records = $model::query()
-            ->with(['seoMeta', ...($type === 'properties' ? ['project', 'propertiesImages'] : [])])
+            ->with(['seoMeta', ...match ($type) {
+                'properties' => ['project', 'propertiesImages'],
+                'collection' => ['items.item'],
+                default => [],
+            }])
             ->when($search !== '', fn ($query) => $query->where(
-                $type === 'article' ? 'title' : 'name',
+                self::nameColumnFor($type),
                 'like',
                 '%'.$search.'%'
             ))
@@ -222,8 +222,8 @@ class SeoController extends Controller
         return [
             'type' => $type,
             'id' => $record->getKey(),
-            'name' => $type === 'article' ? $record->title : $record->name,
-            'url' => route($type === 'properties' ? 'properties' : $type, $record),
+            'name' => LinkTargets::nameFor($record),
+            'url' => LinkTargets::urlFor($record),
             'title' => $meta?->title,
             'description' => $meta?->description,
             'image_path' => $meta?->image_path,
@@ -235,6 +235,14 @@ class SeoController extends Controller
                 'image_url' => $auto['image'],
             ],
         ];
+    }
+
+    /**
+     * Records name themselves in one of two columns.
+     */
+    private static function nameColumnFor(string $type): string
+    {
+        return in_array($type, ['article', 'collection'], true) ? 'title' : 'name';
     }
 
     private function imageUrl(?string $path): ?string

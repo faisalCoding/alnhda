@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\Api\AdvertisingLicenceController;
 use App\Http\Controllers\Admin\Api\ArticleController;
 use App\Http\Controllers\Admin\Api\ArticleFileController;
 use App\Http\Controllers\Admin\Api\BacklinkController;
+use App\Http\Controllers\Admin\Api\CollectionPageController;
 use App\Http\Controllers\Admin\Api\DashboardController;
 use App\Http\Controllers\Admin\Api\LeadController;
 use App\Http\Controllers\Admin\Api\MarketingChecklistController;
@@ -43,6 +44,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::view('dashboard', 'admin.dashboard')->name('dashboard');
     Route::view('projects-dashboard', 'admin.projects')->name('projects-dashboard');
     Route::view('articles-dashboard', 'admin.articles')->name('articles-dashboard');
+    Route::view('collections-dashboard', 'admin.collections')->name('collections-dashboard');
     Route::view('visitors-dashboard', 'admin.visitors')->name('visitors-dashboard');
     Route::view('leads-dashboard', 'admin.leads')->name('leads-dashboard');
     Route::view('whatsapp-dashboard', 'admin.whatsapp')->name('whatsapp-dashboard');
@@ -72,6 +74,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('projects', [ProjectController::class, 'index'])->name('projects.index');
         Route::get('properties', [PropertyController::class, 'index'])->name('properties.index');
         Route::get('articles', [ArticleController::class, 'index'])->name('articles.index');
+        Route::get('collections', [CollectionPageController::class, 'index'])->name('collections.index');
         Route::get('visitors', [VisitorController::class, 'index'])->name('visitors.index');
         Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
 
@@ -104,6 +107,10 @@ Route::prefix('api')->name('panel.api.')->group(function () {
             Route::post('articles', [ArticleController::class, 'store'])->name('articles.store');
             Route::put('articles/{article}', [ArticleController::class, 'update'])->name('articles.update');
             Route::delete('articles/{article}', [ArticleController::class, 'destroy'])->name('articles.destroy');
+
+            Route::post('collections', [CollectionPageController::class, 'store'])->name('collections.store');
+            Route::put('collections/{collectionPage:id}', [CollectionPageController::class, 'update'])->name('collections.update');
+            Route::delete('collections/{collectionPage:id}', [CollectionPageController::class, 'destroy'])->name('collections.destroy');
 
             Route::post('leads', [LeadController::class, 'store'])->name('leads.store');
             Route::put('leads/{lead}', [LeadController::class, 'update'])->name('leads.update');

@@ -49,6 +49,16 @@
                         <p class="text-xs text-zinc-400"
                             x-text="article.created_at ? new Date(article.created_at).toLocaleDateString('ar-SA') : 'لم يُزامن بعد'"></p>
 
+                        <template x-if="ctaSummary(article)">
+                            <span class="inline-flex w-fit items-center gap-1 rounded-lg bg-primary-500/10 px-2 py-1 text-[11px] font-bold text-primary-600 dark:text-primary-300">
+                                <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757" />
+                                </svg>
+                                <span x-text="ctaSummary(article)"></span>
+                            </span>
+                        </template>
+
                         <div class="mt-auto flex items-center gap-2 pt-2">
                             <button type="button" @click="openEdit(article)"
                                 class="flex-1 rounded-xl bg-zinc-100 px-3 py-2 text-xs font-bold hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700">
@@ -108,6 +118,41 @@
 
                         <textarea x-ref="contentArea" x-model="form.content" rows="14"
                             class="{{ $input }} font-mono leading-relaxed" placeholder="اكتب محتوى المقال هنا…"></textarea>
+                    </div>
+
+                    {{-- Article button --}}
+                    <div class="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+                        <h3 class="mb-1 text-sm font-extrabold">زر في نهاية المقال</h3>
+                        <p class="mb-3 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                            اختياري — يفتح مشروعًا أو وحدة أو مقالًا آخر. اتركه «بدون زر» ولن يظهر شيء للقارئ.
+                        </p>
+
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <div>
+                                <label class="{{ $label }}">الوجهة</label>
+                                <select x-model="form.cta_target" class="{{ $input }}">
+                                    <option value="">بدون زر</option>
+                                    <template x-for="group in ctaOptions" :key="group.type">
+                                        <optgroup :label="group.label">
+                                            <template x-for="option in group.options" :key="option.value">
+                                                <option :value="option.value" x-text="option.label"></option>
+                                            </template>
+                                        </optgroup>
+                                    </template>
+                                </select>
+                                <p class="mt-1 text-xs text-zinc-400">
+                                    لا تظهر هنا السجلات التي لم تُزامن بعد — زامنها أولًا ثم اربطها.
+                                </p>
+                            </div>
+
+                            <div>
+                                <label class="{{ $label }}">نص الزر</label>
+                                <input type="text" x-model="form.cta_label" :disabled="!form.cta_target"
+                                    class="{{ $input }} disabled:opacity-50" placeholder="تصفّح المشروع…">
+                                <p class="{{ $error }}" x-show="errors.cta_label" x-text="errors.cta_label"></p>
+                                <p class="mt-1 text-xs text-zinc-400">يُستخدم اسم الوجهة إذا تُرك فارغًا.</p>
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Cover image --}}

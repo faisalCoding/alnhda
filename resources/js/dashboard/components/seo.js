@@ -8,6 +8,7 @@ const RECORD_TYPES = [
     { key: 'project', label: 'المشاريع' },
     { key: 'article', label: 'المقالات' },
     { key: 'properties', label: 'الوحدات' },
+    { key: 'collection', label: 'الصفحات المجمّعة' },
 ];
 
 const emptyForm = () => ({

@@ -139,8 +139,24 @@
                 </div>
             </div>
 
+            {{-- Author-chosen destination: a project, a unit or another article --}}
+            @if ($article->hasCta())
+                <div class="mt-12 flex justify-center">
+                    <a href="{{ $article->ctaUrl() }}"
+                        class="group inline-flex items-center gap-3 bg-[#498e49] hover:bg-[#3d773d] text-white px-10 py-4 rounded-xl font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-xl">
+                        {{ $article->ctaLabel() }}
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5 transform group-hover:-translate-x-1 transition-transform" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </a>
+                </div>
+            @endif
+
             {{-- Footer / Navigation --}}
-            <div class="mt-12 flex justify-center">
+            <div class="mt-8 flex justify-center">
                 <a href="{{ route('articles') }}"
                     class="group inline-flex items-center gap-2 bg-white border-2 border-[#498e49] text-[#498e49] hover:bg-[#498e49] hover:text-white px-8 py-3 rounded-xl font-bold transition-all duration-300 shadow-sm hover:shadow-lg">
                     <svg xmlns="http://www.w3.org/2000/svg"
