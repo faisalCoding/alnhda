@@ -148,7 +148,7 @@
     <div class="flex justify-center mt-12">
         <a href="{{ route('projects') }}" onclick="event.preventDefault(); navigateTo('{{ route('projects') }}');"
             class="group bg-white text-[#498E49] border border-[#498E49] px-8 py-3 rounded-full font-bold hover:bg-[#498E49] hover:text-white transition-all duration-300 shadow-sm hover:shadow-md flex items-center gap-2">
-            <span>عرض جميع المشاريع</span>
+            <span>عرض جميع مشاريعنا في جدة</span>
             <svg class="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" fill="none"
                 stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

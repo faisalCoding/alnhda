@@ -29,5 +29,10 @@ export const VISITOR_FORM_LABELS = {
     header_villa: 'طلبات الفلل',
     header_apartment: 'طلبات الشقق',
     header_floor: 'طلبات الأدوار',
+    hero_client_villa: 'الواجهة — عميل يبحث عن فيلا',
+    hero_client_floor: 'الواجهة — عميل يبحث عن دور',
+    hero_client_apartment: 'الواجهة — عميل يبحث عن شقة',
+    hero_marketer: 'الواجهة — مسوّق عقاري',
+    hero_partnership: 'الواجهة — فرصة شراكة',
     newsletter: 'النشرة البريدية',
 };

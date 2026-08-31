@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Livewire\HeaderNavBar;
 use Illuminate\Routing\Route;
 
 /**
@@ -79,10 +80,36 @@ class SiteSchema
                 '@type' => 'City',
                 'name' => 'جدة',
             ],
+            'hasMap' => HeaderNavBar::OFFICE_MAP_URL,
+            'geo' => $this->officeCoordinates(),
             'sameAs' => [
                 'https://www.youtube.com/@KayanAlnhda',
                 'https://www.instagram.com/nahda_realestate/',
             ],
+        ];
+    }
+
+    /**
+     * Where the office actually is, read out of the map link the site already
+     * publishes rather than typed a second time — two copies of a coordinate
+     * are two coordinates the moment one of them is corrected.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function officeCoordinates(): ?array
+    {
+        parse_str((string) parse_url(HeaderNavBar::OFFICE_MAP_URL, PHP_URL_QUERY), $query);
+
+        $destination = $query['destination'] ?? null;
+
+        if (! is_string($destination) || ! preg_match('/^(-?\d+\.?\d*),(-?\d+\.?\d*)$/', $destination, $matches)) {
+            return null;
+        }
+
+        return [
+            '@type' => 'GeoCoordinates',
+            'latitude' => (float) $matches[1],
+            'longitude' => (float) $matches[2],
         ];
     }
 

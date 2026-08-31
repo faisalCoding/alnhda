@@ -91,6 +91,7 @@ Route::domain(config('app.domain'))->group(function () {
                 'properties' => \App\Models\Properties::all(),
                 'articles' => Article::latest()->get(),
                 'collections' => CollectionPage::indexable()->latest()->get(),
+                'facts' => app(\App\Services\HomeFacts::class),
             ])
             ->header('Content-Type', 'text/plain; charset=utf-8');
     })->name('llms');

@@ -94,6 +94,21 @@ class ImageService
         return $path;
     }
 
+    /**
+     * The widest a hero background is ever shown. Larger uploads are scaled
+     * down rather than served whole: this is the first image on the site and
+     * every visitor pays for its bytes before seeing anything.
+     */
+    public const HERO_WIDTH = 2000;
+
+    /**
+     * Prepares a photograph for the front of the site.
+     */
+    public static function uploadHeroImage($file): string
+    {
+        return self::uploadAndProcess($file, 'hero', self::HERO_WIDTH, null, 'webp', 82);
+    }
+
     public static function uploadAndProcess($file, $folder = 'uploads', $width = null, $height = null, $format = 'webp', $quality = 87)
     {
         // Generate a unique filename

@@ -22,7 +22,7 @@
 
                 <div>
                     <a href="{{ route('about-us') }}" class="fill-btn inline-flex items-center gap-2 group">
-                        <span>تعرف على المزيد</span>
+                        <span>تعرّف على شركة كيان النهضة العقارية</span>
                         <svg xmlns="http://www.w3.org/2000/svg"
                             class="h-5 w-5 transform transition-transform group-hover:-translate-x-1" fill="none"
                             viewBox="0 0 24 24" stroke="currentColor">

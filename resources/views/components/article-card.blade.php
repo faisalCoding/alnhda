@@ -1,44 +1,51 @@
-@props(['article'])
+@props(['article', 'eager' => false])
 
-<div x-data class="w-full max-w-2xl">
-    @php
-        $image = $article->image_article ?? 'img/article.webp';
-        $imageUrl = filter_var($image, FILTER_VALIDATE_URL)
-            ? $image
-            : (Str::contains($image, ['articles/', 'uploads/', 'blogs/'])
-                ? asset('storage/' . $image)
-                : asset(str_replace('\\', '', $image)));
-    @endphp
+@php
+    $image = $article->image_article ?? 'img/article.webp';
+    $imageUrl = filter_var($image, FILTER_VALIDATE_URL)
+        ? $image
+        : (Str::contains($image, ['articles/', 'uploads/', 'blogs/'])
+            ? asset('storage/' . $image)
+            : asset(str_replace('\\', '', $image)));
+    $url = route('article', $article->id);
+@endphp
 
-    <a href="{{ route('article', $article->id) }}"
-        x-on:click.prevent="navigateTo('{{ route('article', $article->id) }}')"
-        class="group flex flex-row-reverse h-36 bg-white shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer border border-transparent hover:border-[#498e49]/30"
-        dir="rtl">
+<a href="{{ $url }}" x-data x-on:click.prevent="navigateTo('{{ $url }}')"
+    class="group flex h-full flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:border-[#498e49]/30 hover:shadow-xl"
+    dir="rtl">
 
-        {{-- Content — left three quarters --}}
-        <div class="flex flex-col justify-between px-5 py-4 grow text-right">
-            <h3
-                class="text-xl font-bold text-gray-800 leading-snug group-hover:text-[#498e49] transition-colors line-clamp-3">
-                {{ $article->title }}
-            </h3>
+    {{-- The photograph is the reason someone stops at a card, so it is shown
+         rather than greyed out behind a colour wash. --}}
+    <div class="relative aspect-video overflow-hidden bg-gray-100">
+        <img src="{{ $imageUrl }}" alt="{{ $article->title }}"
+            class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onerror="this.src='{{ asset('img/article.webp') }}'" width="800" height="450"
+            loading="{{ $eager ? 'eager' : 'lazy' }}" @if ($eager) fetchpriority="high" @endif>
+    </div>
 
-            <div class="flex items-center gap-2 text-gray-400 text-xs font-medium border-t border-gray-100 pt-3 mt-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#498e49]" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <span dir="ltr">{{ $article->created_at->format('Y-m-d') }}</span>
-            </div>
+    <div class="flex flex-1 flex-col gap-3 p-6 text-right">
+        <div class="flex items-center gap-2 text-xs font-medium text-gray-400">
+            <svg class="h-4 w-4 text-[#498e49]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+            </svg>
+            <span>{{ $article->created_at->translatedFormat('d F Y') }}</span>
+            <span class="text-gray-300">•</span>
+            <span>{{ $article->readingTimeLabel() }}</span>
         </div>
-        {{-- Image — right quarter --}}
-        <div class="relative group-hover:w-1/4 w-1/12 duration-500 shrink-0 overflow-hidden">
-            <img src="{{ $imageUrl }}"
-                class="absolute group-hover:blur-[0] blur-sm duration-500 inset-0 w-full h-full object-cover grayscale"
-                alt="{{ $article->title }}" onerror="this.src='{{ asset('img/article.webp') }}'"
-                loading="lazy" width="600" height="400">
-            {{-- Green overlay --}}
-            <div class="absolute inset-0 bg-[#498e49]/70 mix-blend-multiply"></div>
-        </div>
-    </a>
-</div>
+
+        <h3 class="line-clamp-2 text-xl font-bold leading-snug text-gray-800 transition-colors group-hover:text-[#498e49]">
+            {{ $article->title }}
+        </h3>
+
+        <p class="line-clamp-3 text-sm font-light leading-relaxed text-gray-500">{{ $article->excerpt() }}</p>
+
+        <span class="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-bold text-[#498e49]">
+            اقرأ المقال
+            <svg class="h-4 w-4 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24"
+                stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+        </span>
+    </div>
+</a>

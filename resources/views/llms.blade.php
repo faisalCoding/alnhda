@@ -56,6 +56,25 @@
 @endforeach
 @endif
 
+@if ($facts->guarantees())
+## الضمانات
+
+الضمانات المكتوبة التي تُسلَّم مع وحدات الشركة:
+@foreach ($facts->guarantees() as $guarantee)
+- {{ $guarantee }}
+@endforeach
+
+تختلف الضمانات من مشروع إلى آخر، وضمان كل مشروع مذكور في صفحته.
+@endif
+
+## أسئلة وأجوبة
+@foreach ($facts->faq() as $entry)
+
+### {{ $entry['question'] }}
+
+{{ $entry['answer'] }}
+@endforeach
+
 @if ($collections->isNotEmpty())
 ## صفحات مجمّعة
 

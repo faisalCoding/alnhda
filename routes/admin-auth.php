@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\Api\ArticleFileController;
 use App\Http\Controllers\Admin\Api\BacklinkController;
 use App\Http\Controllers\Admin\Api\CollectionPageController;
 use App\Http\Controllers\Admin\Api\DashboardController;
+use App\Http\Controllers\Admin\Api\HomeContentController;
 use App\Http\Controllers\Admin\Api\LeadController;
 use App\Http\Controllers\Admin\Api\MarketingChecklistController;
 use App\Http\Controllers\Admin\Api\MarketingMethodController;
@@ -45,6 +46,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::view('projects-dashboard', 'admin.projects')->name('projects-dashboard');
     Route::view('articles-dashboard', 'admin.articles')->name('articles-dashboard');
     Route::view('collections-dashboard', 'admin.collections')->name('collections-dashboard');
+    Route::view('home-content', 'admin.home-content')->name('home-content');
     Route::view('visitors-dashboard', 'admin.visitors')->name('visitors-dashboard');
     Route::view('leads-dashboard', 'admin.leads')->name('leads-dashboard');
     Route::view('whatsapp-dashboard', 'admin.whatsapp')->name('whatsapp-dashboard');
@@ -75,6 +77,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('properties', [PropertyController::class, 'index'])->name('properties.index');
         Route::get('articles', [ArticleController::class, 'index'])->name('articles.index');
         Route::get('collections', [CollectionPageController::class, 'index'])->name('collections.index');
+        Route::get('home-content', [HomeContentController::class, 'index'])->name('home-content.index');
         Route::get('visitors', [VisitorController::class, 'index'])->name('visitors.index');
         Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
 
@@ -107,6 +110,15 @@ Route::prefix('api')->name('panel.api.')->group(function () {
             Route::post('articles', [ArticleController::class, 'store'])->name('articles.store');
             Route::put('articles/{article}', [ArticleController::class, 'update'])->name('articles.update');
             Route::delete('articles/{article}', [ArticleController::class, 'destroy'])->name('articles.destroy');
+
+            Route::put('home-content', [HomeContentController::class, 'update'])->name('home-content.update');
+            Route::post('home-content/hero-image', [HomeContentController::class, 'uploadHeroImage'])->name('home-content.hero-image.store');
+            Route::delete('home-content/hero-image', [HomeContentController::class, 'destroyHeroImage'])->name('home-content.hero-image.destroy');
+            Route::post('home-content/faq', [HomeContentController::class, 'storeFaq'])->name('home-content.faq.store');
+            Route::post('home-content/faq/import', [HomeContentController::class, 'importFaq'])->name('home-content.faq.import');
+            Route::post('home-content/faq/reorder', [HomeContentController::class, 'reorderFaq'])->name('home-content.faq.reorder');
+            Route::put('home-content/faq/{faqEntry}', [HomeContentController::class, 'updateFaq'])->name('home-content.faq.update');
+            Route::delete('home-content/faq/{faqEntry}', [HomeContentController::class, 'destroyFaq'])->name('home-content.faq.destroy');
 
             Route::post('collections', [CollectionPageController::class, 'store'])->name('collections.store');
             Route::put('collections/{collectionPage:id}', [CollectionPageController::class, 'update'])->name('collections.update');

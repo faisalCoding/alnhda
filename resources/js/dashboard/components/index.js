@@ -3,6 +3,7 @@ import advertisingLicencesPage from './advertisingLicences';
 import articlesPage from './articles';
 import backlinksPage from './backlinks';
 import collectionsPage from './collections';
+import homeContentPage from './homeContent';
 import leadsPage from './leads';
 import marketingToolsPage from './marketingTools';
 import overviewPage from './overview';
@@ -20,6 +21,7 @@ export default function registerComponents(Alpine) {
     Alpine.data('projectsPage', projectsPage);
     Alpine.data('articlesPage', articlesPage);
     Alpine.data('collectionsPage', collectionsPage);
+    Alpine.data('homeContentPage', homeContentPage);
     Alpine.data('visitorsPage', visitorsPage);
     Alpine.data('leadsPage', leadsPage);
     Alpine.data('accountsPage', accountsPage);

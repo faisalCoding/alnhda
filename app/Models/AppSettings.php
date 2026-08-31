@@ -18,6 +18,14 @@ class AppSettings extends Model
         'seo_default_image_path',
         'favicon_path',
         'apple_touch_icon_path',
+        'hero_eyebrow',
+        'hero_title',
+        'hero_subtitle',
+        'hero_primary_label',
+        'hero_secondary_label',
+        'home_guarantees',
+        'hero_image_path',
+        'hidden_home_sections',
     ];
 
     /**
@@ -27,6 +35,8 @@ class AppSettings extends Model
     {
         return [
             'weekly_reports_enabled' => 'boolean',
+            'home_guarantees' => 'array',
+            'hidden_home_sections' => 'array',
         ];
     }
 
