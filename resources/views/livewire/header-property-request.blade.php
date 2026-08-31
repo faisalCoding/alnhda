@@ -88,7 +88,7 @@
 
                     {{-- Logo --}}
                     <div class="absolute bottom-4 left-6 opacity-20">
-                        <img src="/img/alnhdafooterlogo.webp" alt="كيان النهضة" class="h-10 brightness-[100]">
+                        <img src="/img/alnhda-logo.webp" alt="كيان النهضة" class="h-10 brightness-[100]">
                     </div>
                 </div>
 

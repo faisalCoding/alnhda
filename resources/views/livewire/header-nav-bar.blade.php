@@ -5,8 +5,8 @@
 
         {{-- Logo (right side in RTL) --}}
         <a href="{{ route('welcome') }}" class="shrink-0" wire:navigate aria-label="الصفحة الرئيسية">
-            <img src="/img/alnhdafooterlogo.webp" class="h-10 md:h-12 w-auto object-contain"
-                alt="شعار كيان النهضة العقارية" width="800" height="346">
+            <img src="/img/alnhda-logo.webp" class="h-10 md:h-12 w-auto object-contain"
+                alt="شعار كيان النهضة العقارية" width="408" height="182">
         </a>
 
         {{-- Desktop Menu --}}
@@ -68,8 +68,8 @@
             style="display: none;">
 
             <div class="flex items-center justify-between border-b border-zinc-100 px-4 py-4">
-                <img src="/img/alnhdafooterlogo.webp" class="h-9 w-auto object-contain"
-                    alt="شعار كيان النهضة العقارية" width="800" height="346">
+                <img src="/img/alnhda-logo.webp" class="h-9 w-auto object-contain"
+                    alt="شعار كيان النهضة العقارية" width="408" height="182">
                 <button x-on:click="open = false" type="button" aria-label="إغلاق القائمة"
                     class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-[#498E49]">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"

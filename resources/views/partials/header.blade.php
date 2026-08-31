@@ -9,9 +9,9 @@
 
         {{-- Logo --}}
         <div class="mb-7 transform hover:scale-105 transition-transform duration-500">
-            <img src="/img/alnhdafooterlogo.webp" alt="النهضة العقارية"
+            <img src="/img/alnhda-logo.webp" alt="النهضة العقارية"
                 class="w-36 md:w-56 drop-shadow-2xl [filter:brightness(10)]"
-                width="800" height="346">
+                width="408" height="182">
         </div>
 
         {{-- Headings --}}
