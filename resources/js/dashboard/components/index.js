@@ -10,6 +10,7 @@ import overviewPage from './overview';
 import projectsPage from './projects';
 import seoPage from './seo';
 import subscriptionsPage from './subscriptions';
+import trafficPage from './traffic';
 import usefulLinksPage from './usefulLinks';
 import visitorsPage from './visitors';
 import weeklyTasksPage from './weeklyTasks';
@@ -22,6 +23,7 @@ export default function registerComponents(Alpine) {
     Alpine.data('articlesPage', articlesPage);
     Alpine.data('collectionsPage', collectionsPage);
     Alpine.data('homeContentPage', homeContentPage);
+    Alpine.data('trafficPage', trafficPage);
     Alpine.data('visitorsPage', visitorsPage);
     Alpine.data('leadsPage', leadsPage);
     Alpine.data('accountsPage', accountsPage);

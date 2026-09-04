@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\Api\SeoController;
 use App\Http\Controllers\Admin\Api\SessionController;
 use App\Http\Controllers\Admin\Api\SubscriptionController;
 use App\Http\Controllers\Admin\Api\TaskTemplateController;
+use App\Http\Controllers\Admin\Api\TrafficController;
 use App\Http\Controllers\Admin\Api\UsefulLinkController;
 use App\Http\Controllers\Admin\Api\VisitorController;
 use App\Http\Controllers\Admin\Api\WeeklyTaskController;
@@ -47,6 +48,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::view('articles-dashboard', 'admin.articles')->name('articles-dashboard');
     Route::view('collections-dashboard', 'admin.collections')->name('collections-dashboard');
     Route::view('home-content', 'admin.home-content')->name('home-content');
+    Route::view('traffic', 'admin.traffic')->name('traffic');
     Route::view('visitors-dashboard', 'admin.visitors')->name('visitors-dashboard');
     Route::view('leads-dashboard', 'admin.leads')->name('leads-dashboard');
     Route::view('whatsapp-dashboard', 'admin.whatsapp')->name('whatsapp-dashboard');
@@ -78,6 +80,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('articles', [ArticleController::class, 'index'])->name('articles.index');
         Route::get('collections', [CollectionPageController::class, 'index'])->name('collections.index');
         Route::get('home-content', [HomeContentController::class, 'index'])->name('home-content.index');
+        Route::get('traffic', [TrafficController::class, 'index'])->name('traffic.index');
         Route::get('visitors', [VisitorController::class, 'index'])->name('visitors.index');
         Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
 

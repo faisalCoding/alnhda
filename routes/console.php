@@ -24,3 +24,11 @@ Schedule::command('whatsapp:sync-acks')->everyFiveMinutes()->withoutOverlapping(
 Schedule::command('weekly-tasks:generate')->weeklyOn(CarbonInterface::SATURDAY, '07:00')->withoutOverlapping();
 Schedule::command('weekly-tasks:report opening')->weeklyOn(CarbonInterface::SATURDAY, '08:00')->withoutOverlapping();
 Schedule::command('weekly-tasks:report closing')->weeklyOn(CarbonInterface::THURSDAY, '16:00')->withoutOverlapping();
+
+/**
+ * Traffic is read, never counted: Google already recorded the visits and Apache
+ * already wrote the log, so both run once at night and cost a request nothing.
+ * Staggered so the two never overlap on a server with little CPU to spare.
+ */
+Schedule::command('analytics:parse-log')->dailyAt('03:20')->withoutOverlapping();
+Schedule::command('analytics:pull')->dailyAt('03:40')->withoutOverlapping();

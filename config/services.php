@@ -36,6 +36,21 @@ return [
         'callback_url' => env('WHATSAPP_CALLBACK_URL', ''),
     ],
 
+    /**
+     * Reading the traffic the site already collects, rather than counting it a
+     * second time on the server.
+     */
+    'ga4' => [
+        'property_id' => env('GA4_PROPERTY_ID'),
+        // Absolute path to the Google service-account key file. Kept outside
+        // the repository: it is a credential, not configuration.
+        'credentials' => env('GA4_CREDENTIALS_PATH'),
+    ],
+
+    'access_log' => [
+        'path' => env('ACCESS_LOG_PATH', '/var/log/apache2/access.log'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
