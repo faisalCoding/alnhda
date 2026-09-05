@@ -51,7 +51,9 @@ class AccessLogReader
      */
     public function summarise(string $path, Carbon $date): ?array
     {
-        $handle = @fopen($path, 'r');
+        // Rotated days arrive gzipped. gzopen reads a plain file too, so one
+        // path covers both and the caller never has to care which it holds.
+        $handle = @gzopen($path, 'r');
 
         if ($handle === false) {
             return null;
@@ -68,7 +70,7 @@ class AccessLogReader
         $botNames = [];
         $missing = [];
 
-        while (($line = fgets($handle)) !== false) {
+        while (($line = gzgets($handle)) !== false) {
             // Cheap rejection before the regex: most lines belong to other days.
             if (! str_contains($line, $stamp)) {
                 continue;
@@ -107,7 +109,7 @@ class AccessLogReader
             }
         }
 
-        fclose($handle);
+        gzclose($handle);
 
         if ($requests === 0) {
             return null;

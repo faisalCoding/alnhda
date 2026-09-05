@@ -181,3 +181,56 @@ it('writes nothing and complains quietly when the log is missing', function () {
 
     expect(App\Models\ServerLogDay::query()->count())->toBe(0);
 })->group('database');
+
+it('reads a rotated day straight out of the gzipped archive', function () {
+    $plain = writeLog([logLine('1.1.1.1', '20/Aug/2026', '/projects', 200, 700, HUMAN)]);
+    $gz = $plain.'.gz';
+    file_put_contents('compress.zlib://'.$gz, file_get_contents($plain));
+    unlink($plain);
+
+    $summary = app(AccessLogReader::class)->summarise($gz, Carbon::parse('2026-08-20'));
+
+    expect($summary['requests'])->toBe(1)
+        ->and($summary['top_paths'][0]['label'])->toBe('/projects');
+
+    unlink($gz);
+});
+
+it('walks back through the archive when asked to backfill', function () {
+    $base = tempnam(sys_get_temp_dir(), 'backfill').'.log';
+
+    // Today's file, yesterday's rotation, and two gzipped days behind it.
+    file_put_contents($base, logLine('1.1.1.1', '04/Sep/2026', '/', 200, 100, HUMAN)."\n");
+    file_put_contents($base.'.1', logLine('2.2.2.2', '03/Sep/2026', '/', 200, 100, HUMAN)."\n");
+    file_put_contents('compress.zlib://'.$base.'.2.gz', logLine('3.3.3.3', '02/Sep/2026', '/', 200, 100, HUMAN)."\n");
+    file_put_contents('compress.zlib://'.$base.'.10.gz', logLine('4.4.4.4', '01/Sep/2026', '/', 200, 100, HUMAN)."\n");
+
+    config(['services.access_log.path' => $base]);
+    Carbon::setTestNow('2026-09-05 06:00:00');
+
+    $this->artisan('analytics:parse-log', ['--backfill' => 5])->assertSuccessful();
+
+    expect(App\Models\ServerLogDay::query()->count())->toBe(4)
+        ->and(App\Models\ServerLogDay::query()->orderBy('date')->pluck('date')->map->toDateString()->all())
+        ->toBe(['2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04']);
+
+    Carbon::setTestNow();
+    array_map('unlink', [$base, $base.'.1', $base.'.2.gz', $base.'.10.gz']);
+})->group('database');
+
+it('reads the archive in the order logrotate numbers it, not alphabetically', function () {
+    $base = tempnam(sys_get_temp_dir(), 'order').'.log';
+
+    // .10.gz must not be read before .2.gz, which is what plain text sorting does.
+    file_put_contents($base, '');
+    file_put_contents('compress.zlib://'.$base.'.2.gz', logLine('1.1.1.1', '03/Sep/2026', '/two', 200, 100, HUMAN)."\n");
+    file_put_contents('compress.zlib://'.$base.'.10.gz', logLine('2.2.2.2', '03/Sep/2026', '/ten', 200, 100, HUMAN)."\n");
+
+    config(['services.access_log.path' => $base]);
+
+    $this->artisan('analytics:parse-log', ['--date' => '2026-09-03'])->assertSuccessful();
+
+    expect(App\Models\ServerLogDay::query()->first()->top_paths[0]['label'])->toBe('/two');
+
+    array_map('unlink', [$base, $base.'.2.gz', $base.'.10.gz']);
+})->group('database');
