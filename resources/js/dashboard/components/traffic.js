@@ -1,4 +1,4 @@
-import { request } from '../api';
+import { request } from '../api.js';
 
 const NUMBER = new Intl.NumberFormat('ar-SA');
 
@@ -32,6 +32,18 @@ export default function trafficPage() {
         async setRange(days) {
             this.days = days;
             await this.load();
+        },
+
+        /**
+         * The header sits outside the block that waits for the data, so this is
+         * read while `data` is still null on every first paint. Formatting it
+         * here keeps that null out of the markup, where Alpine evaluates an
+         * expression even when the element it belongs to is hidden.
+         */
+        get lastUpdated() {
+            const pulledAt = this.data?.google?.pulled_at;
+
+            return pulledAt ? new Date(pulledAt).toLocaleString('ar-SA') : '';
         },
 
         number(value) {

@@ -22,8 +22,8 @@
                 </template>
             </div>
 
-            <p class="text-xs text-zinc-400" x-show="data?.google?.pulled_at" x-cloak
-                x-text="'آخر تحديث: ' + new Date(data.google.pulled_at).toLocaleString('ar-SA')"></p>
+            <p class="text-xs text-zinc-400" x-show="lastUpdated" x-cloak
+                x-text="'آخر تحديث: ' + lastUpdated"></p>
         </div>
 
         <p x-show="error" x-cloak class="rounded-xl bg-red-500/10 px-4 py-3 text-sm font-bold text-red-600" x-text="error"></p>
