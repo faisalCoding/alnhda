@@ -234,3 +234,12 @@ it('reads the archive in the order logrotate numbers it, not alphabetically', fu
 
     array_map('unlink', [$base, $base.'.2.gz', $base.'.10.gz']);
 })->group('database');
+
+it('names an unknown crawler after itself, not after the word that matched it', function (string $agent, string $expected) {
+    expect(app(AccessLogReader::class)->botName($agent))->toBe($expected);
+})->with([
+    'unknown bot' => ['Mozilla/5.0 (compatible; Barkrowler-Bot/2.1; +http://example.com)', 'Barkrowler-Bot'],
+    'named crawler' => ['SomeCrawler/1.4 (+http://example.com/crawler)', 'Somecrawler'],
+    'bare tool' => ['curl/8.4.0', 'Curl'],
+    'known one still wins' => ['Mozilla/5.0 (compatible; SemrushBot/7~bl; +http://www.semrush.com/bot.html)', 'SemrushBot'],
+]);

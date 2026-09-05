@@ -178,7 +178,14 @@ class AccessLogReader
             }
         }
 
-        return Str::title($marker);
+        // Not one we know: take the crawler's own name out of the agent rather
+        // than reporting the word that matched. A list that says «Bot» three
+        // hundred times names nothing.
+        if (preg_match('/([a-z0-9][a-z0-9._-]*(?:bot|crawler|spider)[a-z0-9._-]*)/', $agent, $found)) {
+            return Str::title(trim($found[1], '._-'));
+        }
+
+        return Str::title(rtrim($marker, '/'));
     }
 
     private function isIgnored(string $path): bool
