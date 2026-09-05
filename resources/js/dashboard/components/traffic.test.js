@@ -88,3 +88,24 @@ test('scales a ranked row against the leader of its own list', () => {
     assert.equal(page.share(list[1], list), '50%');
     assert.equal(page.share(list[2], list), '0%');
 });
+
+test('says nothing about a running day it has no timestamp for', () => {
+    const page = trafficPage();
+    page.data = { today: { has_data: false, updated_at: null } };
+
+    assert.equal(page.todayUpdated, '');
+});
+
+test('reads the refresh time as a phrase, not a clock', () => {
+    const page = trafficPage();
+    const minutesAgo = (n) => new Date(Date.now() - n * 60000).toISOString();
+
+    page.data = { today: { updated_at: minutesAgo(0) } };
+    assert.equal(page.todayUpdated, 'محدّث الآن');
+
+    page.data = { today: { updated_at: minutesAgo(7) } };
+    assert.ok(page.todayUpdated.includes('دقيقة'));
+
+    page.data = { today: { updated_at: minutesAgo(150) } };
+    assert.ok(page.todayUpdated.includes('ساعة'), 'past an hour it should not count in minutes');
+});

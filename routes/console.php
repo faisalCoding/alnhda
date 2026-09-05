@@ -32,3 +32,10 @@ Schedule::command('weekly-tasks:report closing')->weeklyOn(CarbonInterface::THUR
  */
 Schedule::command('analytics:parse-log')->dailyAt('03:20')->withoutOverlapping();
 Schedule::command('analytics:pull')->dailyAt('03:40')->withoutOverlapping();
+
+/**
+ * The day still running, kept current while people are actually on the site.
+ * One pass over a log that is a few hundred kilobytes and one small report —
+ * and the nightly jobs overwrite whatever this leaves behind once the day ends.
+ */
+Schedule::command('analytics:today')->everyFifteenMinutes()->withoutOverlapping();

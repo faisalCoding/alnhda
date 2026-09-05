@@ -49,6 +49,47 @@
                     </div>
                 </template>
 
+                {{-- The day still running --}}
+                <template x-if="data.today.has_data">
+                    <section class="rounded-2xl border border-primary-500/30 bg-primary-500/5 p-6">
+                        <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h2 class="font-extrabold">اليوم حتى الآن</h2>
+                                <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                                    يوم لم ينتهِ بعد، فهو خارج أرقام الفترة أدناه — تلك أيام مكتملة.
+                                </p>
+                            </div>
+
+                            <span class="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400"
+                                x-show="todayUpdated" x-cloak>
+                                <span class="h-2 w-2 rounded-full bg-primary-500 sync-pulse"></span>
+                                <span x-text="todayUpdated"></span>
+                            </span>
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                            <div>
+                                <p class="text-xs font-bold text-zinc-500">الزوار</p>
+                                <p class="mt-1 text-2xl font-extrabold" x-text="number(data.today.users)"></p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-zinc-500">الجلسات</p>
+                                <p class="mt-1 text-2xl font-extrabold" x-text="number(data.today.sessions)"></p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-zinc-500">مشاهدات الصفحات</p>
+                                <p class="mt-1 text-2xl font-extrabold" x-text="number(data.today.views)"></p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-zinc-500">طلبات الخادم</p>
+                                <p class="mt-1 text-2xl font-extrabold" x-text="number(data.today.requests)"></p>
+                                <p class="mt-0.5 text-[11px] text-zinc-400"
+                                    x-text="number(data.today.human_requests) + ' بشرية · ' + number(data.today.bot_requests) + ' زواحف'"></p>
+                            </div>
+                        </div>
+                    </section>
+                </template>
+
                 {{-- Headline numbers --}}
                 <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     @foreach ([['users', 'الزوار'], ['sessions', 'الجلسات'], ['views', 'مشاهدات الصفحات']] as [$key, $label])

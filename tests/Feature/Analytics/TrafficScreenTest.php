@@ -126,3 +126,67 @@ it('carries the breakdowns the nightly pull stored', function () {
         ->assertJsonPath('data.google.channels.0.value', 30)
         ->assertJsonPath('data.google.cities.0.label', 'Jeddah');
 });
+
+// ---- the day still running -----------------------------------------------
+
+it('reports today apart from the finished days behind it', function () {
+    AnalyticsDay::query()->create(['date' => Carbon::today(), 'users' => 9, 'sessions' => 11, 'views' => 30]);
+    AnalyticsDay::query()->create(['date' => Carbon::yesterday(), 'users' => 40, 'sessions' => 50, 'views' => 120]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(panelUrl('/api/traffic?days=7'))
+        ->assertSuccessful()
+        ->assertJsonPath('data.today.users', 9)
+        ->assertJsonPath('data.today.has_data', true)
+        // A part-day must never be added to a run of whole ones.
+        ->assertJsonPath('data.google.totals.users', 40);
+});
+
+it('says it has nothing for today rather than showing a row of zeroes', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(panelUrl('/api/traffic'))
+        ->assertSuccessful()
+        ->assertJsonPath('data.today.has_data', false)
+        ->assertJsonPath('data.today.updated_at', null);
+});
+
+it('carries the moment today was last refreshed', function () {
+    ServerLogDay::query()->create(['date' => Carbon::today(), 'requests' => 120, 'bot_requests' => 40]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(panelUrl('/api/traffic'))
+        ->assertSuccessful()
+        ->assertJsonPath('data.today.requests', 120)
+        ->assertJsonPath('data.today.human_requests', 80)
+        ->assertJsonPath('data.today.bot_requests', 40)
+        ->assertJsonPath('data.today.date', Carbon::today()->toDateString());
+
+    expect($this->actingAs($this->admin, 'admin')->getJson(panelUrl('/api/traffic'))->json('data.today.updated_at'))
+        ->not->toBeNull();
+});
+
+it('refreshes the running day from the log without waiting for the night', function () {
+    $path = tempnam(sys_get_temp_dir(), 'today').'.log';
+    file_put_contents($path, sprintf(
+        '9.9.9.9 - - [%s:10:00:00 +0300] "GET /projects HTTP/1.1" 200 900 "-" "Mozilla/5.0 (iPhone)"'."\n",
+        Carbon::today()->format('d/M/Y')
+    ));
+
+    config(['services.access_log.path' => $path, 'services.ga4.property_id' => null, 'services.ga4.credentials' => null]);
+
+    $this->artisan('analytics:today')->assertSuccessful();
+
+    expect(ServerLogDay::query()->whereDate('date', Carbon::today())->first())
+        ->requests->toBe(1)
+        ->and(ServerLogDay::query()->count())->toBe(1);
+
+    unlink($path);
+});
+
+it('keeps quiet when there is no log and no analytics to refresh', function () {
+    config(['services.access_log.path' => '/no/such.log', 'services.ga4.property_id' => null, 'services.ga4.credentials' => null]);
+
+    $this->artisan('analytics:today')->assertSuccessful();
+
+    expect(ServerLogDay::query()->count())->toBe(0);
+});

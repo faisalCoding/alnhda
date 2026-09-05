@@ -46,6 +46,33 @@ export default function trafficPage() {
             return pulledAt ? new Date(pulledAt).toLocaleString('ar-SA') : '';
         },
 
+        /**
+         * How long ago the running day was last refreshed. Read as a phrase
+         * rather than a timestamp: nobody reads «14:37» and works out whether
+         * the number in front of them is stale.
+         */
+        get todayUpdated() {
+            const updatedAt = this.data?.today?.updated_at;
+
+            if (!updatedAt) {
+                return '';
+            }
+
+            const minutes = Math.max(0, Math.round((Date.now() - new Date(updatedAt).getTime()) / 60000));
+
+            if (minutes < 1) {
+                return 'محدّث الآن';
+            }
+
+            if (minutes < 60) {
+                return `محدّث قبل ${NUMBER.format(minutes)} دقيقة`;
+            }
+
+            const hours = Math.round(minutes / 60);
+
+            return `محدّث قبل ${NUMBER.format(hours)} ساعة`;
+        },
+
         number(value) {
             return NUMBER.format(value ?? 0);
         },

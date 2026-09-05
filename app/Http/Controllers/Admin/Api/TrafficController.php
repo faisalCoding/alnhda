@@ -52,6 +52,7 @@ class TrafficController extends Controller
 
         return response()->json([
             'data' => [
+                'today' => $this->today(),
                 'range' => ['days' => $days, 'from' => $start->toDateString(), 'to' => $end->toDateString()],
                 'ranges' => self::RANGES,
                 'google' => [
@@ -91,6 +92,33 @@ class TrafficController extends Controller
                 'days' => $this->timeline($start, $end, $analytics, $server),
             ],
         ]);
+    }
+
+    /**
+     * The day still running, kept apart from the ranges above it: a partial day
+     * added to a run of finished ones reads as a collapse in traffic every
+     * morning.
+     *
+     * @return array<string, mixed>
+     */
+    private function today(): array
+    {
+        $today = Carbon::today();
+
+        $visits = AnalyticsDay::query()->whereDate('date', $today)->first();
+        $log = ServerLogDay::query()->whereDate('date', $today)->first();
+
+        return [
+            'date' => $today->toDateString(),
+            'has_data' => $visits !== null || $log !== null,
+            'updated_at' => collect([$visits?->updated_at, $log?->updated_at])->filter()->max()?->toISOString(),
+            'users' => (int) ($visits?->users ?? 0),
+            'sessions' => (int) ($visits?->sessions ?? 0),
+            'views' => (int) ($visits?->views ?? 0),
+            'requests' => (int) ($log?->requests ?? 0),
+            'human_requests' => (int) ($log?->humanRequests() ?? 0),
+            'bot_requests' => (int) ($log?->bot_requests ?? 0),
+        ];
     }
 
     /**
