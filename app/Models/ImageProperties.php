@@ -10,12 +10,11 @@ class ImageProperties extends Model
     protected $fillable = [
         'url',
         'order_by',
-        'properties_id',     
+        'properties_id',
     ];
 
-
-    public function properties(){
+    public function properties()
+    {
         return $this->belongsTo(Properties::class);
     }
-
 }

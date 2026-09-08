@@ -20,6 +20,7 @@ class NewsletterSubscription extends Component
         $visitor = Visitor::where('email', $this->email)->first();
         if ($visitor) {
             session()->flash('message', 'أنت بالفعل مشترك في القائمة البريدية');
+
             return;
         }
         Visitor::create([

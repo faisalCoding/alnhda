@@ -17,7 +17,6 @@ use Laravel\Sanctum\HasApiTokens;
 class Employee extends Model implements Authenticatable
 {
     use AuthenticatableTrait;
-
     use HasApiTokens;
 
     /** @use HasFactory<\Database\Factories\EmployeeFactory> */
