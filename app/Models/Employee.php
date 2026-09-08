@@ -2,12 +2,24 @@
 
 namespace App\Models;
 
+use Illuminate\Auth\Authenticatable as AuthenticatableTrait;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Laravel\Sanctum\HasApiTokens;
 
-class Employee extends Model
+/**
+ * An employee is a record the admin maintains, not a login. It becomes
+ * authenticatable only so a personal access token can be issued against one
+ * employee, which is how the owner's own site reads and edits their tasks.
+ */
+class Employee extends Model implements Authenticatable
 {
+    use AuthenticatableTrait;
+
+    use HasApiTokens;
+
     /** @use HasFactory<\Database\Factories\EmployeeFactory> */
     use HasFactory;
 
