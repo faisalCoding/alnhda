@@ -61,6 +61,277 @@ const LOADING_PROBE_INTERVAL_MS = 10000;
 // الفحص يمر عبر صفحة قد تكون ميتة، فلا ننتظر رده إلى ما لا نهاية.
 const PROBE_TIMEOUT_MS = 15000;
 
+// إغلاق الجلسة قد يتعلّق إن ماتت الصفحة تحته، فلا ننتظره إلى ما لا نهاية:
+// بعد المهلة نُجهز على المتصفح مباشرة.
+const DESTROY_TIMEOUT_MS = 10000;
+
+// سقف لعدد المرات التي تُعتمد فيها جلسة متوقفة "جاهزة". الاعتماد علاج لسقوط
+// حدث واحد، لا لصفحة تُعيد تحميل نفسها بلا نهاية: بعد هذا الحد تُسقط الجلسة
+// لتبدأ نظيفة بدل أن تدور أسابيع وهي تُعلن جاهزيتها في كل دورة.
+const MAX_READY_ADOPTIONS = 5;
+
+// حارس المعالج. نقيس نصيب عمليات الجلسة **كلها** لا العملية الأم وحدها: حين
+// علق المتصفح فعلاً كان الملتهم NetworkService — وهو ابن — بينما بقيت الأم دون
+// 6%، فمراقبتها وحدها كانت ستفوّت الحادثة بالكامل. والمزامنة الأولى تتجاوز
+// الحد بحق لدقائق، فلذلك النافذة بالدقائق لا بالثواني.
+const CPU_GUARD_THRESHOLD_PERCENT = 60;
+const CPU_GUARD_WINDOW_MS = 15 * 60 * 1000;
+const CPU_SAMPLE_INTERVAL_MS = 60000;
+
+// الاستهلاك العالي وحده لا يكفي حكماً: المزامنة الأولى تحرق نواة كاملة بحق،
+// وإسقاطها يصنع حلقة إعادة تشغيل أسوأ من الداء. ما ميّز المتصفح المعلّق فعلاً
+// أنه كان يحرق نصف نواة بينما لا يتحرك عبره سوى ~150 بايت في الثانية. فلا
+// يُسقَط إلا من جمع الاثنين: استهلاك عالٍ وإدخال/إخراج متجمّد.
+const IDLE_IO_BYTES_PER_SECOND = 16 * 1024;
+
+// النواة تعدّ زمن المعالج بـ"تكّات"، ومعدّلها الثابت على هذه المنصات 100 في
+// الثانية (USER_HZ).
+const CLOCK_TICKS_PER_SECOND = 100;
+
+// سقف سجل الخدمة: يُلحق إليه عبر nohup بلا حد، فقد يبتلع القرص في حلقة خطأ.
+const LOG_MAX_BYTES = 5 * 1024 * 1024;
+const LOG_KEEP_BYTES = 512 * 1024;
+const LOG_TRIM_INTERVAL_MS = 300000;
+
+// سقف ذاكرة كروم على القرص. بلا سقف بلغ الكاش 319 ميغابايت لجلسة واحدة.
+const DISK_CACHE_BYTES = 64 * 1024 * 1024;
+
+// ── إدارة عمليات المتصفح ──────────────────────────────────────────────────────
+
+/**
+ * مجلد بيانات المتصفح للجلسة، وهو المفتاح الذي نتعرّف به على عملياتها: كروم
+ * يمرّر `--user-data-dir` في سطر أوامر كل عملية من عملياته، أبناءً وأحفاداً.
+ */
+function sessionDataDir(clientId) {
+    return path.join(AUTH_DIR, `session-${clientId}`);
+}
+
+/**
+ * عمليات الجلسة كما يراها النظام. لا نعتمد على شجرة الأبناء: الأب قد يموت
+ * ويبقى الابن يتيماً — وقد حدث — فتنقطع الشجرة بينما تبقى العمليات حيّة. مجلد
+ * البيانات هو الوحيد الذي يبقى في سطر الأوامر مهما تغيّرت القرابة.
+ */
+function findSessionProcesses(clientId, procDir = '/proc') {
+    if (!fs.existsSync(procDir)) {
+        return [];
+    }
+
+    const needle = `--user-data-dir=${sessionDataDir(clientId)}`;
+    const found = [];
+
+    for (const entry of fs.readdirSync(procDir)) {
+        if (!/^\d+$/.test(entry)) {
+            continue;
+        }
+
+        try {
+            if (fs.readFileSync(path.join(procDir, entry, 'cmdline'), 'utf8').includes(needle)) {
+                found.push(Number(entry));
+            }
+        } catch {
+            // ماتت العملية بين المسح والقراءة، أو ليست لنا: لا شأن لنا بها.
+        }
+    }
+
+    return found;
+}
+
+const SINGLETON_LOCKS = ['SingletonLock', 'SingletonCookie', 'SingletonSocket'];
+
+/**
+ * أقفال كروم تبقى على القرص بعد قتل العملية، فيرفض المتصفح التالي الإقلاع
+ * عليها بحجة أن متصفحاً يعمل أصلاً — وهي رسالة "The browser is already
+ * running" التي أوقفت الاستعادة على الخادم.
+ */
+function clearSingletonLocks(clientId, dir = sessionDataDir(clientId)) {
+    for (const name of SINGLETON_LOCKS) {
+        try {
+            fs.rmSync(path.join(dir, name), { force: true });
+        } catch (error) {
+            console.error(`[${clientId}] تعذر حذف ${name}:`, error.message);
+        }
+    }
+}
+
+/**
+ * متصفح بلا مالك: أطلقته نسخة سابقة من الخدمة ثم ماتت دون أن تُغلقه، فبقي
+ * محتلاً مجلد الجلسة — لا الخدمة الجديدة تستطيع فتحه ("The browser is already
+ * running") ولا أحد يوقفه. عاش أحدها خمسة أيام يلتهم نصف نواة. لا تُستدعى إلا
+ * حين لا تكون لدينا جلسة على هذا المجلد، فكل ما يُوجد حينها يتيم بالتعريف.
+ */
+function killOrphanBrowsers(clientId) {
+    const pids = findSessionProcesses(clientId);
+
+    for (const pid of pids) {
+        try {
+            process.kill(pid, 'SIGKILL');
+        } catch (error) {
+            console.error(`[${clientId}] تعذر إنهاء العملية ${pid}:`, error.message);
+        }
+    }
+
+    if (pids.length > 0) {
+        console.log(`[${clientId}] أُنهيت ${pids.length} عملية متصفح يتيمة قبل بدء الجلسة.`);
+        clearSingletonLocks(clientId);
+    }
+
+    return pids.length;
+}
+
+/**
+ * ما يُعاد بناؤه وحده. يُمسح عند إسقاط الجلسة فقط — لا تحت متصفح يعمل — ولا
+ * يقترب من IndexedDB ولا Local Storage: هناك تعيش بيانات الارتباط، ومسحها
+ * يعني مسح رمز QR من جديد.
+ */
+const PURGEABLE_CACHES = [
+    'Default/Cache',
+    'Default/Code Cache',
+    'CertificateRevocation',
+    'component_crx_cache',
+];
+
+function purgeSessionCaches(clientId, dir = sessionDataDir(clientId)) {
+    if (!fs.existsSync(dir)) {
+        return false;
+    }
+
+    for (const relative of PURGEABLE_CACHES) {
+        try {
+            fs.rmSync(path.join(dir, relative), { recursive: true, force: true });
+        } catch (error) {
+            console.error(`[${clientId}] تعذر مسح ${relative}:`, error.message);
+        }
+    }
+
+    return true;
+}
+
+/**
+ * سجل الخدمة يُلحق إليه من الخارج (`nohup node index.js >> node.log`) فلا شيء
+ * يحدّه إلا نحن. وإعادة التسمية لا تنفع: مُوجّه الخرج يمسك بالملف نفسه لا
+ * باسمه، فيواصل الكتابة في المُعاد تسميته. القصّ في مكانه هو الحل.
+ */
+function trimServiceLog(logPath = LOG_PATH) {
+    let size = 0;
+
+    try {
+        size = fs.statSync(logPath).size;
+    } catch {
+        return false;
+    }
+
+    if (size <= LOG_MAX_BYTES) {
+        return false;
+    }
+
+    try {
+        const handle = fs.openSync(logPath, 'r');
+        const buffer = Buffer.alloc(LOG_KEEP_BYTES);
+        const read = fs.readSync(handle, buffer, 0, LOG_KEEP_BYTES, size - LOG_KEEP_BYTES);
+        fs.closeSync(handle);
+
+        fs.writeFileSync(logPath, buffer.subarray(0, read));
+        console.log(`قُصّ سجل الخدمة من ${Math.round(size / 1048576)} ميغابايت إلى آخر ${Math.round(read / 1024)} كيلوبايت.`);
+
+        return true;
+    } catch (error) {
+        console.error('تعذر قص سجل الخدمة:', error.message);
+
+        return false;
+    }
+}
+
+/**
+ * ما استهلكته عمليات الجلسة مجتمعة: تكّات المعالج، ومجموع ما قرأته وكتبته من
+ * محارف (rchar/wchar — تشمل المقابس لا القرص وحده). تُرجع null إن لم توجد
+ * عملية واحدة، فيميّز الحارس "لا متصفح" عن "متصفح خامل". وتبقى `chars` عند
+ * null إن تعذّرت قراءة /proc/<pid>/io، فيمتنع الحارس عن الحكم بدل أن يُسقط
+ * جلسة سليمة اعتماداً على نصف دليل.
+ */
+function readSessionUsage(clientId, procDir = '/proc') {
+    let ticks = 0;
+    let chars = 0;
+    let counted = 0;
+    let countedIo = 0;
+
+    for (const pid of findSessionProcesses(clientId, procDir)) {
+        const dir = path.join(procDir, String(pid));
+
+        try {
+            const stat = fs.readFileSync(path.join(dir, 'stat'), 'utf8');
+
+            // اسم العملية بين قوسين وقد يحوي مسافات وأقواساً، فيُقرأ ما بعد آخر
+            // قوس إغلاق: أول حقل بعده هو الحالة، وutime وstime بعدها بأحد عشر.
+            const fields = stat.slice(stat.lastIndexOf(')') + 2).split(' ');
+
+            ticks += Number(fields[11]) + Number(fields[12]);
+            counted++;
+        } catch {
+            // ماتت بين المسح والقراءة.
+
+            continue;
+        }
+
+        try {
+            const io = fs.readFileSync(path.join(dir, 'io'), 'utf8');
+
+            for (const key of ['rchar', 'wchar']) {
+                chars += Number(io.match(new RegExp(`^${key}:\\s*(\\d+)`, 'm'))?.[1] ?? 0);
+            }
+
+            countedIo++;
+        } catch {
+            // النواة قد تمنع قراءتها؛ نتركها مجهولة بدل أن نخمّنها صفراً.
+        }
+    }
+
+    if (counted === 0) {
+        return null;
+    }
+
+    return { ticks, chars: countedIo > 0 ? chars : null };
+}
+
+/**
+ * قرار الحارس من قياسين متتاليين، مفصولاً عن القراءة من /proc كي يُختبر. أي
+ * قياس لا يستوفي الشرطين يمحو التاريخ: المطلوب حالٌ **متصلة**، لا مجموع نوبات.
+ */
+function assessSessionUsage(session, usage, now = Date.now()) {
+    const previous = session.usageSample;
+
+    // يُسجَّل وقت القياس حتى حين لا تُوجد عمليات، وإلا أُعيد مسح /proc في كل
+    // دورة مكنسة لجلسة لا متصفح لها أصلاً.
+    session.usageSample = { ticks: usage?.ticks ?? null, chars: usage?.chars ?? null, at: now };
+
+    if (!previous || previous.ticks === null || !usage || now <= previous.at) {
+        return false;
+    }
+
+    const seconds = (now - previous.at) / 1000;
+    const percent = ((usage.ticks - previous.ticks) / CLOCK_TICKS_PER_SECOND) / seconds * 100;
+    const moved = usage.chars === null || previous.chars === null
+        ? null
+        : (usage.chars - previous.chars) / seconds;
+
+    session.cpuPercent = Math.round(percent);
+    session.ioPerSecond = moved === null ? null : Math.round(moved);
+
+    const wedged = percent >= CPU_GUARD_THRESHOLD_PERCENT
+        && moved !== null
+        && moved >= 0
+        && moved < IDLE_IO_BYTES_PER_SECOND;
+
+    if (!wedged) {
+        session.cpuHighSince = null;
+
+        return false;
+    }
+
+    session.cpuHighSince ??= previous.at;
+
+    return now - session.cpuHighSince >= CPU_GUARD_WINDOW_MS;
+}
+
 /**
  * إنشاء أو استرجاع جلسة واتساب لمستخدم معين
  */
@@ -68,6 +339,10 @@ function getOrCreateSession(clientId) {
     if (sessions.has(clientId)) {
         return sessions.get(clientId);
     }
+
+    // لا جلسة لدينا على هذا المجلد، فأي متصفح يحتلّه الآن يتيم: نُنهيه قبل أن
+    // يمنع المتصفح الجديد من الإقلاع أصلاً.
+    killOrphanBrowsers(clientId);
 
     const sessionData = {
         client: null,
@@ -101,6 +376,13 @@ function getOrCreateSession(clientId) {
                 // crashpad يتطلب HOME قابلاً للكتابة ويفشل تحت systemd؛ لا حاجة له.
                 '--disable-crashpad',
                 '--disable-gpu',
+                // متصفح آلي لا يحتاج محدّث المكوّنات ولا Safe Browsing ولا بذرة
+                // التجارب: شغل خلفي دائم يُبقي اتصالاً مفتوحاً بجوجل ويُراكم نسخاً
+                // من مكوّن الشهادات على القرص، بلا أي فائدة لجلسة واتساب.
+                '--disable-background-networking',
+                '--disable-component-update',
+                '--no-first-run',
+                `--disk-cache-size=${DISK_CACHE_BYTES}`,
             ],
         },
     });
@@ -222,6 +504,7 @@ function rememberGroup(clientId, chatId, name) {
 }
 
 const AUTH_DIR = path.join(__dirname, '.wwebjs_auth');
+const LOG_PATH = path.join(__dirname, 'node.log');
 
 /**
  * يُرفع عند تغيّر ما تتوقعه Laravel من هذه الخدمة، فتكتشف تشغيل نسخة قديمة
@@ -574,6 +857,8 @@ function removeSessionFiles(clientId) {
 
     try {
         fs.rmSync(dir, { recursive: true, force: true });
+        // المجموعات المُلتقطة تخصّ جلسة لم تعد موجودة، فلا تبقى في الذاكرة.
+        seenGroups.delete(clientId);
         console.log(`[${clientId}] حُذفت بيانات الجلسة المنتهية.`);
     } catch (error) {
         console.error(`[${clientId}] تعذر حذف بيانات الجلسة:`, error.message);
@@ -650,6 +935,18 @@ async function resolveStalledSession(clientId, session) {
         const { state, injected } = await withTimeout(probeSession(session.client), PROBE_TIMEOUT_MS);
 
         if (state === 'CONNECTED' && injected) {
+            session.adoptions = (session.adoptions ?? 0) + 1;
+
+            // الاعتماد علاج لحدث سقط مرة، لا لصفحة تُعيد تحميل نفسها: كل إعادة
+            // تحميل تُعيد المصادقة فتعود الجلسة إلى طور التهيئة، فتُعتمد من
+            // جديد. بلا سقف تدور هكذا أسابيع وهي تُعلن جاهزيتها في كل دورة.
+            if (session.adoptions > MAX_READY_ADOPTIONS) {
+                console.error(`[${clientId}] اعتُمدت الجلسة جاهزة ${MAX_READY_ADOPTIONS} مرات دون حدث جاهزية — الصفحة لا تستقر، وتُسقط الجلسة.`);
+                failSession(session, `تُعيد صفحة واتساب تحميل نفسها ولا تستقر (${MAX_READY_ADOPTIONS} محاولات) — أُسقطت الجلسة لتبدأ من جديد.`);
+
+                return;
+            }
+
             // الإرسال يعمل، لكن attachEventListeners لم يُستدعَ على الأرجح، فقد
             // لا تصل تأكيدات الاستلام. نُسجّلها بوضوح حتى لا تُلتمس في مكان آخر.
             console.log(`[${clientId}] لم يصل حدث الجاهزية رغم اكتمال الاتصال والحقن — اعتُمدت الجلسة جاهزة (قد تتأخر تأكيدات الاستلام).`);
@@ -672,17 +969,72 @@ async function resolveStalledSession(clientId, session) {
     }
 }
 
+/**
+ * انقضت مهلة البدء دون أن يصل أي حدث من واتساب — لا QR ولا مصادقة ولا فشل.
+ */
+function isStartupExpired(session, now = Date.now()) {
+    return session.status === 'starting'
+        && now - session.startedAt > STARTUP_TIMEOUT_SECONDS * 1000;
+}
+
+/**
+ * مضت فترة التهدئة على جلسة فاشلة، فتُسقط لتبدأ التالية محاولة نظيفة.
+ */
+function isErrorCooledDown(session, now = Date.now()) {
+    return session.status === 'error'
+        && now - (session.erroredAt ?? 0) > ERROR_RETRY_SECONDS * 1000;
+}
+
+/**
+ * يقرأ نصيب الجلسة من المعالج والإدخال/الإخراج على فترات متباعدة — مسح /proc
+ * أثقل من أن يُعاد كل عشر ثوانٍ — ويُسقط الجلسة إن ثبت أن متصفحها علق.
+ */
+function guardSessionUsage(clientId, session, now = Date.now()) {
+    if (!session.client || now - (session.usageSample?.at ?? 0) < CPU_SAMPLE_INTERVAL_MS) {
+        return false;
+    }
+
+    if (!assessSessionUsage(session, readSessionUsage(clientId), now)) {
+        return false;
+    }
+
+    const minutes = Math.round((now - session.cpuHighSince) / 60000);
+    console.error(`[${clientId}] متصفح معلّق: ${session.cpuPercent}% من المعالج و${session.ioPerSecond} بايت/ثانية فقط منذ ${minutes} دقيقة — إسقاط الجلسة.`);
+    dropSession(clientId, session);
+
+    return true;
+}
+
+/**
+ * المكنسة هي دورة حياة الجلسات كلها. كل فحص هنا كان يوماً داخل معالج /status،
+ * فكانت الجلسة التي لا يستطلعها أحد — وهي حال كل جلسة مستعادة تلقائياً — تعلق
+ * إلى الأبد بلا مهلة ولا أثر في أي مكان.
+ */
 function sweepStalledSessions(now = Date.now()) {
     for (const [clientId, session] of sessions) {
         if (isLoadingStalled(session, now)) {
             resolveStalledSession(clientId, session);
+
+            continue;
         }
+
+        if (isStartupExpired(session, now)) {
+            console.error(`[${clientId}] لم يصل أي حدث خلال ${STARTUP_TIMEOUT_SECONDS} ثانية.`);
+            failSession(session, `تعذر بدء الجلسة خلال ${STARTUP_TIMEOUT_SECONDS} ثانية — راجع node.log.`);
+
+            continue;
+        }
+
+        if (isErrorCooledDown(session, now)) {
+            dropSession(clientId, session);
+
+            continue;
+        }
+
+        guardSessionUsage(clientId, session, now);
     }
 }
 
-/**
- * تُسقط جلسة عالقة حتى يبدأ الطلب التالي محاولة جديدة بدل الانتظار بلا نهاية.
- */
 /**
  * destroy() قد يعود قبل أن يموت Chromium فعلاً (أو يُرفض إن كانت الصفحة قيد
  * الحقن)، فيبقى المتصفح يتيماً. كل جلسة مُسقطة كانت تسرّب متصفحاً كاملاً، وهو
@@ -692,7 +1044,9 @@ async function closeClient(clientId, client) {
     const browserProcess = client?.pupBrowser?.process?.();
 
     try {
-        await client?.destroy();
+        // بلا مهلة: لو تعلّق destroy() — وهو وارد على صفحة ميتة — لما وصل
+        // التنفيذ إلى سطر القتل أدناه، فبقي المتصفح حيّاً بلا مالك.
+        await withTimeout(Promise.resolve(client?.destroy()), DESTROY_TIMEOUT_MS);
     } catch (error) {
         console.error(`[${clientId}] تعذر إغلاق الجلسة:`, error.message);
     }
@@ -707,11 +1061,19 @@ async function closeClient(clientId, client) {
     }
 }
 
-function dropSession(clientId, session) {
+/**
+ * تُسقط الجلسة وتُنظّف أثرها: لا عملية باقية، ولا قفل، ولا كاش متراكم.
+ */
+async function dropSession(clientId, session) {
     console.log(`[${clientId}] إسقاط الجلسة (الحالة: ${session.status}).`);
     sessions.delete(clientId);
 
-    return closeClient(clientId, session.client);
+    await closeClient(clientId, session.client);
+
+    // بعد أن أُغلق المتصفح لا قبله: القفل يخصّ عملية ماتت، والكاش لا يُمسّ
+    // تحت متصفح يكتب فيه.
+    clearSingletonLocks(clientId);
+    purgeSessionCaches(clientId);
 }
 
 // ── GET /health ───────────────────────────────────────────────────────────────
@@ -732,6 +1094,10 @@ app.get('/health', (req, res) => {
         active_sessions: Array.from(sessions.entries()).map(([id, session]) => ({
             client_id: id,
             status: session.status,
+            // آخر ما قاسه الحارس: يجعل المتصفح المعلّق ظاهراً في التشخيص بدل
+            // أن يبقى رقماً لا يراه إلا من فتح top على الخادم.
+            cpu_percent: session.cpuPercent ?? null,
+            io_bytes_per_second: session.ioPerSecond ?? null,
         })),
         saved_sessions: saved,
     });
@@ -770,15 +1136,15 @@ app.get('/status/:clientId', async (req, res) => {
 
     const elapsed = Math.round((Date.now() - session.startedAt) / 1000);
 
-    // لا حدث وصل خلال المهلة: الجلسة معلّقة، نعلّمها كخطأ بدل الدوران بلا نهاية.
-    if (session.status === 'starting' && elapsed > STARTUP_TIMEOUT_SECONDS) {
+    // القواعد نفسها التي تُطبّقها المكنسة، لا نسخة ثانية منها: الاستطلاع
+    // يُعجّل الحسم فقط، ولا يملك مهلةً خاصة به.
+    if (isStartupExpired(session)) {
         console.error(`[${clientId}] لم يصل أي حدث خلال ${elapsed} ثانية.`);
         failSession(session, `تعذر بدء الجلسة خلال ${STARTUP_TIMEOUT_SECONDS} ثانية — راجع node.log.`);
     }
 
     if (session.status === 'error') {
-        // بعد فترة التهدئة نُسقط الجلسة ليبدأ الاستطلاع التالي محاولة نظيفة.
-        if (Date.now() - session.erroredAt > ERROR_RETRY_SECONDS * 1000) {
+        if (isErrorCooledDown(session)) {
             dropSession(clientId, session);
         }
 
@@ -1303,6 +1669,9 @@ if (require.main === module) {
         // المراقبة دورية وليست عند الاستطلاع فقط: الجلسات المستعادة تلقائياً لا
         // يستطلعها أحد، وتوقفها يعني توقف الإرسال بلا أثر في أي مكان.
         setInterval(sweepStalledSessions, LOADING_PROBE_INTERVAL_MS);
+
+        trimServiceLog();
+        setInterval(trimServiceLog, LOG_TRIM_INTERVAL_MS);
     });
 }
 
@@ -1310,8 +1679,28 @@ module.exports = {
     sessions,
     enterLoading,
     isLoadingStalled,
+    isStartupExpired,
+    isErrorCooledDown,
     resolveStalledSession,
     sweepStalledSessions,
+    findSessionProcesses,
+    readSessionUsage,
+    assessSessionUsage,
+    purgeSessionCaches,
+    clearSingletonLocks,
+    trimServiceLog,
+    sessionDataDir,
+    PURGEABLE_CACHES,
+    SINGLETON_LOCKS,
+    MAX_READY_ADOPTIONS,
+    STARTUP_TIMEOUT_SECONDS,
+    ERROR_RETRY_SECONDS,
+    CPU_GUARD_THRESHOLD_PERCENT,
+    CPU_GUARD_WINDOW_MS,
+    IDLE_IO_BYTES_PER_SECOND,
+    CLOCK_TICKS_PER_SECOND,
+    LOG_MAX_BYTES,
+    LOG_KEEP_BYTES,
     extractMessageId,
     chooseStoredMessage,
     recoverMessageId,
