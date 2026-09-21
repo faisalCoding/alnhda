@@ -87,6 +87,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
 
+    @include('partials.fonts')
+
     {{-- The page heading is the largest text above the fold, so its own face is
          fetched at once rather than after the stylesheet has been parsed. --}}
     <link rel="preload" href="/fonts/changa/changa-200-arabic.woff2" as="font" type="font/woff2" crossorigin>
@@ -94,7 +96,7 @@
     <!-- Styles -->
     <style>
         body {
-            font-family: 'Almarai', sans-serif !important;
+            font-family: 'Lama Sans', 'Almarai', sans-serif !important;
         }
 
         /* Changa ExtraLight, declared here rather than in the bundled
@@ -141,7 +143,7 @@
         /* The layout sets the body font with !important, so a heading that wants a
            different face has to say so just as loudly. */
         .font-display {
-            font-family: 'Changa', 'Almarai', sans-serif !important;
+            font-family: 'Changa', 'Lama Sans', sans-serif !important;
             font-weight: 200;
         }
     </style>

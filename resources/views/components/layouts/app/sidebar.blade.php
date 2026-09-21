@@ -6,9 +6,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+
+    @include('partials.fonts')
+
     <style>
         body {
-            font-family: 'Almarai', sans-serif !important;
+            font-family: 'Lama Sans', 'Almarai', sans-serif !important;
         }
     </style>
 </head>

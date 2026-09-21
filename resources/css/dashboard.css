@@ -7,7 +7,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    --font-sans: 'Almarai', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Lama Sans', 'Almarai', ui-sans-serif, system-ui, sans-serif;
 
     --color-primary-50: #f2f8f2;
     --color-primary-100: #e0eee0;
