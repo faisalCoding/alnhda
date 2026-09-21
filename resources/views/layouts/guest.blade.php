@@ -64,6 +64,9 @@
 
     {{-- 4. Twitter Card --}}
     <meta name="twitter:card" content="summary_large_image" />
+    @if (config('services.social.x.handle'))
+        <meta name="twitter:site" content="{{ config('services.social.x.handle') }}" />
+    @endif
     <meta name="twitter:title" content="{{ $seo->title ?: 'كيان النهضة العقارية' }}" />
     <meta name="twitter:description" content="{{ $seo->description ?: 'شركة متخصصة وذات خبرة في التطوير العقاري. نقدم أفضل الحلول السكنية والاستثمارية. اكتشف مشاريعنا الآن!' }}" />
     <meta name="twitter:image" content="{{ $seoImage }}" />

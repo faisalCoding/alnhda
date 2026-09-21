@@ -20,7 +20,7 @@
 - البريد الإلكتروني: info@kayanalnhda.com
 - النطاق الرسمي: {{ route('welcome') }}
 - نطاق سابق مملوك للشركة: https://kayanalnhda.com — يحوّل بالكامل إلى النطاق الرسمي أعلاه
-- القنوات الرسمية: يوتيوب https://www.youtube.com/@KayanAlnhda — إنستغرام https://www.instagram.com/nahda_realestate/
+- القنوات الرسمية: @foreach (config('services.social', []) as $account){{ $account['label'] }} {{ $account['url'] }}{{ $loop->last ? '' : ' — ' }}@endforeach
 
 ## عن الشركة
 

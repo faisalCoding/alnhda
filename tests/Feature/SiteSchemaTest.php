@@ -32,6 +32,13 @@ function nodeOfType(array $nodes, string $type): ?array
     return collect($nodes)->firstWhere('@type', $type);
 }
 
+it('declares the official accounts as sameAs, in the order they are configured', function () {
+    $organisation = nodeOfType(graphNodes($this->get(route('welcome'))->assertOk()->getContent()), 'RealEstateAgent');
+
+    expect($organisation['sameAs'])->toBe(array_column(config('services.social'), 'url'))
+        ->and($organisation['sameAs'])->toContain('https://x.com/Nahda_Cont');
+});
+
 it('publishes the organisation, the site and the page as one graph', function () {
     $nodes = graphNodes($this->get(route('projects'))->assertOk()->getContent());
 

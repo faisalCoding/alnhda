@@ -82,10 +82,7 @@ class SiteSchema
             ],
             'hasMap' => HeaderNavBar::OFFICE_MAP_URL,
             'geo' => $this->officeCoordinates(),
-            'sameAs' => [
-                'https://www.youtube.com/@KayanAlnhda',
-                'https://www.instagram.com/nahda_realestate/',
-            ],
+            'sameAs' => array_column(config('services.social', []), 'url'),
         ];
     }
 
@@ -163,7 +160,7 @@ class SiteSchema
 
         $label = $this->pageDefaults->label($name);
 
-        // label() يعيد اسم المسار نفسه حين لا يعرف الصفحة — لا نبني فتاتًا منه.
+        // label() يعيد اسم المسار نفسه حين لا يعرف الصفحة — لا نطور فتاتًا منه.
         if ($label === $name) {
             return null;
         }

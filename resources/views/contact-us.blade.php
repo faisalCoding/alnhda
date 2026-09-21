@@ -71,6 +71,13 @@
                                     class="text-gray-600 hover:text-[#498E49] transition-colors">info@kayanalnhda.com</a>
                             </div>
                         </div>
+
+                        {{-- Official accounts --}}
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <h3 class="font-bold text-gray-900 text-lg mb-1">تابعنا</h3>
+                            <p class="text-gray-600 mb-4">آخر المشاريع والأخبار على حساباتنا الرسمية</p>
+                            <x-social-links />
+                        </div>
                     </div>
 
                     {{-- Contact Form --}}

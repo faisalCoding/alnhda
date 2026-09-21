@@ -51,6 +51,33 @@ return [
         'path' => env('ACCESS_LOG_PATH', '/var/log/apache2/access.log'),
     ],
 
+    /**
+     * The company's official accounts, declared once. They are published in
+     * three different shapes — buttons in the footer and on the contact page,
+     * `sameAs` for search engines, and a prose line for language models — and a
+     * URL kept in three places is three URLs the moment one account moves.
+     * Order here is the order the buttons appear in.
+     */
+    'social' => [
+        'youtube' => [
+            'label' => 'يوتيوب',
+            'aria' => 'قناة اليوتيوب لشركة كيان النهضة العقارية',
+            'url' => 'https://www.youtube.com/@KayanAlnhda',
+        ],
+        'instagram' => [
+            'label' => 'إنستغرام',
+            'aria' => 'حساب إنستغرام لشركة كيان النهضة العقارية',
+            'url' => 'https://www.instagram.com/nahda_realestate/',
+        ],
+        'x' => [
+            'label' => 'إكس',
+            'aria' => 'حساب إكس لشركة كيان النهضة العقارية',
+            'url' => 'https://x.com/Nahda_Cont',
+            // يُستعمل في وسم twitter:site، وهو يطلبه مسبوقاً بعلامة @.
+            'handle' => '@Nahda_Cont',
+        ],
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
