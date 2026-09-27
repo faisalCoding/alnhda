@@ -43,7 +43,11 @@ class WeeklyTaskController extends Controller
     public function employees(): AnonymousResourceCollection
     {
         return EmployeeResource::collection(
-            Employee::query()->orderBy('sort_order')->orderBy('id')->get()
+            Employee::query()
+                ->withExists(['tokens as has_lawhati_code' => fn ($query) => $query->where('name', Employee::LAWHATI_TOKEN)])
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get()
         );
     }
 

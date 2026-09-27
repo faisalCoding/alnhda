@@ -34,5 +34,10 @@ class AppServiceProvider extends ServiceProvider
         // device exhaust another's budget.
         RateLimiter::for('tasks-api', fn (Request $request) => Limit::perMinute(120)
             ->by($request->user()?->currentAccessToken()?->id ?? $request->ip()));
+
+        // لوحتي checks a code when a phone connects and refreshes the team
+        // now and then; per code, like the task API.
+        RateLimiter::for('lawhati-api', fn (Request $request) => Limit::perMinute(120)
+            ->by($request->user()?->currentAccessToken()?->id ?? $request->ip()));
     }
 }

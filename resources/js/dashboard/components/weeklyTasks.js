@@ -22,6 +22,8 @@ export default function weeklyTasksPage() {
         employeeForm: { id: null, name: '', phone: '', role: '', enrolled_on: '', is_active: true },
         employeeErrors: {},
         showEmployees: false,
+        // The sign-in code for لوحتي just issued to one employee; it is shown once.
+        lawhati: { employeeId: null, code: '', link: '', whatsappUrl: null, busy: false, copied: '', error: '' },
 
         templateForm: { title: '', employee_id: '', weekly_task_category_id: '' },
         templateErrors: {},
@@ -340,6 +342,56 @@ export default function weeklyTasksPage() {
             } catch (error) {
                 this.error = error.message;
             }
+        },
+
+        // ---- لوحتي sign-in codes ---------------------------------------------
+
+        async issueLawhatiCode(employee) {
+            if (
+                employee.has_lawhati_code &&
+                !confirm(`لدى «${employee.name}» رمز دخول إلى لوحتي. الرمز الجديد يوقف السابق على كل أجهزته. متابعة؟`)
+            ) {
+                return;
+            }
+
+            this.lawhati = { employeeId: employee.id, code: '', link: '', whatsappUrl: null, busy: true, copied: '', error: '' };
+
+            try {
+                const { data } = await request('POST', `/api/employees/${employee.id}/lawhati-code`);
+                this.lawhati = { ...this.lawhati, code: data.code, link: data.link, whatsappUrl: data.whatsapp_url, busy: false };
+                this.markLawhatiCode(employee.id, true);
+            } catch (error) {
+                this.lawhati = { ...this.lawhati, busy: false, error: error.message };
+            }
+        },
+
+        async revokeLawhatiCode(employee) {
+            if (!confirm(`إيقاف رمز «${employee.name}»؟ سيخرج من لوحتي على كل أجهزته.`)) {
+                return;
+            }
+
+            try {
+                await request('DELETE', `/api/employees/${employee.id}/lawhati-code`);
+                this.markLawhatiCode(employee.id, false);
+                this.closeLawhatiCode();
+            } catch (error) {
+                this.lawhati = { ...this.lawhati, error: error.message };
+            }
+        },
+
+        closeLawhatiCode() {
+            this.lawhati = { employeeId: null, code: '', link: '', whatsappUrl: null, busy: false, copied: '', error: '' };
+        },
+
+        async copyLawhati(what) {
+            await navigator.clipboard.writeText(what === 'link' ? this.lawhati.link : this.lawhati.code);
+            this.lawhati.copied = what;
+        },
+
+        markLawhatiCode(employeeId, hasCode) {
+            this.employees = this.employees.map((item) =>
+                item.id === employeeId ? { ...item, has_lawhati_code: hasCode } : item,
+            );
         },
 
         // ---- templates ------------------------------------------------------

@@ -9,17 +9,52 @@
 
         <ul class="mb-5 max-h-56 space-y-2 overflow-y-auto">
             <template x-for="employee in employees" :key="employee.id">
-                <li class="flex items-center gap-3 rounded-xl border border-zinc-200 px-3.5 py-2.5 dark:border-zinc-800">
-                    <span class="h-2 w-2 shrink-0 rounded-full" :class="employee.is_active ? 'bg-emerald-500' : 'bg-zinc-300'"></span>
-                    <span class="min-w-0 flex-1">
-                        <span class="block truncate text-sm font-bold" x-text="employee.name"></span>
-                        <span class="block truncate text-xs text-zinc-500 dark:text-zinc-400"
-                            x-text="[employee.role, employee.enrolled_on].filter(Boolean).join(' · ')"></span>
-                    </span>
-                    <button type="button" @click="editEmployee(employee)"
-                        class="shrink-0 text-xs font-bold text-primary-600 hover:underline dark:text-primary-300">تعديل</button>
-                    <button type="button" @click="removeEmployee(employee)"
-                        class="shrink-0 text-xs font-bold text-red-500 hover:underline">حذف</button>
+                <li class="rounded-xl border border-zinc-200 px-3.5 py-2.5 dark:border-zinc-800">
+                    <div class="flex items-center gap-3">
+                        <span class="h-2 w-2 shrink-0 rounded-full" :class="employee.is_active ? 'bg-emerald-500' : 'bg-zinc-300'"></span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block truncate text-sm font-bold" x-text="employee.name"></span>
+                            <span class="block truncate text-xs text-zinc-500 dark:text-zinc-400"
+                                x-text="[employee.role, employee.enrolled_on, employee.has_lawhati_code ? 'مرتبط بلوحتي' : null].filter(Boolean).join(' · ')"></span>
+                        </span>
+                        <button type="button" @click="issueLawhatiCode(employee)"
+                            class="shrink-0 text-xs font-bold text-primary-600 hover:underline dark:text-primary-300">رمز لوحتي</button>
+                        <button type="button" @click="editEmployee(employee)"
+                            class="shrink-0 text-xs font-bold text-primary-600 hover:underline dark:text-primary-300">تعديل</button>
+                        <button type="button" @click="removeEmployee(employee)"
+                            class="shrink-0 text-xs font-bold text-red-500 hover:underline">حذف</button>
+                    </div>
+
+                    <div x-show="lawhati.employeeId === employee.id" x-cloak
+                        class="mt-3 space-y-2.5 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
+                        <p class="text-xs font-bold">رمز دخول لوحتي</p>
+                        <p x-show="lawhati.busy" class="text-xs text-zinc-500">يُصدر الرمز…</p>
+                        <p x-show="lawhati.error" class="{{ $error }}" x-text="lawhati.error"></p>
+                        <template x-if="lawhati.code">
+                            <div class="space-y-2.5">
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                                    أرسل الرابط للموظف ليفتحه من جواله أو متصفحه، أو ليلصق الرمز في لوحتي.
+                                    يظهر الرمز هنا مرة واحدة، وإصدار رمز جديد يوقف السابق.
+                                </p>
+                                <code class="block select-all break-all rounded-lg bg-white px-3 py-2 text-xs dark:bg-zinc-900"
+                                    dir="ltr" x-text="lawhati.code"></code>
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button" @click="copyLawhati('link')" class="{{ $primary }}"
+                                        x-text="lawhati.copied === 'link' ? 'نُسخ الرابط' : 'نسخ الرابط'"></button>
+                                    <button type="button" @click="copyLawhati('code')" class="{{ $ghost }}"
+                                        x-text="lawhati.copied === 'code' ? 'نُسخ الرمز' : 'نسخ الرمز'"></button>
+                                    <a x-show="lawhati.whatsappUrl" :href="lawhati.whatsappUrl" target="_blank" rel="noopener"
+                                        class="{{ $ghost }}">إرسال بواتساب</a>
+                                </div>
+                            </div>
+                        </template>
+                        <div class="flex justify-end gap-3">
+                            <button type="button" x-show="employee.has_lawhati_code" @click="revokeLawhatiCode(employee)"
+                                class="text-xs font-bold text-red-500 hover:underline">إيقاف الرمز</button>
+                            <button type="button" @click="closeLawhatiCode()"
+                                class="text-xs font-bold text-zinc-500 hover:underline">إغلاق</button>
+                        </div>
+                    </div>
                 </li>
             </template>
             <li x-show="!employees.length" x-cloak

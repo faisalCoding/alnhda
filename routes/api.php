@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\LawhatiController;
 use App\Http\Controllers\Api\TeamProgressController;
 use App\Http\Controllers\Api\WeeklyTaskController;
+use App\Models\Employee;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -28,3 +30,21 @@ Route::middleware(['auth:sanctum', 'throttle:tasks-api'])->group(function () {
         Route::get('team/progress', TeamProgressController::class)->name('api.team.progress');
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| لوحتي API
+|--------------------------------------------------------------------------
+|
+| Read by لوحتي, the team's Kanban app, with an employee's sign-in code
+| (issued from the employees list in the panel). A code can only name its
+| employee and list the team, so cards can be assigned to people.
+|
+*/
+
+Route::middleware(['auth:sanctum', 'abilities:'.Employee::LAWHATI_TOKEN, 'throttle:lawhati-api'])
+    ->prefix('lawhati')
+    ->group(function () {
+        Route::get('me', [LawhatiController::class, 'me'])->name('api.lawhati.me');
+        Route::get('team', [LawhatiController::class, 'team'])->name('api.lawhati.team');
+    });

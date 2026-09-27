@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\Api\BacklinkController;
 use App\Http\Controllers\Admin\Api\CollectionPageController;
 use App\Http\Controllers\Admin\Api\DashboardController;
 use App\Http\Controllers\Admin\Api\HomeContentController;
+use App\Http\Controllers\Admin\Api\LawhatiCodeController;
 use App\Http\Controllers\Admin\Api\LeadController;
 use App\Http\Controllers\Admin\Api\MarketingChecklistController;
 use App\Http\Controllers\Admin\Api\MarketingMethodController;
@@ -153,6 +154,12 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('marketing-checklists', [MarketingChecklistController::class, 'index'])->name('marketing-checklists.index');
 
         Route::get('employees', [WeeklyTaskController::class, 'employees'])->name('employees.index');
+
+        // Not idempotent on purpose: a replayed response would hand out a
+        // code again, and the replay cache would keep it in plain text.
+        Route::post('employees/{employee}/lawhati-code', [LawhatiCodeController::class, 'store'])->name('employees.lawhati-code.store');
+        Route::delete('employees/{employee}/lawhati-code', [LawhatiCodeController::class, 'destroy'])->name('employees.lawhati-code.destroy');
+
         Route::get('weekly-task-categories', [WeeklyTaskController::class, 'categories'])->name('weekly-task-categories.index');
         Route::get('weekly-task-templates', [WeeklyTaskController::class, 'templates'])->name('weekly-task-templates.index');
         Route::get('weekly-tasks', [WeeklyTaskController::class, 'week'])->name('weekly-tasks.index');

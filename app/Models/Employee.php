@@ -12,10 +12,14 @@ use Laravel\Sanctum\HasApiTokens;
 /**
  * An employee is a record the admin maintains, not a login. It becomes
  * authenticatable only so a personal access token can be issued against one
- * employee, which is how the owner's own site reads and edits their tasks.
+ * employee, which is how the owner's own site reads and edits their tasks,
+ * and how an employee signs in to لوحتي, the team's Kanban app.
  */
 class Employee extends Model implements Authenticatable
 {
+    /** The name and the only ability of an employee's لوحتي sign-in code. */
+    public const LAWHATI_TOKEN = 'lawhati';
+
     use AuthenticatableTrait;
     use HasApiTokens;
 
