@@ -12,7 +12,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('admin.login.store') }}" class="flex flex-col gap-5">
+    <form method="POST" action="{{ route('admin.login.store') }}" class="flex flex-col gap-5" data-login-form>
         @csrf
 
         <div>
@@ -40,11 +40,56 @@
             تذكرني
         </label>
 
-        <button type="submit"
-            class="w-full rounded-xl bg-primary-500 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500/40">
-            تسجيل الدخول
+        <button type="submit" data-login-submit
+            class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-500 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500/40 disabled:cursor-wait disabled:opacity-70 disabled:hover:bg-primary-500">
+            <svg data-login-spinner class="hidden h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4Z"></path>
+            </svg>
+            <span data-login-label>تسجيل الدخول</span>
         </button>
     </form>
+
+    {{-- A second click while the first request is still on its way sends another
+         login, so one mistyped password used to count twice toward the lockout. --}}
+    <script>
+        (() => {
+            const form = document.querySelector('[data-login-form]');
+            const button = form.querySelector('[data-login-submit]');
+            const label = button.querySelector('[data-login-label]');
+            const spinner = button.querySelector('[data-login-spinner]');
+            let releaseTimer = null;
+
+            const setBusy = (busy) => {
+                form.dataset.submitting = busy ? 'true' : '';
+                button.disabled = busy;
+                button.setAttribute('aria-busy', busy ? 'true' : 'false');
+                spinner.classList.toggle('hidden', !busy);
+                label.textContent = busy ? 'جارٍ تسجيل الدخول…' : 'تسجيل الدخول';
+            };
+
+            form.addEventListener('submit', (event) => {
+                if (form.dataset.submitting) {
+                    event.preventDefault();
+
+                    return;
+                }
+
+                setBusy(true);
+
+                // A request that stalls must not leave the form locked for good.
+                releaseTimer = setTimeout(() => setBusy(false), 15000);
+            });
+
+            // Going back restores this page from the back-forward cache with the button still disabled.
+            window.addEventListener('pageshow', (event) => {
+                if (event.persisted) {
+                    clearTimeout(releaseTimer);
+                    setBusy(false);
+                }
+            });
+        })();
+    </script>
 
     @if (config('app.admin_registration_enabled'))
         <p class="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
