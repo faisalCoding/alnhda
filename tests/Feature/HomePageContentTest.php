@@ -129,7 +129,7 @@ it('names the districts it builds in, which is how a buyer searches', function (
     $html = homeHtml();
 
     expect($html)
-        ->toContain('أين نبني في جدة')
+        ->toContain('أين نطور في جدة')
         ->toContain('جدة مخطط التيسير')
         ->toContain('مشروع التيسير 12');
 });

@@ -30,7 +30,7 @@ class HomeFacts
     public const HERO_DEFAULTS = [
         'eyebrow' => 'أساسات راسخة.. لمستقبل آمن',
         'title' => 'تطوير وبيع فلل وشقق سكنية في جدة',
-        'subtitle' => 'مشاريعنا نبنيها لتدوم و تبقى نموذجا للجودة و الاستدامة',
+        'subtitle' => 'مشاريعنا نطورها لتدوم و تبقى نموذجا للجودة و الاستدامة',
         'primary_label' => 'تصفّح مشاريعنا في جدة',
         'secondary_label' => 'تواصل معنا',
     ];
@@ -45,7 +45,7 @@ class HomeFacts
     public const SECTIONS = [
         'about' => 'من نحن',
         'projects' => 'المشاريع',
-        'districts' => 'أين نبني في جدة',
+        'districts' => 'أين نطور في جدة',
         'guarantees' => 'الضمانات',
         'articles' => 'المقالات',
         'faq' => 'الأسئلة المتكررة',

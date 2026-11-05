@@ -266,7 +266,7 @@ it('hides a section from the page when it is switched off', function () {
     $this->get(route('welcome'))
         ->assertOk()
         ->assertDontSee('ما نضمنه لك مكتوبًا', false)
-        ->assertSee('أين نبني في جدة', false);
+        ->assertSee('أين نطور في جدة', false);
 });
 
 it('takes the structured data down with the section it describes', function () {
