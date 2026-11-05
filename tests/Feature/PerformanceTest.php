@@ -41,3 +41,29 @@ it('lazy loads the heavy about page image with explicit dimensions', function ()
     expect($html)->toContain('rebarandplan.webp')
         ->toContain('loading="lazy" width="1200" height="1600"');
 });
+
+it('asks for the project cover before the rest of the page', function () {
+    $project = Project::factory()->create(['image_url' => 'uploads/cover.webp']);
+
+    $html = $this->get(route('project', $project))->assertOk()->getContent();
+
+    expect($html)->toMatch('/<img src="[^"]*uploads\/cover\.webp" alt="[^"]*" fetchpriority="high"/');
+});
+
+it('asks for the first photo of a unit first and leaves the rest to the gallery', function () {
+    $project = Project::factory()->create();
+    $unit = Properties::create([
+        'name' => 'فيلا تجريبية',
+        'project_id' => $project->id,
+        'status' => 'متاح',
+    ]);
+
+    foreach (['uploads/one.webp', 'uploads/two.webp', 'uploads/three.webp'] as $order => $url) {
+        $unit->propertiesImages()->create(['url' => $url, 'order_by' => $order]);
+    }
+
+    $html = $this->get(route('properties', $unit))->assertOk()->getContent();
+
+    expect(substr_count($html, 'fetchpriority="high"'))->toBe(1)
+        ->and($html)->toMatch('/uploads\/one\.webp"[^>]*fetchpriority="high"/');
+});

@@ -119,6 +119,7 @@
                                    <div class="swiper-slide cursor-zoom-in" 
                                          @click="showModal = true; $nextTick(() => { lightboxSwiper.slideTo({{ $loop->index }}, 0); lightboxSwiper.update(); })">
                                          <img src="{{ asset('storage/' . $image->url) }}" alt="{{ $properties->name }}"
+                                             @if ($loop->first) fetchpriority="high" @endif
                                              {{ \App\Services\ImageService::srcsetAttributes($image->url, '(min-width: 1024px) 66vw, (min-width: 640px) 100vw, 600px') }}
                                              class="w-full h-full object-cover">
                                      </div>

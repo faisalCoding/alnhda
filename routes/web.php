@@ -1,6 +1,5 @@
 <?php
 
-use App\Livewire\ControlBoard;
 use App\Models\Article;
 use App\Models\CollectionPage;
 use App\Models\Project;
@@ -12,8 +11,6 @@ Route::domain(config('app.domain'))->group(function () {
     Route::get('/', function () {
         return view('welcome');
     })->name('welcome');
-
-    Route::view('/control-board', ControlBoard::class);
 
     Route::middleware(['auth'])->group(function () {
         Route::redirect('settings', 'settings/profile');
@@ -72,9 +69,9 @@ Route::domain(config('app.domain'))->group(function () {
     Route::view('terms-of-use', 'terms-of-use')->name('terms-of-use');
 
     Route::get('/sitemap.xml', function () {
-        $projects = Project::all();
-        $properties = \App\Models\Properties::all();
-        $articles = Article::all();
+        $projects = Project::indexable()->get();
+        $properties = \App\Models\Properties::indexable()->get();
+        $articles = Article::indexable()->get();
 
         return response()->view('sitemap', [
             'projects' => $projects,
@@ -87,9 +84,9 @@ Route::domain(config('app.domain'))->group(function () {
     Route::get('/llms.txt', function () {
         return response()
             ->view('llms', [
-                'projects' => Project::ordered()->get(),
-                'properties' => \App\Models\Properties::all(),
-                'articles' => Article::latest()->get(),
+                'projects' => Project::ordered()->indexable()->get(),
+                'properties' => \App\Models\Properties::indexable()->get(),
+                'articles' => Article::indexable()->latest()->get(),
                 'collections' => CollectionPage::indexable()->latest()->get(),
                 'facts' => app(\App\Services\HomeFacts::class),
             ])

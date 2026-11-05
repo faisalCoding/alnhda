@@ -85,7 +85,14 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+    {{-- Almarai احتياطي خلف Lama Sans لا يُرسم به شيء ما دام Lama Sans يغطي
+         النص، فلا يُترك ملف أنماطه يحجب رسم الصفحة: كان يؤخر أول ظهور للنص
+         على الجوال قرابة ثانية. يُحمَّل في الخلفية ويبقى جاهزًا إن احتيج. --}}
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet"
+        media="print" onload="this.media='all'">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+    </noscript>
 
     @include('partials.fonts')
 

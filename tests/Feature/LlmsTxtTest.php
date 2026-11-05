@@ -45,6 +45,22 @@ it('lists available projects, units and articles with absolute links', function 
         ->toContain('[اختيار الشقة المناسبة]('.route('article', $article).')');
 });
 
+it('leaves out projects, units and articles switched to noindex', function () {
+    $project = Project::factory()->create(['name' => 'مشروع مخفي', 'status' => 'جديد']);
+    $project->seoMeta()->create(['noindex' => true]);
+    $property = Properties::factory()->create(['name' => 'وحدة مخفية', 'project_id' => Project::factory()->create()->id]);
+    $property->seoMeta()->create(['noindex' => true]);
+    $article = Article::factory()->create(['title' => 'مقال مخفي']);
+    $article->seoMeta()->create(['noindex' => true]);
+
+    $content = $this->get(route('llms'))->assertOk()->getContent();
+
+    expect($content)
+        ->not->toContain(route('project', $project).')')
+        ->not->toContain(route('properties', $property).')')
+        ->not->toContain(route('article', $article).')');
+});
+
 it('moves sold projects out of the main listing and into the optional section', function () {
     $sold = Project::factory()->create(['name' => 'مشروع منتهٍ', 'status' => 'تم البيع']);
     Project::factory()->create(['name' => 'مشروع متاح', 'status' => 'جديد']);

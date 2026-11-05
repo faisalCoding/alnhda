@@ -54,7 +54,7 @@
         {{-- Image Section --}}
         <div class="w-full h-[500px] relative rounded-3xl overflow-hidden mb-8 shadow-xl">
             @if ($project->image_url)
-                <img src="{{ asset('storage/' . $project->image_url) }}" alt="{{ $project->name }}"
+                <img src="{{ asset('storage/' . $project->image_url) }}" alt="{{ $project->name }}" fetchpriority="high"
                     {{ \App\Services\ImageService::srcsetAttributes($project->image_url, '(min-width: 1536px) 1504px, (min-width: 1280px) 1248px, (min-width: 1024px) 992px, (min-width: 768px) 736px, 700px') }}
                     class="w-full h-full object-cover">
             @else

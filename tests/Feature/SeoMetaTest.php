@@ -199,6 +199,28 @@ it('serves an xml sitemap with an xml declaration and real content urls', functi
         ->and($response->getContent())->toContain(route('article', $article));
 });
 
+it('leaves records switched to noindex out of the sitemap', function () {
+    $listed = Project::factory()->create();
+    $listed->seoMeta()->create(['title' => 'عنوان مخصص']);
+    $hiddenProject = Project::factory()->create();
+    $hiddenProject->seoMeta()->create(['noindex' => true]);
+    $hiddenArticle = Article::factory()->create();
+    $hiddenArticle->seoMeta()->create(['noindex' => true]);
+    $hiddenUnit = Properties::create(['name' => 'وحدة مخفية', 'project_id' => $listed->id, 'status' => 'متاح']);
+    $hiddenUnit->seoMeta()->create(['noindex' => true]);
+
+    $this->get(route('sitemap'))
+        ->assertOk()
+        ->assertSee('<loc>'.route('project', $listed).'</loc>', false)
+        ->assertDontSee('<loc>'.route('project', $hiddenProject).'</loc>', false)
+        ->assertDontSee('<loc>'.route('article', $hiddenArticle).'</loc>', false)
+        ->assertDontSee('<loc>'.route('properties', $hiddenUnit).'</loc>', false);
+});
+
+it('answers the retired control board address with a 404 rather than a server error', function () {
+    $this->get('/control-board')->assertNotFound();
+});
+
 it('marks auth pages as noindex', function () {
     $this->get('http://localhost/login')
         ->assertOk()

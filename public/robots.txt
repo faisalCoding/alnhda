@@ -6,6 +6,5 @@ Disallow: /reset-password
 Disallow: /verify-email
 Disallow: /confirm-password
 Disallow: /settings
-Disallow: /control-board
 
 Sitemap: https://kayanalnhda.sa/sitemap.xml

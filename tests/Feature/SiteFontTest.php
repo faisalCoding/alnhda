@@ -32,6 +32,17 @@ it('keeps the previous face loaded so it can be used again', function () {
         ->assertSee('family=Almarai', false);
 });
 
+it('does not hold the first paint back for the previous face', function () {
+    $html = $this->get(route('welcome'))->assertOk()->getContent();
+    $outsideNoscript = preg_replace('/<noscript>.*?<\/noscript>/s', '', $html);
+
+    preg_match_all('/<link[^>]*family=Almarai[^>]*>/s', $outsideNoscript, $links);
+
+    expect($links[0])->toHaveCount(1)
+        ->and($links[0][0])->toContain('media="print"')
+        ->toContain('onload="this.media=\'all\'"');
+});
+
 it('fetches the body weight with the page rather than after its stylesheet', function () {
     $this->get(route('welcome'))
         ->assertOk()
