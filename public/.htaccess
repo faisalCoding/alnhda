@@ -22,6 +22,14 @@
     RewriteCond %{HTTP:X-Forwarded-Proto} !=https
     RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+    # Drop index.php from the address... (/index.php and /index.php/projects
+    # answer the same pages as / and /projects, each with a canonical of its
+    # own). THE_REQUEST is the address the visitor asked for, so the front
+    # controller's own rewrite below never matches; GET/HEAD only, because a
+    # 301 would drop a form's body.
+    RewriteCond %{THE_REQUEST} ^(GET|HEAD)\s/index\.php(?:/([^\s?]*))?[\s?] [NC]
+    RewriteRule ^ /%2 [L,R=301,NE]
+
     # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} (.+)/$
