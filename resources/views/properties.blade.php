@@ -119,6 +119,7 @@
                                    <div class="swiper-slide cursor-zoom-in" 
                                          @click="showModal = true; $nextTick(() => { lightboxSwiper.slideTo({{ $loop->index }}, 0); lightboxSwiper.update(); })">
                                          <img src="{{ asset('storage/' . $image->url) }}" alt="{{ $properties->name }}"
+                                             {{ \App\Services\ImageService::srcsetAttributes($image->url, '(min-width: 1024px) 66vw, (min-width: 640px) 100vw, 600px') }}
                                              class="w-full h-full object-cover">
                                      </div>
                                 @endforeach
@@ -461,6 +462,7 @@
                         @foreach ($properties->propertiesImages as $image)
                             <div class="swiper-slide !flex items-center justify-center select-none px-2">
                                 <img src="{{ asset('storage/' . $image->url) }}"
+                                     {{ \App\Services\ImageService::srcsetAttributes($image->url, '100vw') }}
                                      class="max-w-full max-h-full object-contain rounded-xl pointer-events-none"
                                      draggable="false"
                                      alt="{{ $properties->name }}">

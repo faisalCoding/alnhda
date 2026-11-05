@@ -7,10 +7,10 @@ use App\Http\Requests\Admin\StorePropertyRequest;
 use App\Http\Requests\Admin\UpdatePropertyRequest;
 use App\Http\Resources\Admin\PropertyResource;
 use App\Models\Properties;
+use App\Services\ImageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\Storage;
 
 class PropertyController extends Controller
 {
@@ -44,7 +44,7 @@ class PropertyController extends Controller
     public function destroy(Properties $property): JsonResponse
     {
         foreach ($property->propertiesImages as $image) {
-            Storage::disk('public')->delete($image->url);
+            ImageService::delete($image->url);
         }
 
         $id = $property->id;

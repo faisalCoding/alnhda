@@ -85,8 +85,9 @@
                                 : asset(str_replace('\\', '', $image)));
                     @endphp
                     <img src="{{ $imageUrl }}" alt="{{ $article->title }}"
+                        {{ \App\Services\ImageService::srcsetAttributes($image, '(min-width: 896px) 896px, 100vw') }}
                         class="absolute inset-0 w-full h-full object-cover"
-                        onerror="this.src='{{ asset('img/article.webp') }}'">
+                        onerror="this.removeAttribute('srcset'); this.src='{{ asset('img/article.webp') }}'">
 
                     <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
                 </div>

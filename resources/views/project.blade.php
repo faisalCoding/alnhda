@@ -55,6 +55,7 @@
         <div class="w-full h-[500px] relative rounded-3xl overflow-hidden mb-8 shadow-xl">
             @if ($project->image_url)
                 <img src="{{ asset('storage/' . $project->image_url) }}" alt="{{ $project->name }}"
+                    {{ \App\Services\ImageService::srcsetAttributes($project->image_url, '(min-width: 1536px) 1504px, (min-width: 1280px) 1248px, (min-width: 1024px) 992px, (min-width: 768px) 736px, 700px') }}
                     class="w-full h-full object-cover">
             @else
                 <div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-xl">
@@ -157,6 +158,7 @@
                                 <div class="h-48 w-full overflow-hidden bg-gray-100">
                                     @if ($property->propertiesImages->count() > 0)
                                         <img src="{{ asset('storage/' . $property->propertiesImages->first()->url) }}"
+                                            {{ \App\Services\ImageService::srcsetAttributes($property->propertiesImages->first()->url, '(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw') }}
                                             alt="{{ $property->name }}"
                                             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
                                     @else

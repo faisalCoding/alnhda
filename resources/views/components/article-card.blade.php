@@ -18,8 +18,9 @@
          rather than greyed out behind a colour wash. --}}
     <div class="relative aspect-video overflow-hidden bg-gray-100">
         <img src="{{ $imageUrl }}" alt="{{ $article->title }}"
+            {{ \App\Services\ImageService::srcsetAttributes($image, '(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw') }}
             class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            onerror="this.src='{{ asset('img/article.webp') }}'" width="800" height="450"
+            onerror="this.removeAttribute('srcset'); this.src='{{ asset('img/article.webp') }}'" width="800" height="450"
             loading="{{ $eager ? 'eager' : 'lazy' }}" @if ($eager) fetchpriority="high" @endif>
     </div>
 

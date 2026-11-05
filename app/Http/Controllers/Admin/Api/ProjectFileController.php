@@ -15,10 +15,10 @@ class ProjectFileController extends Controller
 {
     public function storeImage(UploadProjectImageRequest $request, Project $project): ProjectResource
     {
-        $path = ImageService::uploadAndProcess($request->file('image'), 'uploads', 800);
+        $path = ImageService::uploadAndProcess($request->file('image'), 'uploads', ImageService::PROJECT_WIDTH);
 
         if ($project->image_url) {
-            Storage::disk('public')->delete($project->image_url);
+            ImageService::delete($project->image_url);
         }
 
         $project->update(['image_url' => $path]);

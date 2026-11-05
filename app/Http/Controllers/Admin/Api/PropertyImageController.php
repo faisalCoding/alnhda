@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Admin\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ImageProperties;
+use App\Services\ImageService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Storage;
 
 class PropertyImageController extends Controller
 {
     public function destroy(ImageProperties $image): JsonResponse
     {
-        Storage::disk('public')->delete($image->url);
+        ImageService::delete($image->url);
 
         $id = $image->id;
         $image->delete();

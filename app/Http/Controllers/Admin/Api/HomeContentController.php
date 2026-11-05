@@ -12,7 +12,6 @@ use App\Models\FaqEntry;
 use App\Services\HomeFacts;
 use App\Services\ImageService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * The words on the front of the site, as the panel edits them.
@@ -98,7 +97,7 @@ class HomeContentController extends Controller
         $settings->update(['hero_image_path' => ImageService::uploadHeroImage($request->file('image'))]);
 
         if (filled($previous)) {
-            Storage::disk('public')->delete($previous);
+            ImageService::delete($previous);
         }
 
         return $this->index();
@@ -116,7 +115,7 @@ class HomeContentController extends Controller
         $settings->update(['hero_image_path' => null]);
 
         if (filled($previous)) {
-            Storage::disk('public')->delete($previous);
+            ImageService::delete($previous);
         }
 
         return $this->index();

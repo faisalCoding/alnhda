@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Project;
+use App\Services\ImageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Encoders\JpegEncoder;
@@ -12,7 +13,7 @@ uses(RefreshDatabase::class);
 it('converts legacy jpg images to webp and updates the model path', function () {
     Storage::fake('public');
 
-    $jpeg = Image::createImage(1600, 1200)->fill('#8aa17c');
+    $jpeg = Image::createImage(3000, 2000)->fill('#8aa17c');
     Storage::disk('public')->put('uploads/legacy.jpg', (string) $jpeg->encode(new JpegEncoder(quality: 100)));
 
     $project = Project::factory()->create(['image_url' => 'uploads/legacy.jpg']);
@@ -24,13 +25,13 @@ it('converts legacy jpg images to webp and updates the model path', function () 
     Storage::disk('public')->assertMissing('uploads/legacy.jpg');
 
     $optimized = Image::decode(Storage::disk('public')->path('uploads/legacy.webp'));
-    expect($optimized->width())->toBe(1200);
+    expect($optimized->width())->toBe(ImageService::PROJECT_WIDTH);
 });
 
 it('re-encodes oversized webp images in place and scales them down', function () {
     Storage::fake('public');
 
-    Storage::disk('public')->put('uploads/big.webp', noisyWebp(2400, 1600, quality: 95));
+    Storage::disk('public')->put('uploads/big.webp', noisyWebp(3000, 2000, quality: 95));
     $originalSize = Storage::disk('public')->size('uploads/big.webp');
 
     $project = Project::factory()->create(['image_url' => 'uploads/big.webp']);
@@ -41,7 +42,20 @@ it('re-encodes oversized webp images in place and scales them down', function ()
         ->and(Storage::disk('public')->size('uploads/big.webp'))->toBeLessThan($originalSize);
 
     $optimized = Image::decode(Storage::disk('public')->path('uploads/big.webp'));
-    expect($optimized->width())->toBe(1200);
+    expect($optimized->width())->toBe(ImageService::PROJECT_WIDTH);
+});
+
+it('never compresses a webp within the width a second time, even when that would shrink it', function () {
+    Storage::fake('public');
+
+    Storage::disk('public')->put('uploads/fine.webp', noisyWebp(1600, 1200, quality: 100));
+    $originalBytes = Storage::disk('public')->get('uploads/fine.webp');
+
+    Project::factory()->create(['image_url' => 'uploads/fine.webp']);
+
+    $this->artisan('app:optimize-images', ['--skip-static' => true])->assertSuccessful();
+
+    expect(Storage::disk('public')->get('uploads/fine.webp'))->toBe($originalBytes);
 });
 
 it('keeps an already optimized webp untouched when re-encoding would not shrink it', function () {

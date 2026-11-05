@@ -5,10 +5,11 @@ namespace App\Console\Commands;
 use App\Models\Article;
 use App\Models\ImageProperties;
 use App\Models\Project;
+use App\Services\IccProfile;
+use App\Services\ImageService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Encoders\WebpEncoder;
 use Intervention\Image\Laravel\Facades\Image;
 
 class OptimizeImages extends Command
@@ -19,7 +20,7 @@ class OptimizeImages extends Command
      * @var string
      */
     protected $signature = 'app:optimize-images
-                            {--quality=87 : WebP encoding quality}
+                            {--quality='.ImageService::QUALITY.' : WebP encoding quality}
                             {--skip-static : Skip the public/img static images}
                             {--skip-dynamic : Skip the uploaded storage images}';
 
@@ -64,7 +65,7 @@ class OptimizeImages extends Command
 
         foreach (Project::whereNotNull('image_url')->get() as $project) {
             try {
-                $newPath = $this->optimizeStoredImage($project->image_url, 1200, $quality);
+                $newPath = $this->optimizeStoredImage($project->image_url, ImageService::PROJECT_WIDTH, $quality);
 
                 if ($newPath === null) {
                     continue;
@@ -93,7 +94,7 @@ class OptimizeImages extends Command
 
         foreach (ImageProperties::whereNotNull('url')->get() as $imgRecord) {
             try {
-                $newPath = $this->optimizeStoredImage($imgRecord->url, 1200, $quality);
+                $newPath = $this->optimizeStoredImage($imgRecord->url, ImageService::PROPERTY_WIDTH, $quality);
 
                 if ($newPath === null) {
                     continue;
@@ -122,7 +123,7 @@ class OptimizeImages extends Command
 
         foreach (Article::whereNotNull('image_article')->get() as $article) {
             try {
-                $newPath = $this->optimizeStoredImage($article->image_article, 1000, $quality);
+                $newPath = $this->optimizeStoredImage($article->image_article, ImageService::ARTICLE_WIDTH, $quality);
 
                 if ($newPath === null) {
                     continue;
@@ -143,6 +144,8 @@ class OptimizeImages extends Command
 
     /**
      * Re-encode one image on the public disk as WebP, keeping the original when re-encoding would not shrink it.
+     * A WebP already within the width is not touched at all: it was compressed once, and compressing it again
+     * only takes more detail away.
      * Returns the (possibly new) relative path, or null when the file is missing or was kept as-is.
      */
     private function optimizeStoredImage(string $path, int $maxWidth, int $quality): ?string
@@ -156,9 +159,13 @@ class OptimizeImages extends Command
         $isConversion = $newPath !== $path;
         $originalSize = filesize($absolutePath);
 
+        if (! $isConversion && $this->fitsWithin($absolutePath, $maxWidth)) {
+            return null;
+        }
+
         $img = Image::decode($absolutePath);
         $img->scaleDown(width: $maxWidth);
-        $encoded = (string) $img->encode(new WebpEncoder(quality: $quality));
+        [$encoded] = ImageService::encodeWebp($img, $quality, IccProfile::fromFile($absolutePath));
 
         if (! $isConversion && strlen($encoded) >= $originalSize) {
             return null;
@@ -176,8 +183,15 @@ class OptimizeImages extends Command
         return $newPath;
     }
 
+    private function fitsWithin(string $absolutePath, int $maxWidth): bool
+    {
+        $size = @getimagesize($absolutePath);
+
+        return $size !== false && $size[0] <= $maxWidth;
+    }
+
     /**
-     * Optimize all static public/img files, including re-compressing existing WebP files.
+     * Optimize all static public/img files, scaling down WebP files that are wider than they need to be.
      */
     private function optimizeStaticImages(int $quality): void
     {
@@ -216,11 +230,17 @@ class OptimizeImages extends Command
                 default => 1600,
             };
 
+            if ($absolutePath === $webpAbsolutePath && $this->fitsWithin($absolutePath, $maxWidth)) {
+                $this->line("  {$filename} kept as-is (already WebP within {$maxWidth}px)");
+
+                continue;
+            }
+
             try {
                 $originalSize = filesize($absolutePath);
                 $img = Image::decode($absolutePath);
                 $img->scaleDown(width: $maxWidth);
-                $encoded = (string) $img->encode(new WebpEncoder(quality: $quality));
+                [$encoded] = ImageService::encodeWebp($img, $quality, IccProfile::fromFile($absolutePath));
 
                 if ($absolutePath === $webpAbsolutePath && strlen($encoded) >= $originalSize) {
                     $this->line("  {$filename} kept as-is (already smaller)");

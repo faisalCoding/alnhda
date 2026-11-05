@@ -17,7 +17,7 @@ class PropertyFileController extends Controller
     public function storeImages(UploadPropertyImagesRequest $request, Properties $property): PropertyResource
     {
         foreach ($request->file('photos', []) as $photo) {
-            $path = ImageService::uploadAndProcess($photo, 'uploads', 1200);
+            $path = ImageService::uploadAndProcess($photo, 'uploads', ImageService::PROPERTY_WIDTH);
 
             ImageProperties::query()->create([
                 'url' => $path,
