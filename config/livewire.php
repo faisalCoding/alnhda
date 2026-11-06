@@ -30,15 +30,18 @@ return [
 
     /*
     |---------------------------------------------------------------------------
-    | Layout
+    | Page Layout
     |---------------------------------------------------------------------------
     | The view that will be used as the layout when rendering a single component
     | as an entire page via `Route::get('/post/create', CreatePost::class);`.
     | In this case, the view returned by CreatePost will render into $slot.
     |
+    | Livewire 4 renamed this from `layout`, and its own default (layouts::app)
+    | points at resources/views/layouts/app.blade.php, which is empty here.
+    |
     */
 
-    'layout' => 'components.layouts.app',
+    'component_layout' => 'components.layouts.app',
 
     /*
     |---------------------------------------------------------------------------
@@ -50,7 +53,22 @@ return [
     |
     */
 
-    'lazy_placeholder' => null,
+    'component_placeholder' => null,
+
+    /*
+    |---------------------------------------------------------------------------
+    | Make Command
+    |---------------------------------------------------------------------------
+    | `artisan make:livewire` keeps writing a class in App\Livewire with its view
+    | in resources/views/livewire, as every component here is written, rather
+    | than Livewire 4's single-file default.
+    |
+    */
+
+    'make_command' => [
+        'type' => 'class',
+        'emoji' => false,
+    ],
 
     /*
     |---------------------------------------------------------------------------

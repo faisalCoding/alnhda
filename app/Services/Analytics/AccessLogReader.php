@@ -40,11 +40,13 @@ class AccessLogReader
     ];
 
     /**
-     * Paths that say nothing about what people read.
+     * Paths that say nothing about what people read. Livewire's script and
+     * calls live under /livewire/ up to v3 and /livewire-{hash}/ from v4, so
+     * the prefix is left open after the name.
      *
      * @var list<string>
      */
-    private const IGNORED_PREFIXES = ['/build/', '/img/', '/fonts/', '/storage/', '/favicon', '/robots.txt'];
+    private const IGNORED_PREFIXES = ['/build/', '/img/', '/fonts/', '/storage/', '/favicon', '/robots.txt', '/livewire'];
 
     /**
      * @return array<string, mixed>|null Null when the log holds nothing for that day.

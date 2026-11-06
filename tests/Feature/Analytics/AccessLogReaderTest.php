@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ServerLogDay;
 use App\Services\Analytics\AccessLogReader;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -75,6 +76,24 @@ it('ranks the pages people read, without the assets or the crawlers', function (
         ['label' => '/projects', 'value' => 2],
         ['label' => '/', 'value' => 1],
     ]);
+
+    unlink($path);
+});
+
+it('leaves the script and calls Livewire makes out of the pages people read', function () {
+    $path = writeLog([
+        logLine('1.1.1.1', '03/Sep/2026', '/projects', 200, 100, HUMAN),
+        logLine('1.1.1.1', '03/Sep/2026', '/livewire/livewire.min.js?id=df3a17f2', 200, 100, HUMAN),
+        logLine('1.1.1.1', '03/Sep/2026', '/livewire/update', 200, 100, HUMAN),
+        logLine('2.2.2.2', '03/Sep/2026', '/livewire-1a2b3c4d/livewire.min.js?id=df3a17f2', 200, 100, HUMAN),
+        logLine('2.2.2.2', '03/Sep/2026', '/livewire-1a2b3c4d/update', 200, 100, HUMAN),
+        logLine('2.2.2.2', '03/Sep/2026', '/livewire-1a2b3c4d/upload-file', 200, 100, HUMAN),
+    ]);
+
+    $summary = app(AccessLogReader::class)->summarise($path, Carbon::parse('2026-09-03'));
+
+    expect($summary['top_paths'])->toBe([['label' => '/projects', 'value' => 1]])
+        ->and($summary['requests'])->toBe(6);
 
     unlink($path);
 });
@@ -167,8 +186,8 @@ it('reads yesterday out of the rotated file when apache has moved it', function 
 
     $this->artisan('analytics:parse-log', ['--date' => '2026-09-03'])->assertSuccessful();
 
-    expect(App\Models\ServerLogDay::query()->count())->toBe(1)
-        ->and(App\Models\ServerLogDay::query()->first()->requests)->toBe(1);
+    expect(ServerLogDay::query()->count())->toBe(1)
+        ->and(ServerLogDay::query()->first()->requests)->toBe(1);
 
     unlink($current);
     unlink($current.'.1');
@@ -179,7 +198,7 @@ it('writes nothing and complains quietly when the log is missing', function () {
 
     $this->artisan('analytics:parse-log')->assertSuccessful();
 
-    expect(App\Models\ServerLogDay::query()->count())->toBe(0);
+    expect(ServerLogDay::query()->count())->toBe(0);
 })->group('database');
 
 it('reads a rotated day straight out of the gzipped archive', function () {
@@ -210,8 +229,8 @@ it('walks back through the archive when asked to backfill', function () {
 
     $this->artisan('analytics:parse-log', ['--backfill' => 5])->assertSuccessful();
 
-    expect(App\Models\ServerLogDay::query()->count())->toBe(4)
-        ->and(App\Models\ServerLogDay::query()->orderBy('date')->pluck('date')->map->toDateString()->all())
+    expect(ServerLogDay::query()->count())->toBe(4)
+        ->and(ServerLogDay::query()->orderBy('date')->pluck('date')->map->toDateString()->all())
         ->toBe(['2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04']);
 
     Carbon::setTestNow();
@@ -230,7 +249,7 @@ it('reads the archive in the order logrotate numbers it, not alphabetically', fu
 
     $this->artisan('analytics:parse-log', ['--date' => '2026-09-03'])->assertSuccessful();
 
-    expect(App\Models\ServerLogDay::query()->first()->top_paths[0]['label'])->toBe('/two');
+    expect(ServerLogDay::query()->first()->top_paths[0]['label'])->toBe('/two');
 
     array_map('unlink', [$base, $base.'.2.gz', $base.'.10.gz']);
 })->group('database');
