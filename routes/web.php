@@ -4,7 +4,6 @@ use App\Models\Article;
 use App\Models\CollectionPage;
 use App\Models\Project;
 use Illuminate\Support\Facades\Route;
-use Livewire\Volt\Volt;
 
 Route::domain(config('app.domain'))->group(function () {
 
@@ -15,9 +14,9 @@ Route::domain(config('app.domain'))->group(function () {
     Route::middleware(['auth'])->group(function () {
         Route::redirect('settings', 'settings/profile');
 
-        Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
-        Volt::route('settings/password', 'settings.password')->name('settings.password');
-        Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
+        Route::livewire('settings/profile', 'settings.profile')->name('settings.profile');
+        Route::livewire('settings/password', 'settings.password')->name('settings.password');
+        Route::livewire('settings/appearance', 'settings.appearance')->name('settings.appearance');
 
     });
 
