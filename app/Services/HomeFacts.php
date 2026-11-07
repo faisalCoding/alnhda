@@ -6,6 +6,8 @@ use App\Models\AppSettings;
 use App\Models\FaqEntry;
 use App\Models\Project;
 use App\Models\Properties;
+use Illuminate\Support\Collection;
+use IntlListFormatter;
 
 /**
  * What the home page states as fact about the company, in one copy.
@@ -218,7 +220,7 @@ class HomeFacts
      * Districts are what a buyer searches by — «شقق في التيسير» far more often
      * than «شقق في جدة» — and the site never said one out loud before.
      *
-     * @return array<string, \Illuminate\Support\Collection<int, Project>>
+     * @return array<string, Collection<int, Project>>
      */
     public function projectsByDistrict(): array
     {
@@ -302,18 +304,14 @@ class HomeFacts
 
     /**
      * Joins items the way the sentence would be spoken, not with commas alone.
+     * ICU writes the waw before every item, as Arabic does, rather than the
+     * English habit of commas with a single "and" before the last.
      *
      * @param  list<string>  $items
      */
     private function sentence(array $items): string
     {
-        if (count($items) < 2) {
-            return $items[0] ?? '';
-        }
-
-        $last = array_pop($items);
-
-        return implode('، ', $items).' و'.$last;
+        return (new IntlListFormatter('ar', IntlListFormatter::TYPE_AND))->format($items);
     }
 
     /**

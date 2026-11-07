@@ -1,8 +1,10 @@
 <?php
 
+use App\Livewire\HeaderNavBar;
 use App\Models\Project;
 use App\Models\Properties;
 use App\Services\HomeFacts;
+use App\Services\SiteSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 
@@ -121,6 +123,14 @@ it('joins several facts into a sentence rather than a comma list', function () {
     expect($answer['answer'])->toContain('ضمان الهيكل وضمان التمديدات');
 });
 
+it('repeats the waw between every item, the way arabic lists are written', function () {
+    Project::factory()->create(['guarantees' => ['ضمان الهيكل', 'ضمان التمديدات', 'ضمان العزل']]);
+
+    $answer = collect(app(HomeFacts::class)->faq())->firstWhere('question', 'ما الضمانات التي تقدمونها على الوحدة؟');
+
+    expect($answer['answer'])->toContain('تشمل ضمانات كيان النهضة العقارية ضمان الهيكل وضمان التمديدات وضمان العزل.');
+});
+
 // ---- the districts -------------------------------------------------------
 
 it('names the districts it builds in, which is how a buyer searches', function () {
@@ -167,13 +177,13 @@ it('publishes no empty item list when there are no projects yet', function () {
 });
 
 it('gives the office a coordinate a map can place', function () {
-    $organization = app(\App\Services\SiteSchema::class)->organization();
+    $organization = app(SiteSchema::class)->organization();
 
     expect($organization['geo'])->toBe([
         '@type' => 'GeoCoordinates',
         'latitude' => 21.5660262,
         'longitude' => 39.2480873,
-    ])->and($organization['hasMap'])->toBe(\App\Livewire\HeaderNavBar::OFFICE_MAP_URL);
+    ])->and($organization['hasMap'])->toBe(HeaderNavBar::OFFICE_MAP_URL);
 });
 
 // ---- the links -----------------------------------------------------------
