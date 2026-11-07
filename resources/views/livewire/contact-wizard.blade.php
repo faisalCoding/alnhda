@@ -3,50 +3,12 @@
     $unitTypes = \App\Livewire\ContactWizard::UNIT_TYPES;
 @endphp
 
-{{-- Steps live in Alpine: walking between three questions is not worth a
-     network round trip each way, so only the finished answer reaches the
-     server. Choices are pushed onto the Livewire component as they are made,
-     which costs nothing until the form is actually submitted. --}}
-<div x-data="{
-    open: false,
-    step: 1,
-    role: '',
-    unitType: '',
-    done: false,
-    asksUnitType() {
-        return this.role === 'client';
-    },
-    get lastStep() {
-        return this.asksUnitType() ? 3 : 2;
-    },
-    chooseRole(role) {
-        this.role = role;
-        $wire.role = role;
-        this.unitType = '';
-        $wire.unitType = '';
-        this.step = 2;
-    },
-    chooseUnitType(type) {
-        this.unitType = type;
-        $wire.unitType = type;
-        this.step = 3;
-    },
-    back() {
-        if (this.step > 1) {
-            this.step--;
-        }
-    },
-    show() {
-        this.done = false;
-        this.step = 1;
-        this.role = '';
-        this.unitType = '';
-        this.open = true;
-    },
-    close() {
-        this.open = false;
-    },
-}"
+{{-- Steps live in Alpine (contactWizard in resources/js/site/components.js):
+     walking between three questions is not worth a network round trip each
+     way, so only the finished answer reaches the server. Choices are pushed
+     onto the Livewire component as they are made, which costs nothing until
+     the form is actually submitted. --}}
+<div x-data="contactWizard"
     x-on:open-contact-wizard.window="show()"
     x-on:contact-wizard-saved="done = true"
     x-on:keydown.escape.window="close()">
@@ -81,7 +43,7 @@
                 {{-- Progress through the steps taken, not the steps shown: before a
                      role is chosen the flow does not yet know how long it is. --}}
                 <div class="h-full bg-[#498E49] transition-all duration-300"
-                    :style="`width: ${((step - 1) / (lastStep - 1)) * 100}%`"></div>
+                    :style="progressWidth"></div>
             </div>
         </div>
 

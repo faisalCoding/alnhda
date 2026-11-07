@@ -27,7 +27,7 @@
 
             <div class="mt-12 flex justify-center">
                 <a href="{{ route('articles') }}"
-                    onclick="event.preventDefault(); navigateTo('{{ route('articles') }}');"
+                    data-fade-link
                     class="group inline-flex items-center gap-2 rounded-xl border-2 border-[#498E49] bg-white px-8 py-3 font-bold text-[#498E49] shadow-sm transition-all duration-300 hover:bg-[#498E49] hover:text-white hover:shadow-lg">
                     كل المقالات العقارية
                     <svg class="h-5 w-5 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24"

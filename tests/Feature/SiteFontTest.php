@@ -40,7 +40,9 @@ it('does not hold the first paint back for the previous face', function () {
 
     expect($links[0])->toHaveCount(1)
         ->and($links[0][0])->toContain('media="print"')
-        ->toContain('onload="this.media=\'all\'"');
+        ->toContain('id="almarai-stylesheet"')
+        ->not->toContain('onload=')
+        ->and($outsideNoscript)->toMatch("/<script nonce=\"[^\"]+\">\s*\(function \(link\) \{.*link\.media = 'all'.*\}\)\(document\.getElementById\('almarai-stylesheet'\)\);/s");
 });
 
 it('fetches the body weight with the page rather than after its stylesheet', function () {

@@ -1,11 +1,15 @@
 <?php
 
+use App\Http\Middleware\ContentSecurityPolicy;
 use App\Models\Article;
 use App\Models\CollectionPage;
 use App\Models\Project;
+use App\Models\Properties;
+use App\Services\HomeFacts;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
-Route::domain(config('app.domain'))->group(function () {
+Route::domain(config('app.domain'))->middleware(ContentSecurityPolicy::class)->group(function () {
 
     Route::get('/', function () {
         return view('welcome');
@@ -29,12 +33,12 @@ Route::domain(config('app.domain'))->group(function () {
     })->name('project');
 
     Route::get('project/{project}/download', function (Project $project) {
-        if (empty($project->pdf_path) || ! \Illuminate\Support\Facades\Storage::disk('public')->exists($project->pdf_path)) {
+        if (empty($project->pdf_path) || ! Storage::disk('public')->exists($project->pdf_path)) {
             abort(404);
         }
         $filename = $project->name.'.pdf';
 
-        return \Illuminate\Support\Facades\Storage::disk('public')->download($project->pdf_path, $filename);
+        return Storage::disk('public')->download($project->pdf_path, $filename);
     })->name('project.download');
 
     Route::get('article/{article}', function (Article $article) {
@@ -44,22 +48,22 @@ Route::domain(config('app.domain'))->group(function () {
     Route::get('collections/{collection:slug}', function (CollectionPage $collection) {
         return view('collection', [
             'collection' => $collection->load(['items.item' => function ($morphTo) {
-                $morphTo->morphWith([\App\Models\Properties::class => ['project', 'propertiesImages']]);
+                $morphTo->morphWith([Properties::class => ['project', 'propertiesImages']]);
             }]),
         ]);
     })->name('collection');
 
-    Route::get('properties/{properties}', function (\App\Models\Properties $properties) {
+    Route::get('properties/{properties}', function (Properties $properties) {
         return view('properties', ['properties' => $properties]);
     })->name('properties');
 
-    Route::get('properties/{properties}/download', function (\App\Models\Properties $properties) {
-        if (empty($properties->pdf_path) || ! \Illuminate\Support\Facades\Storage::disk('public')->exists($properties->pdf_path)) {
+    Route::get('properties/{properties}/download', function (Properties $properties) {
+        if (empty($properties->pdf_path) || ! Storage::disk('public')->exists($properties->pdf_path)) {
             abort(404);
         }
         $filename = $properties->name.'.pdf';
 
-        return \Illuminate\Support\Facades\Storage::disk('public')->download($properties->pdf_path, $filename);
+        return Storage::disk('public')->download($properties->pdf_path, $filename);
     })->name('properties.download');
 
     Route::view('about-us', 'about-us')->name('about-us');
@@ -69,7 +73,7 @@ Route::domain(config('app.domain'))->group(function () {
 
     Route::get('/sitemap.xml', function () {
         $projects = Project::indexable()->get();
-        $properties = \App\Models\Properties::indexable()->get();
+        $properties = Properties::indexable()->get();
         $articles = Article::indexable()->get();
 
         return response()->view('sitemap', [
@@ -84,10 +88,10 @@ Route::domain(config('app.domain'))->group(function () {
         return response()
             ->view('llms', [
                 'projects' => Project::ordered()->indexable()->get(),
-                'properties' => \App\Models\Properties::indexable()->get(),
+                'properties' => Properties::indexable()->get(),
                 'articles' => Article::indexable()->latest()->get(),
                 'collections' => CollectionPage::indexable()->latest()->get(),
-                'facts' => app(\App\Services\HomeFacts::class),
+                'facts' => app(HomeFacts::class),
             ])
             ->header('Content-Type', 'text/plain; charset=utf-8');
     })->name('llms');

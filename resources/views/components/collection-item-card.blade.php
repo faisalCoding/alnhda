@@ -18,7 +18,7 @@
         <img src="{{ $seo['image'] }}" alt="{{ \App\Services\LinkTargets::nameFor($item) }}"
             class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy" width="800" height="450"
-            onerror="this.src='{{ asset('img/article.webp') }}'">
+            data-fallback="{{ asset('img/article.webp') }}">
         <span
             class="absolute top-4 right-4 rounded-full bg-white/90 backdrop-blur-md px-3 py-1 text-xs font-bold text-[#498e49] shadow-sm">
             {{ $kind }}

@@ -9,10 +9,10 @@
                 @foreach (App\Models\Project::ordered()->get() as $project)
                     @if ($project->status !== 'تم البيع')
                         <a href="{{ route('project', $project) }}"
-                            onclick="event.preventDefault(); navigateTo('{{ route('project', $project) }}');"
+                            data-fade-link
                             class="group relative block rounded-[2rem] overflow-hidden h-[500px] cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-500 text-right">
                     @else
-                        <div x-data="{ showBadge: false, x: 0, y: 0 }" @mousemove="x = $event.clientX; y = $event.clientY"
+                        <div x-data="cursorBadge" @mousemove="follow($event)"
                             @mouseenter="showBadge = true" @mouseleave="showBadge = false"
                             class="group relative rounded-[2rem] overflow-hidden h-[500px] cursor-none shadow-lg hover:shadow-2xl transition-all duration-500 text-right">
                     @endif
@@ -21,7 +21,7 @@
                             {{-- Floating Cursor Badge --}}
                             <div x-show="showBadge"
                                 class="fixed pointer-events-none z-[100] bg-[#498E49] text-white px-4 py-2 rounded-full font-bold shadow-2xl transform -translate-x-1/2 -translate-y-1/2"
-                                :style="`left: ${x}px; top: ${y}px; transition: transform 0.05s linear;`"
+                                :style="position"
                                 x-transition:enter="transition ease-out duration-200"
                                 x-transition:enter-start="opacity-0 scale-50" x-transition:enter-end="opacity-100 scale-100"
                                 x-transition:leave="transition ease-in duration-150"

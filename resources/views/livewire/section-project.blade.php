@@ -1,33 +1,7 @@
 @php $projects = App\Models\Project::ordered()->get(); @endphp
 
 <div id="projects" class="bg-[#f8f9fa] w-full flex text-center flex-col py-16 rtl overflow-hidden" dir="rtl"
-    x-data="{
-        dragging: false,
-        startX: 0,
-        startScroll: 0,
-        moved: false,
-        onMouseDown(e) {
-            this.dragging = true;
-            this.moved = false;
-            this.startX = e.pageX - this.$refs.track.offsetLeft;
-            this.startScroll = this.$refs.track.scrollLeft;
-            this.$refs.track.style.cursor = 'grabbing';
-            this.$refs.track.style.userSelect = 'none';
-        },
-        onMouseMove(e) {
-            if (!this.dragging) return;
-            const x = e.pageX - this.$refs.track.offsetLeft;
-            const walk = x - this.startX;
-            if (Math.abs(walk) > 5) this.moved = true;
-            this.$refs.track.scrollLeft = this.startScroll - walk;
-        },
-        onMouseUp() {
-            this.dragging = false;
-            this.$refs.track.style.cursor = 'grab';
-            this.$refs.track.style.userSelect = '';
-            setTimeout(() => { this.moved = false; }, 100);
-        },
-    }">
+    x-data="projectCarousel">
 
     <div class="relative mb-12 container mx-auto px-4">
         <h2 class="text-3xl md:text-4xl font-bold text-gray-900">إكتشف مشاريعنا <span
@@ -43,21 +17,21 @@
         @mousedown="onMouseDown($event)"
         @mousemove="onMouseMove($event)"
         @mouseup="onMouseUp($event)"
-        @mouseleave="dragging = false; $refs.track.style.cursor = 'grab'">
+        @mouseleave="onMouseLeave()">
 
         @foreach ($projects as $project)
             @if ($project->status !== 'تم البيع')
                 <a href="{{ route('project', $project) }}" wire:key="project-{{ $project->id }}"
                     class="block shrink-0 w-[80vw] sm:w-[45vw] lg:w-[30vw] xl:w-[22vw]" dir="rtl" draggable="false"
-                    x-on:click.prevent="if (!moved) navigateTo('{{ route('project', $project) }}')">
+                    x-on:click.prevent="openProject('{{ route('project', $project) }}')">
             @else
                 <div wire:key="project-{{ $project->id }}" class="shrink-0 w-[80vw] sm:w-[45vw] lg:w-[30vw] xl:w-[22vw]"
                     dir="rtl">
             @endif
                 <div
                     @if($project->status === 'تم البيع')
-                        x-data="{ showBadge: false, x: 0, y: 0 }"
-                        @mousemove="x = $event.clientX; y = $event.clientY"
+                        x-data="cursorBadge"
+                        @mousemove="follow($event)"
                         @mouseenter="showBadge = true"
                         @mouseleave="showBadge = false"
                     @endif
@@ -67,7 +41,7 @@
                         {{-- Floating Cursor Badge --}}
                         <div x-show="showBadge"
                              class="fixed pointer-events-none z-[100] bg-[#498E49] text-white px-4 py-2 rounded-full font-bold shadow-2xl transform -translate-x-1/2 -translate-y-1/2"
-                             :style="`left: ${x}px; top: ${y}px; transition: transform 0.05s linear;`"
+                             :style="position"
                              x-transition:enter="transition ease-out duration-200"
                              x-transition:enter-start="opacity-0 scale-50"
                              x-transition:enter-end="opacity-100 scale-100"
@@ -147,7 +121,7 @@
     </div>
 
     <div class="flex justify-center mt-12">
-        <a href="{{ route('projects') }}" onclick="event.preventDefault(); navigateTo('{{ route('projects') }}');"
+        <a href="{{ route('projects') }}" data-fade-link
             class="group bg-white text-[#498E49] border border-[#498E49] px-8 py-3 rounded-full font-bold hover:bg-[#498E49] hover:text-white transition-all duration-300 shadow-sm hover:shadow-md flex items-center gap-2">
             <span>عرض جميع مشاريعنا في جدة</span>
             <svg class="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" fill="none"

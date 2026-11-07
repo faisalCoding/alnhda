@@ -86,7 +86,7 @@
             transform: scale(1.25);
         }
     </style>
-    <div x-data="{ showModal: false }" class="container mx-auto px-4 py-8 rtl" dir="rtl">
+    <div x-data="unitGallery" class="container mx-auto px-4 py-8 rtl" dir="rtl">
 
         {{-- Breadcrumb --}}
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-6">
@@ -117,7 +117,7 @@
                             <div class="swiper-wrapper">
                                 @foreach ($properties->propertiesImages as $image)
                                    <div class="swiper-slide cursor-zoom-in" 
-                                         @click="showModal = true; $nextTick(() => { lightboxSwiper.slideTo({{ $loop->index }}, 0); lightboxSwiper.update(); })">
+                                         @click="openLightbox({{ $loop->index }})">
                                          <img src="{{ asset('storage/' . $image->url) }}" alt="{{ $properties->name }}"
                                              @if ($loop->first) fetchpriority="high" @endif
                                              {{ \App\Services\ImageService::srcsetAttributes($image->url, '(min-width: 1024px) 66vw, (min-width: 640px) 100vw, 600px') }}
@@ -207,13 +207,13 @@
                                     <div class="w-1.5 h-8 bg-[#498e49] rounded-full ml-3"></div>
                                     <h2 class="text-2xl font-bold text-gray-800">فيديو الوحدة</h2>
                                 </div>
-                                <div x-data="{ playing: false }"
+                                <div x-data="youtubePlayer" data-video="{{ youtubeEmbedUrl($properties->unit_youtube) }}"
                                     class="sm:w-full max-sm:w-full relative rounded-3xl overflow-hidden shadow-xl bg-gray-900 aspect-video">
-                                    <div x-show="!playing" @click="playing = true"
+                                    <div x-show="!playing" @click="play()"
                                         class="absolute inset-0 cursor-pointer group">
                                         <img src="{{ youtubeThumbnail($properties->unit_youtube) }}"
                                             class="w-full h-full object-cover"
-                                            onerror="this.src='{{ asset('img/article.webp') }}'"
+                                            data-fallback="{{ asset('img/article.webp') }}"
                                             alt="فيديو الوحدة">
                                         <div class="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors"></div>
                                         <div class="absolute inset-0 flex items-center justify-center">
@@ -224,14 +224,15 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <iframe x-show="playing" x-cloak
-                                        class="w-full h-full"
-                                        src=""
-                                        :src="playing ? '{{ youtubeEmbedUrl($properties->unit_youtube) }}' : ''"
-                                        frameborder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowfullscreen>
-                                    </iframe>
+                                    <div x-show="playing" x-cloak class="w-full h-full">
+                                        <iframe x-ref="frame"
+                                            class="w-full h-full"
+                                            src=""
+                                            frameborder="0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowfullscreen>
+                                        </iframe>
+                                    </div>
                                 </div>
                             </div>
                         @endif
@@ -243,13 +244,13 @@
                                     <div class="w-1.5 h-8 bg-[#498e49] rounded-full ml-3"></div>
                                     <h2 class="text-2xl font-bold text-gray-800">فيديو مراحل انشاء الوحدة</h2>
                                 </div>
-                                <div x-data="{ playing: false }"
+                                <div x-data="youtubePlayer" data-video="{{ youtubeEmbedUrl($properties->stages_building_youtube) }}"
                                     class="sm:w-full max-sm:w-full relative rounded-3xl overflow-hidden shadow-xl bg-gray-900 aspect-video">
-                                    <div x-show="!playing" @click="playing = true"
+                                    <div x-show="!playing" @click="play()"
                                         class="absolute inset-0 cursor-pointer group">
                                         <img src="{{ youtubeThumbnail($properties->stages_building_youtube) }}"
                                             class="w-full h-full object-cover"
-                                            onerror="this.src='{{ asset('img/article.webp') }}'"
+                                            data-fallback="{{ asset('img/article.webp') }}"
                                             alt="فيديو مراحل الإنشاء">
                                         <div class="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors"></div>
                                         <div class="absolute inset-0 flex items-center justify-center">
@@ -260,14 +261,15 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <iframe x-show="playing" x-cloak
-                                        class="w-full h-full"
-                                        src=""
-                                        :src="playing ? '{{ youtubeEmbedUrl($properties->stages_building_youtube) }}' : ''"
-                                        frameborder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowfullscreen>
-                                    </iframe>
+                                    <div x-show="playing" x-cloak class="w-full h-full">
+                                        <iframe x-ref="frame"
+                                            class="w-full h-full"
+                                            src=""
+                                            frameborder="0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowfullscreen>
+                                        </iframe>
+                                    </div>
                                 </div>
                             </div>
                         @endif
@@ -495,7 +497,7 @@
     <script src="{{ asset('js/swiper-bundle.min.js') }}"></script>
 
     <!-- Initialize Swiper -->
-    <script>
+    <script nonce="{{ Vite::cspNonce() }}">
         var swiper = new Swiper(".mySwiper", {
             pagination: {
                 el: ".swiper-pagination",

@@ -175,4 +175,19 @@ return [
     */
 
     'pagination_theme' => 'tailwind',
+
+    /*
+    |---------------------------------------------------------------------------
+    | CSP Safe
+    |---------------------------------------------------------------------------
+    |
+    | Ships the CSP build of Alpine, which parses expressions instead of handing
+    | them to eval. The public site sends a strict Content-Security-Policy
+    | (App\Http\Middleware\ContentSecurityPolicy), so any logic heavier than
+    | a call or an assignment belongs in an Alpine.data() component in
+    | resources/js/app.js rather than in an attribute.
+    |
+    */
+
+    'csp_safe' => true,
 ];

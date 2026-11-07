@@ -10,7 +10,7 @@
     $url = route('article', $article->id);
 @endphp
 
-<a href="{{ $url }}" x-data x-on:click.prevent="navigateTo('{{ $url }}')"
+<a href="{{ $url }}" data-fade-link
     class="group flex h-full flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:border-[#498e49]/30 hover:shadow-xl"
     dir="rtl">
 
@@ -20,7 +20,7 @@
         <img src="{{ $imageUrl }}" alt="{{ $article->title }}"
             {{ \App\Services\ImageService::srcsetAttributes($image, '(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw') }}
             class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            onerror="this.removeAttribute('srcset'); this.src='{{ asset('img/article.webp') }}'" width="800" height="450"
+            data-fallback="{{ asset('img/article.webp') }}" width="800" height="450"
             loading="{{ $eager ? 'eager' : 'lazy' }}" @if ($eager) fetchpriority="high" @endif>
     </div>
 

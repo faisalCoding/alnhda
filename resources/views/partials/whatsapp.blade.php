@@ -12,23 +12,7 @@
 @endphp
 
 <div
-    x-data="{
-        visible: false,
-        open: false,
-        init() {
-            setTimeout(() => {
-                this.visible = true;
-                const cycle = () => {
-                    this.open = true;
-                    setTimeout(() => {
-                        this.open = false;
-                        setTimeout(cycle, 2500);
-                    }, 3500);
-                };
-                setTimeout(cycle, 1200);
-            }, 5000);
-        }
-    }"
+    x-data="whatsappBubble"
     x-show="visible"
     x-transition:enter="transition ease-out duration-700"
     x-transition:enter-start="opacity-0 translate-y-12"

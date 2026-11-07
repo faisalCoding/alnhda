@@ -17,7 +17,7 @@
     {{-- Background --}}
     <div class="absolute inset-0 z-0">
         <img src="{{ $heroImage }}" alt="{{ $heroAlt }}" class="w-full h-full object-cover" fetchpriority="high"
-            loading="eager" width="1600" height="900" onerror="this.src='{{ asset('img/homebg.webp') }}'">
+            loading="eager" width="1600" height="900" data-fallback="{{ asset('img/homebg.webp') }}">
         {{-- A photograph is brighter than flat concrete, so the text needs its
              own ground rather than the image being dimmed into grey mush. --}}
         <div class="absolute inset-0 bg-gradient-to-b from-black/75 via-black/55 to-black/80"></div>

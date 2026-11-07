@@ -88,8 +88,16 @@
     {{-- Almarai احتياطي خلف Lama Sans لا يُرسم به شيء ما دام Lama Sans يغطي
          النص، فلا يُترك ملف أنماطه يحجب رسم الصفحة: كان يؤخر أول ظهور للنص
          على الجوال قرابة ثانية. يُحمَّل في الخلفية ويبقى جاهزًا إن احتيج. --}}
-    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet"
-        media="print" onload="this.media='all'">
+    <link id="almarai-stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap"
+        rel="stylesheet" media="print">
+    {{-- The policy refuses onload="" handlers, so the swap to media="all" is a
+         script of its own carrying this response's nonce. --}}
+    <script nonce="{{ Vite::cspNonce() }}">
+        (function (link) {
+            var apply = function () { link.media = 'all'; };
+            link.sheet ? apply() : link.addEventListener('load', apply);
+        })(document.getElementById('almarai-stylesheet'));
+    </script>
     <noscript>
         <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     </noscript>
@@ -158,8 +166,22 @@
 
     @stack('styles')
 
+    {{-- A photo that fails to load is swapped for the stand-in its data-fallback
+         names. The policy refuses onerror="" handlers, and an image can fail
+         before the deferred bundle runs, so this listens from the head. --}}
+    <script nonce="{{ Vite::cspNonce() }}">
+        document.addEventListener('error', function (event) {
+            var image = event.target;
+
+            if (image.tagName === 'IMG' && image.dataset.fallback && image.getAttribute('src') !== image.dataset.fallback) {
+                image.removeAttribute('srcset');
+                image.src = image.dataset.fallback;
+            }
+        }, true);
+    </script>
+
     <!-- Google Tag Manager -->
-    <script>
+    <script nonce="{{ Vite::cspNonce() }}">
         (function(w, d, s, l, i) {
             w[l] = w[l] || [];
             w[l].push({
@@ -191,7 +213,7 @@
     <!-- End Google Tag Manager (noscript) -->
 
     @section('header')
-        <header x-data="{ scrolled: false }" x-on:scroll.window="scrolled = window.scrollY > 20"
+        <header x-data="stickyHeader" x-on:scroll.window="onScroll()"
             x-bind:class="scrolled ? 'h-16! md:h-20! bg-white/95! shadow-md!' : ''"
             class="sticky top-0 z-50 flex justify-center items-center w-full h-20 md:h-25 bg-white/80 backdrop-blur-md border-b border-white/10 shadow-sm transition-all duration-300">
             @livewire('header-nav-bar')

@@ -1,5 +1,4 @@
-<nav x-data="{ open: false }" x-effect="document.body.classList.toggle('overflow-hidden', open)"
-    x-on:keydown.escape.window="open = false" class="w-full mx-auto px-4 py-3 container">
+<nav x-data="mobileMenu" x-on:keydown.escape.window="open = false" class="w-full mx-auto px-4 py-3 container">
 
     <div class="flex items-center justify-between gap-3">
 
@@ -37,7 +36,7 @@
             </a>
 
             {{-- Mobile Menu Button --}}
-            <button x-on:click="open = true" type="button" x-bind:aria-expanded="open.toString()"
+            <button x-on:click="open = true" type="button" x-bind:aria-expanded="open ? 'true' : 'false'"
                 aria-controls="mobile-menu" aria-label="فتح القائمة"
                 class="md:hidden rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-[#498E49] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#498E49]">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
