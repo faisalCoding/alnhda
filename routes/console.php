@@ -39,3 +39,10 @@ Schedule::command('analytics:pull')->dailyAt('03:40')->withoutOverlapping();
  * and the nightly jobs overwrite whatever this leaves behind once the day ends.
  */
 Schedule::command('analytics:today')->everyFifteenMinutes()->withoutOverlapping();
+
+/**
+ * The ministry publishes sale deeds once a quarter, a few weeks after it ends.
+ * Only the portal's catalogue is asked, once a week, so the panel can say a new
+ * quarter is waiting; the file itself is downloaded and uploaded by a person.
+ */
+Schedule::command('market:check')->weeklyOn(CarbonInterface::SUNDAY, '04:10')->withoutOverlapping();

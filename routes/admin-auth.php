@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\Api\LawhatiCodeController;
 use App\Http\Controllers\Admin\Api\LeadController;
 use App\Http\Controllers\Admin\Api\MarketingChecklistController;
 use App\Http\Controllers\Admin\Api\MarketingMethodController;
+use App\Http\Controllers\Admin\Api\MarketPriceController;
 use App\Http\Controllers\Admin\Api\ProjectController;
 use App\Http\Controllers\Admin\Api\ProjectFileController;
 use App\Http\Controllers\Admin\Api\PropertyController;
@@ -50,6 +51,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::view('collections-dashboard', 'admin.collections')->name('collections-dashboard');
     Route::view('home-content', 'admin.home-content')->name('home-content');
     Route::view('traffic', 'admin.traffic')->name('traffic');
+    Route::view('market-prices', 'admin.market-prices')->name('market-prices');
     Route::view('visitors-dashboard', 'admin.visitors')->name('visitors-dashboard');
     Route::view('leads-dashboard', 'admin.leads')->name('leads-dashboard');
     Route::view('whatsapp-dashboard', 'admin.whatsapp')->name('whatsapp-dashboard');
@@ -82,6 +84,8 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('collections', [CollectionPageController::class, 'index'])->name('collections.index');
         Route::get('home-content', [HomeContentController::class, 'index'])->name('home-content.index');
         Route::get('traffic', [TrafficController::class, 'index'])->name('traffic.index');
+        Route::get('market-prices', [MarketPriceController::class, 'index'])->name('market-prices.index');
+        Route::post('market-prices/import', [MarketPriceController::class, 'store'])->name('market-prices.import');
         Route::get('visitors', [VisitorController::class, 'index'])->name('visitors.index');
         Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
 

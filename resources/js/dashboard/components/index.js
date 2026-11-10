@@ -6,6 +6,7 @@ import collectionsPage from './collections';
 import homeContentPage from './homeContent';
 import leadsPage from './leads';
 import marketingToolsPage from './marketingTools';
+import marketPricesPage from './marketPrices';
 import overviewPage from './overview';
 import projectsPage from './projects';
 import seoPage from './seo';
@@ -24,6 +25,7 @@ export default function registerComponents(Alpine) {
     Alpine.data('collectionsPage', collectionsPage);
     Alpine.data('homeContentPage', homeContentPage);
     Alpine.data('trafficPage', trafficPage);
+    Alpine.data('marketPricesPage', marketPricesPage);
     Alpine.data('visitorsPage', visitorsPage);
     Alpine.data('leadsPage', leadsPage);
     Alpine.data('accountsPage', accountsPage);
