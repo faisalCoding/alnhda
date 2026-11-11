@@ -22,8 +22,17 @@ class MarketQuarterFactory extends Factory
             'source_name' => 'sales.csv',
             'deals_count' => fake()->numberBetween(100, 90000),
             'skipped_rows' => 0,
+            'figures_version' => MarketQuarter::FIGURES_VERSION,
             'imported_at' => now(),
         ];
+    }
+
+    /**
+     * Counted before area bands and price spreads were kept.
+     */
+    public function outdated(): static
+    {
+        return $this->state(fn (): array => ['figures_version' => 1]);
     }
 
     /**

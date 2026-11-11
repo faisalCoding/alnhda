@@ -147,6 +147,107 @@ test('labels a bar in the unit of the chosen metric', () => {
     assert.ok(page.barLabel(point).startsWith('الربع الأول 2026'));
 });
 
+test('prints the range of prices, and a dash where none was kept', () => {
+    const page = marketPricesPage();
+
+    assert.equal(page.range({ lower: 3200, upper: 4700 }), `${page.rate(3200)} – ${page.rate(4700)}`);
+    assert.equal(page.range({ lower: 0, upper: 0 }), '—', 'a quarter counted before ranges were kept');
+    assert.equal(page.range({ lower: null, upper: null }), '—');
+    assert.equal(page.range(null), '—');
+    assert.equal(page.range(undefined), '—');
+});
+
+test('offers no bands and no notices before the screen has loaded', () => {
+    const page = marketPricesPage();
+
+    assert.deepEqual(page.bands, []);
+    assert.deepEqual(page.outdated, []);
+    assert.deepEqual(page.changed, []);
+    assert.equal(page.day(null), '');
+});
+
+test('picks out the quarters that need their file again', () => {
+    const page = marketPricesPage();
+    page.data = {
+        quarters: [
+            { key: '2025-3', outdated: true, file_changed: false },
+            { key: '2025-4', outdated: false, file_changed: true },
+            { key: '2026-1', outdated: false, file_changed: false },
+        ],
+    };
+
+    assert.deepEqual(page.outdated.map((quarter) => quarter.key), ['2025-3']);
+    assert.deepEqual(page.changed.map((quarter) => quarter.key), ['2025-4']);
+});
+
+test('uploads what is dropped on the screen and stops showing the drop target', async () => {
+    const page = marketPricesPage();
+    const seen = [];
+    page.upload = async (event) => seen.push(event.target.files);
+    page.dragging = true;
+
+    await page.drop({ dataTransfer: { files: ['a.csv', 'b.csv'] } });
+
+    assert.equal(page.dragging, false);
+    assert.deepEqual(seen, [['a.csv', 'b.csv']]);
+
+    await page.drop({});
+    assert.deepEqual(seen[1], [], 'something dropped that is not a file uploads nothing');
+});
+
+test('reads no property types out of a screen that is still loading', () => {
+    const page = marketPricesPage();
+
+    assert.equal(page.types, null);
+    assert.equal(page.typesQuarterNote, '');
+    assert.equal(page.extremes(null), '—');
+    assert.equal(page.extremes({ lowest: null, highest: null }), '—');
+});
+
+test('names the quarter the type figures are for only when it differs from the screen', () => {
+    const page = marketPricesPage();
+    page.data = { filters: { quarter: '2026-2' }, types: { quarter: '2026-1' } };
+
+    assert.ok(page.typesQuarterNote.includes('الربع الأول 2026'));
+
+    page.data = { filters: { quarter: '2026-1' }, types: { quarter: '2026-1' } };
+    assert.equal(page.typesQuarterNote, '');
+
+    page.data = { filters: { quarter: '2026-1' }, types: { quarter: null } };
+    assert.equal(page.typesQuarterNote, '', 'no figures from the authority, nothing to name');
+});
+
+test('prints the lowest and highest price the authority reported', () => {
+    const page = marketPricesPage();
+
+    assert.equal(page.extremes({ lowest: 1999, highest: 8090 }), `${page.rate(1999)} – ${page.rate(8090)}`);
+});
+
+test('draws a chart in its own metric when it names one', () => {
+    const page = marketPricesPage();
+    const series = [
+        { key: '2025-4', year: 2025, quarter: 4, average: 3700, deals: 5518 },
+        { key: '2026-1', year: 2026, quarter: 1, average: null, deals: 0 },
+    ];
+
+    // The screen is on the median, which these points do not have.
+    assert.equal(page.metric, 'median');
+    assert.equal(page.barHeight(series, series[0], 'average'), '100%');
+    assert.equal(page.barHeight(series, series[1], 'average'), '0%');
+    assert.equal(page.barHeight(series, series[0]), '0%');
+    assert.ok(page.barLabel(series[0], 'average').includes('صفقة'));
+});
+
+test('says which kind of file an upload turned out to be', () => {
+    const page = marketPricesPage();
+    const periods = [{ year: 2026, quarter: 1, deals: 12098, region: 'مكة المكرمة' }];
+
+    assert.ok(page.importSummary(periods, 'indicators').includes('مكة المكرمة'));
+    assert.ok(page.importSummary(periods, 'indicators').includes('مؤشرات'));
+    assert.ok(!page.importSummary(periods, 'sales').includes('مؤشرات'));
+    assert.ok(!page.importSummary(periods).includes('مؤشرات'), 'a response that names no kind is read as deeds');
+});
+
 test('sums up what an upload brought in', () => {
     const page = marketPricesPage();
 

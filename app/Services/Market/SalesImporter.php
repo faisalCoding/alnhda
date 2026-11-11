@@ -2,6 +2,7 @@
 
 namespace App\Services\Market;
 
+use App\Enums\AreaBand;
 use App\Enums\MarketLevel;
 use App\Exceptions\UnreadableSalesFile;
 use App\Models\MarketPriceStat;
@@ -12,9 +13,11 @@ use Illuminate\Support\Facades\DB;
  * Turns a quarter of sale deeds into the figures the panel reads.
  *
  * Each deed is counted once for its district, its city, its region and the
- * country, and at each of those once under its own classification and once
- * under all of them. Reading the same quarter again replaces what it wrote, so
- * a corrected file from the ministry is simply uploaded over the old one.
+ * country. At each of those it is counted under its own classification and
+ * under all of them, and under its own area band and under all of them, so
+ * the screen can narrow by either without adding anything up itself. Reading
+ * the same quarter again replaces what it wrote, so a corrected file from the
+ * ministry is simply uploaded over the old one.
  */
 class SalesImporter
 {
@@ -108,30 +111,36 @@ class SalesImporter
         }
 
         $classifications = array_unique([$deal['classification'], MarketPriceStat::ALL_CLASSIFICATIONS]);
+        $bands = [AreaBand::forArea($deal['area'])->value, MarketPriceStat::ALL_AREAS];
         $rate = $deal['price'] / $deal['area'];
 
         foreach ($places as [$level, $regionKey, $cityKey, $districtKey]) {
             foreach ($classifications as $classification) {
-                $group = implode('|', [$level->value, $regionKey, $cityKey, $districtKey, $classification]);
+                foreach ($bands as $band) {
+                    $group = implode('|', [$level->value, $regionKey, $cityKey, $districtKey, $classification, $band]);
 
-                $groups[$group] ??= [
-                    'level' => $level->value,
-                    'region_key' => $regionKey,
-                    'city_key' => $cityKey,
-                    'district_key' => $districtKey,
-                    'classification' => $classification,
-                    'deals' => 0,
-                    'properties' => 0,
-                    'price' => 0.0,
-                    'area' => 0.0,
-                    'rates' => [],
-                ];
+                    $groups[$group] ??= [
+                        'level' => $level->value,
+                        'region_key' => $regionKey,
+                        'city_key' => $cityKey,
+                        'district_key' => $districtKey,
+                        'classification' => $classification,
+                        'area_band' => $band,
+                        'deals' => 0,
+                        'properties' => 0,
+                        'price' => 0.0,
+                        'area' => 0.0,
+                        'rates' => [],
+                        'prices' => [],
+                    ];
 
-                $groups[$group]['deals']++;
-                $groups[$group]['properties'] += $deal['properties'];
-                $groups[$group]['price'] += $deal['price'];
-                $groups[$group]['area'] += $deal['area'];
-                $groups[$group]['rates'][] = $rate;
+                    $groups[$group]['deals']++;
+                    $groups[$group]['properties'] += $deal['properties'];
+                    $groups[$group]['price'] += $deal['price'];
+                    $groups[$group]['area'] += $deal['area'];
+                    $groups[$group]['rates'][] = $rate;
+                    $groups[$group]['prices'][] = $deal['price'];
+                }
             }
         }
     }
@@ -149,6 +158,7 @@ class SalesImporter
                 'source_name' => $sourceName,
                 'deals_count' => $period['deals'],
                 'skipped_rows' => $skipped,
+                'figures_version' => MarketQuarter::FIGURES_VERSION,
                 'imported_at' => now(),
             ])->save();
 
@@ -158,6 +168,9 @@ class SalesImporter
             $rows = [];
 
             foreach ($period['groups'] as $group) {
+                sort($group['rates']);
+                sort($group['prices']);
+
                 $rows[] = [
                     'market_quarter_id' => $quarter->id,
                     'level' => $group['level'],
@@ -168,11 +181,15 @@ class SalesImporter
                     'district_key' => $group['district_key'],
                     'district' => $this->label($labels, 'district', $group['city_key'].'|'.$group['district_key']),
                     'classification' => $group['classification'],
+                    'area_band' => $group['area_band'],
                     'deals_count' => $group['deals'],
                     'properties_count' => $group['properties'],
                     'total_price' => (int) round($group['price']),
                     'total_area' => round($group['area'], 2),
-                    'median_price_per_meter' => round($this->median($group['rates']), 2),
+                    'median_price_per_meter' => round($this->quantile($group['rates'], 0.5), 2),
+                    'lower_price_per_meter' => round($this->quantile($group['rates'], 0.25), 2),
+                    'upper_price_per_meter' => round($this->quantile($group['rates'], 0.75), 2),
+                    'median_price' => (int) round($this->quantile($group['prices'], 0.5)),
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
@@ -205,19 +222,21 @@ class SalesImporter
     }
 
     /**
-     * The middle price per metre. Deeds include gifts recorded at a token
-     * price and farmland sold by the square kilometre, and a mean follows
-     * those; the median does not.
+     * The value a given share of a sorted list falls below: 0.5 is the median,
+     * 0.25 and 0.75 the quarters either side of it.
      *
-     * @param  list<float>  $rates
+     * The median is kept rather than the mean because deeds include gifts
+     * recorded at a token price and farmland sold by the square kilometre, and
+     * a mean follows those. The quarters say how wide the ordinary range is.
+     *
+     * @param  list<float>  $sorted
      */
-    private function median(array $rates): float
+    private function quantile(array $sorted, float $share): float
     {
-        sort($rates);
+        $position = (count($sorted) - 1) * $share;
+        $below = (int) floor($position);
+        $above = (int) ceil($position);
 
-        $count = count($rates);
-        $middle = intdiv($count, 2);
-
-        return $count % 2 === 1 ? $rates[$middle] : ($rates[$middle - 1] + $rates[$middle]) / 2;
+        return $sorted[$below] + ($sorted[$above] - $sorted[$below]) * ($position - $below);
     }
 }

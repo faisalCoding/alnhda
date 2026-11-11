@@ -24,8 +24,10 @@ export default function marketPricesPage() {
 
         quarter: '',
         classification: '',
+        band: '',
         city: '',
         district: '',
+        type: '',
 
         metric: 'median',
         search: '',
@@ -35,6 +37,10 @@ export default function marketPricesPage() {
 
         uploads: [],
         uploading: false,
+        dragging: false,
+
+        checking: false,
+        checkMessage: '',
 
         async init() {
             await this.load();
@@ -46,7 +52,7 @@ export default function marketPricesPage() {
 
             const query = new URLSearchParams();
 
-            for (const name of ['quarter', 'classification', 'city', 'district']) {
+            for (const name of ['quarter', 'classification', 'band', 'city', 'district', 'type']) {
                 if (this[name]) {
                     query.set(name, this[name]);
                 }
@@ -64,9 +70,14 @@ export default function marketPricesPage() {
                 if (filters) {
                     this.quarter = filters.quarter;
                     this.classification = filters.classification;
+                    this.band = filters.band;
                     this.city = filters.city;
                     this.district = filters.district ?? '';
                 }
+
+                // A kind of property the chosen city or quarter does not have
+                // comes back unselected.
+                this.type = this.data?.types?.selected ?? '';
             } catch (error) {
                 this.error = error.message;
             }
@@ -77,9 +88,15 @@ export default function marketPricesPage() {
             await this.load();
         },
 
+        async setBand(value) {
+            this.band = value;
+            await this.load();
+        },
+
         async setCity(value) {
             this.city = value;
             this.district = '';
+            this.type = '';
             this.search = '';
             await this.load();
         },
@@ -87,6 +104,45 @@ export default function marketPricesPage() {
         async openDistrict(key) {
             this.district = this.district === key ? '' : key;
             await this.load();
+        },
+
+        async openType(name) {
+            this.type = this.type === name ? '' : name;
+            await this.load();
+        },
+
+        /**
+         * Asks the open data portal now which quarters it has published,
+         * rather than waiting for the weekly check.
+         */
+        async check() {
+            if (this.checking) {
+                return;
+            }
+
+            this.checking = true;
+            this.checkMessage = '';
+
+            try {
+                const payload = await request('POST', '/api/market-prices/check');
+                const waiting = (payload?.data?.waiting ?? 0) + (payload?.data?.indicators_waiting ?? 0);
+
+                this.checkMessage = waiting
+                    ? `على المنصة ${this.number(waiting)} من الملفات لم يُرفع بعد.`
+                    : 'كل ما نُشر على المنصة مرفوع هنا.';
+
+                await this.load();
+            } catch (error) {
+                this.checkMessage = error.message;
+            }
+
+            this.checking = false;
+        },
+
+        /** Files let go of anywhere on the screen are uploaded like chosen ones. */
+        async drop(event) {
+            this.dragging = false;
+            await this.upload({ target: { files: event.dataTransfer?.files ?? [] } });
         },
 
         /**
@@ -117,7 +173,7 @@ export default function marketPricesPage() {
                     });
 
                     entry.status = 'done';
-                    entry.message = this.importSummary(payload?.data?.quarters ?? []);
+                    entry.message = this.importSummary(payload?.data?.quarters ?? [], payload?.data?.kind);
                 } catch (error) {
                     entry.status = 'failed';
                     entry.message = error.errors?.file?.[0] ?? error.message;
@@ -130,9 +186,14 @@ export default function marketPricesPage() {
             await this.load();
         },
 
-        importSummary(quarters) {
+        /** What a file turned out to be and how much was read from it. */
+        importSummary(quarters, kind = 'sales') {
             return quarters
-                .map((quarter) => `${this.quarterLabel(quarter)}: ${this.number(quarter.deals)} صفقة`)
+                .map((quarter) => {
+                    const source = kind === 'indicators' ? `مؤشرات نوع العقار، ${quarter.region} — ` : '';
+
+                    return `${source}${this.quarterLabel(quarter)}: ${this.number(quarter.deals)} صفقة`;
+                })
                 .join(' · ');
         },
 
@@ -151,6 +212,46 @@ export default function marketPricesPage() {
 
         get classifications() {
             return this.data?.classifications ?? [];
+        },
+
+        get bands() {
+            return this.data?.bands ?? [];
+        },
+
+        /** The authority's figures by kind of property for the chosen city. */
+        get types() {
+            return this.data?.types ?? null;
+        },
+
+        /**
+         * The quarter the type figures are for, named only when it is not the
+         * one the rest of the screen is on: the authority publishes later than
+         * the ministry, so the two are often a quarter apart.
+         */
+        get typesQuarterNote() {
+            const shown = this.types?.quarter;
+
+            if (!shown) {
+                return '';
+            }
+
+            return shown === this.data?.filters?.quarter
+                ? ''
+                : `أقرب ربع نشرته الهيئة: ${this.quarterLabel(shown)}.`;
+        },
+
+        /**
+         * Quarters counted before area bands and price ranges were kept. They
+         * still draw, but have nothing to show under a band until their file
+         * is uploaded again.
+         */
+        get outdated() {
+            return (this.data?.quarters ?? []).filter((quarter) => quarter.outdated);
+        },
+
+        /** Quarters whose file the ministry replaced after it was uploaded. */
+        get changed() {
+            return (this.data?.quarters ?? []).filter((quarter) => quarter.file_changed);
         },
 
         get comparedWith() {
@@ -212,6 +313,31 @@ export default function marketPricesPage() {
             return value === null || value === undefined ? '—' : NUMBER.format(Math.round(value));
         },
 
+        /**
+         * The middle half of prices per metre, low to high. A dash where the
+         * quarter was counted before ranges were kept, or nothing was sold.
+         */
+        range(point) {
+            if (!point?.lower || !point?.upper) {
+                return '—';
+            }
+
+            return `${this.rate(point.lower)} – ${this.rate(point.upper)}`;
+        },
+
+        /** The lowest and highest price per metre the authority reported. */
+        extremes(row) {
+            if (!row?.lowest || !row?.highest) {
+                return '—';
+            }
+
+            return `${this.rate(row.lowest)} – ${this.rate(row.highest)}`;
+        },
+
+        day(iso) {
+            return iso ? new Date(iso).toLocaleDateString('ar-SA', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+        },
+
         /** Accepts a «2026-1» key or anything carrying a year and a quarter. */
         quarterLabel(quarter) {
             const [year, number] =
@@ -260,24 +386,28 @@ export default function marketPricesPage() {
             };
         },
 
-        /** The tallest bar of a chart, used to scale the rest. */
-        peak(series) {
-            return Math.max(1, ...(series ?? []).map((point) => point[this.metric] ?? 0));
+        /**
+         * The tallest bar of a chart, used to scale the rest. A chart draws
+         * the metric chosen on the screen unless it names its own.
+         */
+        peak(series, metric = this.metric) {
+            return Math.max(1, ...(series ?? []).map((point) => point[metric] ?? 0));
         },
 
-        barHeight(series, point) {
-            const value = point[this.metric] ?? 0;
+        barHeight(series, point, metric = this.metric) {
+            const value = point[metric] ?? 0;
 
-            return `${Math.max(value ? 2 : 0, Math.round((value / this.peak(series)) * 100))}%`;
+            return `${Math.max(value ? 2 : 0, Math.round((value / this.peak(series, metric)) * 100))}%`;
         },
 
-        /** What a bar says when pointed at, in the unit of the chosen metric. */
-        barLabel(point) {
+        /** What a bar says when pointed at, in the unit of its metric. */
+        barLabel(point, metric = this.metric) {
             const value = {
                 median: () => `${this.rate(point.median)} ر.س/م²`,
+                average: () => `${this.rate(point.average)} ر.س/م² · ${this.number(point.deals)} صفقة`,
                 deals: () => `${this.number(point.deals)} صفقة`,
                 value: () => `${this.money(point.value)} ر.س`,
-            }[this.metric]();
+            }[metric]();
 
             return `${this.quarterLabel(point)} — ${value}`;
         },

@@ -21,6 +21,11 @@ class MarketPriceStat extends Model
      */
     public const ALL_CLASSIFICATIONS = '';
 
+    /**
+     * The area band stored on the row that covers every size together.
+     */
+    public const ALL_AREAS = '';
+
     protected $fillable = [
         'market_quarter_id',
         'level',
@@ -31,11 +36,15 @@ class MarketPriceStat extends Model
         'district_key',
         'district',
         'classification',
+        'area_band',
         'deals_count',
         'properties_count',
         'total_price',
         'total_area',
         'median_price_per_meter',
+        'lower_price_per_meter',
+        'upper_price_per_meter',
+        'median_price',
     ];
 
     /**
@@ -50,6 +59,9 @@ class MarketPriceStat extends Model
             'total_price' => 'integer',
             'total_area' => 'float',
             'median_price_per_meter' => 'float',
+            'lower_price_per_meter' => 'float',
+            'upper_price_per_meter' => 'float',
+            'median_price' => 'integer',
         ];
     }
 

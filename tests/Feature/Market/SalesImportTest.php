@@ -1,10 +1,12 @@
 <?php
 
+use App\Enums\AreaBand;
 use App\Enums\MarketLevel;
 use App\Exceptions\UnreadableSalesFile;
 use App\Models\MarketPriceStat;
 use App\Models\MarketQuarter;
 use App\Services\Market\SalesImporter;
+use Illuminate\Database\Eloquent\Builder;
 
 const SALES_HEADER = 'المنطقة,المدينة,المدينة / الحي,الرقم المرجعي للصفقة,تاريخ الصفقة ميلادي,تاريخ الصفقة هجري,تصنيف العقار,عدد العقارات,السعر,المساحة';
 
@@ -27,13 +29,21 @@ function saleRow(string $district, string $price, string $area, string $date = '
     return sprintf('%s,%s,%s/ %s ,1,%s,1447/07/26,%s,1,"%s","%s"', $region, $city, $city, $district, $date, $classification, $price, $area);
 }
 
-function marketStat(MarketLevel $level, string $classification = '', array $where = []): ?MarketPriceStat
+function marketStat(MarketLevel $level, string $classification = '', array $where = [], ?AreaBand $band = null): ?MarketPriceStat
+{
+    return marketStats($level, $classification, $band)->where($where)->first();
+}
+
+/**
+ * Rows for one level, one classification and one area band; an empty
+ * classification and no band are the rows that cover all of each.
+ */
+function marketStats(MarketLevel $level, string $classification = '', ?AreaBand $band = null): Builder
 {
     return MarketPriceStat::query()
         ->where('level', $level)
         ->where('classification', $classification)
-        ->where($where)
-        ->first();
+        ->where('area_band', $band?->value ?? MarketPriceStat::ALL_AREAS);
 }
 
 it('counts each deed for its district, city, region and the country', function () {
@@ -65,7 +75,7 @@ it('counts each deed for its district, city, region and the country', function (
         // 2,000 and 6,000 a metre: the median sits between them.
         ->and($safa->median_price_per_meter)->toBe(4000.0)
         ->and($safa->averagePricePerMeter())->toBe(4000.0)
-        ->and(MarketPriceStat::query()->where('level', MarketLevel::Region)->where('classification', '')->count())->toBe(2);
+        ->and(marketStats(MarketLevel::Region)->count())->toBe(2);
 });
 
 it('takes the median, which one enormous plot does not move', function () {
@@ -92,6 +102,62 @@ it('keeps a row for each classification beside the one for all of them', functio
         ->and(marketStat(MarketLevel::City, 'تجاري')->median_price_per_meter)->toBe(9000.0);
 });
 
+it('counts each deed under the size of what it sold as well as under every size', function () {
+    app(SalesImporter::class)->import(salesFile([
+        saleRow('الصفا', '450,000', '120.00'),
+        saleRow('الصفا', '600,000', '149.99'),
+        saleRow('الصفا', '700,000', '150.00'),
+        saleRow('الصفا', '1,200,000', '600.00'),
+        saleRow('الصفا', '9,000,000', '3,000.00'),
+    ]));
+
+    expect(marketStat(MarketLevel::District)->deals_count)->toBe(5)
+        ->and(marketStat(MarketLevel::District, band: AreaBand::Under150)->deals_count)->toBe(2)
+        ->and(marketStat(MarketLevel::District, band: AreaBand::From150)->deals_count)->toBe(1)
+        ->and(marketStat(MarketLevel::District, band: AreaBand::From300))->toBeNull()
+        ->and(marketStat(MarketLevel::District, band: AreaBand::From600)->deals_count)->toBe(1)
+        ->and(marketStat(MarketLevel::District, band: AreaBand::Over1000)->median_price_per_meter)->toBe(3000.0)
+        // The same split is kept all the way up, and beside each classification.
+        ->and(marketStat(MarketLevel::Country, band: AreaBand::Under150)->deals_count)->toBe(2)
+        ->and(marketStat(MarketLevel::City, 'سكني', band: AreaBand::Under150)->deals_count)->toBe(2)
+        ->and(marketStat(MarketLevel::City, 'تجاري', band: AreaBand::Under150))->toBeNull();
+});
+
+it('keeps the spread of prices and the typical deal beside the median', function () {
+    app(SalesImporter::class)->import(salesFile([
+        saleRow('الصفا', '500,000', '500.00'),
+        saleRow('الصفا', '1,000,000', '500.00'),
+        saleRow('الصفا', '1,500,000', '500.00'),
+        saleRow('الصفا', '2,000,000', '500.00'),
+        saleRow('الصفا', '2,500,000', '500.00'),
+    ]));
+
+    $safa = marketStat(MarketLevel::District);
+
+    expect($safa->median_price_per_meter)->toBe(3000.0)
+        ->and($safa->lower_price_per_meter)->toBe(2000.0)
+        ->and($safa->upper_price_per_meter)->toBe(4000.0)
+        ->and($safa->median_price)->toBe(1500000);
+});
+
+it('gives a single deed the same price at every point of the spread', function () {
+    app(SalesImporter::class)->import(salesFile([saleRow('الصفا', '1,000,000', '500.00')]));
+
+    $safa = marketStat(MarketLevel::District);
+
+    expect([$safa->lower_price_per_meter, $safa->median_price_per_meter, $safa->upper_price_per_meter])
+        ->toBe([2000.0, 2000.0, 2000.0]);
+});
+
+it('marks a quarter as counted with the current figures', function () {
+    MarketQuarter::factory()->outdated()->period(2026, 1)->create();
+
+    $quarters = app(SalesImporter::class)->import(salesFile([saleRow('الصفا', '1,000,000', '500.00')]));
+
+    expect($quarters[0]->figures_version)->toBe(MarketQuarter::FIGURES_VERSION)
+        ->and(MarketQuarter::query()->sole()->isOutdated())->toBeFalse();
+});
+
 it('folds the spellings of one place into one row', function () {
     app(SalesImporter::class)->import(salesFile([
         saleRow('أم السلم', '500,000', '500.00'),
@@ -100,11 +166,11 @@ it('folds the spellings of one place into one row', function () {
         saleRow('الصفا', '500,000', '500.00', region: 'منطقة مكة المكرمة'),
     ]));
 
-    expect(MarketPriceStat::query()->where('level', MarketLevel::District)->where('classification', '')->count())->toBe(2)
+    expect(marketStats(MarketLevel::District)->count())->toBe(2)
         ->and(marketStat(MarketLevel::District, '', ['district_key' => 'ام السلم'])->deals_count)->toBe(3)
         // Shown the way it was written most often.
         ->and(marketStat(MarketLevel::District, '', ['district_key' => 'ام السلم'])->district)->toBe('أم السلم')
-        ->and(MarketPriceStat::query()->where('level', MarketLevel::Region)->where('classification', '')->count())->toBe(1);
+        ->and(marketStats(MarketLevel::Region)->count())->toBe(1);
 });
 
 it('reads the layout the first quarter of 2023 was published in', function () {
@@ -153,7 +219,7 @@ it('replaces a quarter when its file is uploaded again', function () {
 
     expect(MarketQuarter::query()->count())->toBe(1)
         ->and(MarketQuarter::query()->first()->deals_count)->toBe(1)
-        ->and(MarketPriceStat::query()->where('level', MarketLevel::District)->where('classification', '')->count())->toBe(1)
+        ->and(marketStats(MarketLevel::District)->count())->toBe(1)
         ->and(marketStat(MarketLevel::Country)->median_price_per_meter)->toBe(4000.0);
 });
 
@@ -164,7 +230,7 @@ it('leaves other quarters alone', function () {
     $importer->import(salesFile([saleRow('الصفا', '2,000,000', '500.00')]));
 
     expect(MarketQuarter::query()->chronological()->get()->map->key()->all())->toBe(['2025-4', '2026-1'])
-        ->and(MarketPriceStat::query()->where('level', MarketLevel::Country)->where('classification', '')->count())->toBe(2);
+        ->and(marketStats(MarketLevel::Country)->count())->toBe(2);
 });
 
 it('does not open a quarter for a stray date', function () {

@@ -2,20 +2,24 @@
 
 namespace App\Http\Controllers\Admin\Api;
 
+use App\Enums\AreaBand;
 use App\Enums\MarketLevel;
 use App\Exceptions\UnreadableSalesFile;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ImportMarketSalesRequest;
 use App\Models\MarketPriceStat;
 use App\Models\MarketQuarter;
+use App\Services\Market\CatalogueSync;
+use App\Services\Market\MarketFileImporter;
 use App\Services\Market\OpenDataCatalogue;
 use App\Services\Market\PlaceName;
-use App\Services\Market\SalesImporter;
+use App\Services\Market\PropertyTypeFigures;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * The market prices screen reads figures that were worked out when each
@@ -29,8 +33,11 @@ class MarketPriceController extends Controller
      */
     private const DEFAULT_CITY = 'جدة';
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, PropertyTypeFigures $types): JsonResponse
     {
+        $cityKey = PlaceName::key((string) $request->query('city', self::DEFAULT_CITY));
+        $type = $request->query('type');
+
         $quarters = MarketQuarter::query()->chronological()->get();
         $imported = $quarters->filter(fn (MarketQuarter $quarter): bool => $quarter->isImported())->values();
 
@@ -46,7 +53,12 @@ class MarketPriceController extends Controller
         ];
 
         if ($imported->isEmpty()) {
-            return response()->json(['data' => $payload]);
+            // The authority's indicators stand on their own: they can be
+            // uploaded and read before a single quarter of deeds has been.
+            return response()->json(['data' => $payload + [
+                'city' => ['key' => $cityKey, 'label' => PlaceName::preferred($cityKey)],
+                'types' => $types->forCity($cityKey, null, MarketPriceStat::ALL_CLASSIFICATIONS, is_string($type) ? $type : null),
+            ]]);
         }
 
         $selected = $imported->first(fn (MarketQuarter $quarter): bool => $quarter->key() === $request->query('quarter'))
@@ -61,15 +73,16 @@ class MarketPriceController extends Controller
             ? (string) $request->query('classification')
             : MarketPriceStat::ALL_CLASSIFICATIONS;
 
-        $cityKey = PlaceName::key((string) $request->query('city', self::DEFAULT_CITY));
+        $band = AreaBand::tryFrom((string) $request->query('band', ''))?->value ?? MarketPriceStat::ALL_AREAS;
+
         $districtKey = PlaceName::key((string) $request->query('district', ''));
 
         $comparison = array_filter([$selected->id, $yearBefore?->id]);
 
-        $countryRows = $this->stats(MarketLevel::Country, $classification)->get();
-        $cityRows = $this->stats(MarketLevel::City, $classification)->where('city_key', $cityKey)->get();
+        $countryRows = $this->stats(MarketLevel::Country, $classification, $band)->get();
+        $cityRows = $this->stats(MarketLevel::City, $classification, $band)->where('city_key', $cityKey)->get();
 
-        $districtRows = $this->stats(MarketLevel::District, $classification)
+        $districtRows = $this->stats(MarketLevel::District, $classification, $band)
             ->where('city_key', $cityKey)
             ->whereIn('market_quarter_id', $comparison)
             ->get();
@@ -79,21 +92,26 @@ class MarketPriceController extends Controller
                 'quarter' => $selected->key(),
                 'compared_with' => $yearBefore?->key(),
                 'classification' => $classification,
+                'band' => $band,
                 'city' => $cityKey,
                 'district' => $districtKey === '' ? null : $districtKey,
             ],
             'classifications' => $classifications,
+            'bands' => array_map(
+                fn (AreaBand $band): array => ['key' => $band->value, 'label' => $band->label()],
+                AreaBand::cases(),
+            ),
             'country' => [
                 'current' => $this->point($countryRows->firstWhere('market_quarter_id', $selected->id)),
                 'previous' => $this->point($countryRows->firstWhere('market_quarter_id', $yearBefore?->id)),
                 'series' => $this->series($imported, $countryRows),
             ],
             'regions' => $this->ranking(
-                $this->stats(MarketLevel::Region, $classification)->whereIn('market_quarter_id', $comparison)->get(),
+                $this->stats(MarketLevel::Region, $classification, $band)->whereIn('market_quarter_id', $comparison)->get(),
                 $selected,
                 'region',
             ),
-            'cities' => $this->stats(MarketLevel::City, MarketPriceStat::ALL_CLASSIFICATIONS)
+            'cities' => $this->stats(MarketLevel::City)
                 ->where('market_quarter_id', $selected->id)
                 ->orderByDesc('deals_count')
                 ->get()
@@ -114,36 +132,55 @@ class MarketPriceController extends Controller
                 'previous' => $this->point($cityRows->firstWhere('market_quarter_id', $yearBefore?->id)),
                 'series' => $this->series($imported, $cityRows),
             ],
+            'types' => $types->forCity($cityKey, [$selected->year, $selected->quarter], $classification, is_string($type) ? $type : null),
             'districts' => $this->ranking($districtRows, $selected, 'district'),
-            'district' => $districtKey === '' ? null : $this->district($imported, $classification, $cityKey, $districtKey),
+            'district' => $districtKey === '' ? null : $this->district($imported, $classification, $band, $cityKey, $districtKey),
         ]]);
     }
 
-    public function store(ImportMarketSalesRequest $request, SalesImporter $importer): JsonResponse
+    /**
+     * Takes a quarter of the ministry's deeds or a quarter of the authority's
+     * indicators; which one it is, is read from the file.
+     */
+    public function store(ImportMarketSalesRequest $request, MarketFileImporter $importer): JsonResponse
     {
         $file = $request->file('file');
 
         try {
-            $quarters = $importer->import($file->getRealPath(), $file->getClientOriginalName());
+            $result = $importer->import($file->getRealPath(), $file->getClientOriginalName());
         } catch (UnreadableSalesFile $e) {
             throw ValidationException::withMessages(['file' => $e->getMessage()]);
         }
 
-        return response()->json([
-            'data' => [
-                'quarters' => array_map(fn (MarketQuarter $quarter): array => $this->quarter($quarter), $quarters),
-            ],
-        ], 201);
+        return response()->json(['data' => ['kind' => $result['kind'], 'quarters' => $result['periods']]], 201);
+    }
+
+    /**
+     * Asks the open data portal now, instead of waiting for the weekly check.
+     */
+    public function check(CatalogueSync $sync): JsonResponse
+    {
+        try {
+            $result = $sync->run();
+        } catch (Throwable $e) {
+            return response()->json(['message' => 'تعذّر الوصول إلى منصة البيانات المفتوحة الآن: '.$e->getMessage()], 502);
+        }
+
+        return response()->json(['data' => $result]);
     }
 
     /**
      * @return Builder<MarketPriceStat>
      */
-    private function stats(MarketLevel $level, string $classification): Builder
-    {
+    private function stats(
+        MarketLevel $level,
+        string $classification = MarketPriceStat::ALL_CLASSIFICATIONS,
+        string $band = MarketPriceStat::ALL_AREAS,
+    ): Builder {
         return MarketPriceStat::query()
             ->where('level', $level)
-            ->where('classification', $classification);
+            ->where('classification', $classification)
+            ->where('area_band', $band);
     }
 
     /**
@@ -155,6 +192,7 @@ class MarketPriceController extends Controller
     {
         return MarketPriceStat::query()
             ->where('level', MarketLevel::Country)
+            ->where('area_band', MarketPriceStat::ALL_AREAS)
             ->where('classification', '!=', MarketPriceStat::ALL_CLASSIFICATIONS)
             ->get(['classification', 'deals_count'])
             ->groupBy('classification')
@@ -176,6 +214,10 @@ class MarketPriceController extends Controller
             'deals' => $quarter->deals_count,
             'skipped' => $quarter->skipped_rows,
             'imported_at' => $quarter->imported_at?->toISOString(),
+            'outdated' => $quarter->isOutdated(),
+            'file_updated_at' => $quarter->file_updated_at?->toISOString(),
+            'file_changed' => $quarter->fileChangedSinceImport(),
+            'download_url' => $quarter->download_url,
             'portal_url' => $quarter->portalUrl(),
         ];
     }
@@ -195,7 +237,10 @@ class MarketPriceController extends Controller
             'value' => $stat->total_price,
             'area' => $stat->total_area,
             'median' => $stat->median_price_per_meter,
+            'lower' => $stat->lower_price_per_meter,
+            'upper' => $stat->upper_price_per_meter,
             'average' => $stat->averagePricePerMeter(),
+            'median_price' => $stat->median_price,
         ];
     }
 
@@ -217,7 +262,8 @@ class MarketPriceController extends Controller
                 'year' => $quarter->year,
                 'quarter' => $quarter->quarter,
             ] + ($this->point($byQuarter->get($quarter->id)) ?? [
-                'deals' => 0, 'properties' => 0, 'value' => 0, 'area' => 0.0, 'median' => null, 'average' => null,
+                'deals' => 0, 'properties' => 0, 'value' => 0, 'area' => 0.0,
+                'median' => null, 'lower' => null, 'upper' => null, 'average' => null, 'median_price' => null,
             ]))
             ->all();
     }
@@ -251,9 +297,9 @@ class MarketPriceController extends Controller
      * @param  Collection<int, MarketQuarter>  $quarters
      * @return array<string, mixed>|null
      */
-    private function district(Collection $quarters, string $classification, string $cityKey, string $districtKey): ?array
+    private function district(Collection $quarters, string $classification, string $band, string $cityKey, string $districtKey): ?array
     {
-        $rows = $this->stats(MarketLevel::District, $classification)
+        $rows = $this->stats(MarketLevel::District, $classification, $band)
             ->where('city_key', $cityKey)
             ->where('district_key', $districtKey)
             ->get();

@@ -16,13 +16,23 @@ class MarketQuarter extends Model
     /** @use HasFactory<MarketQuarterFactory> */
     use HasFactory;
 
+    /**
+     * Raised whenever the importer starts keeping something it did not keep
+     * before. A quarter counted with an older version is still shown, and the
+     * panel asks for its file again so it can catch up.
+     */
+    public const FIGURES_VERSION = 2;
+
     protected $fillable = [
         'year',
         'quarter',
         'dataset_id',
+        'download_url',
+        'file_updated_at',
         'source_name',
         'deals_count',
         'skipped_rows',
+        'figures_version',
         'imported_at',
     ];
 
@@ -36,6 +46,8 @@ class MarketQuarter extends Model
             'quarter' => 'integer',
             'deals_count' => 'integer',
             'skipped_rows' => 'integer',
+            'figures_version' => 'integer',
+            'file_updated_at' => 'datetime',
             'imported_at' => 'datetime',
         ];
     }
@@ -69,6 +81,24 @@ class MarketQuarter extends Model
     public function isImported(): bool
     {
         return $this->imported_at !== null;
+    }
+
+    /**
+     * Counted before the importer kept everything it keeps now.
+     */
+    public function isOutdated(): bool
+    {
+        return $this->isImported() && $this->figures_version < self::FIGURES_VERSION;
+    }
+
+    /**
+     * The ministry replaced the file after it was uploaded here.
+     */
+    public function fileChangedSinceImport(): bool
+    {
+        return $this->isImported()
+            && $this->file_updated_at !== null
+            && $this->file_updated_at->greaterThan($this->imported_at);
     }
 
     /**

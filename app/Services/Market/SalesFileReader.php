@@ -15,6 +15,8 @@ use Generator;
  */
 class SalesFileReader
 {
+    use ReadsCsvFiles;
+
     /**
      * Every heading each column has been published under, spacing removed.
      *
@@ -48,11 +50,7 @@ class SalesFileReader
      */
     public function deals(string $path): Generator
     {
-        $handle = @fopen($path, 'r');
-
-        if ($handle === false) {
-            throw new UnreadableSalesFile('تعذّر فتح الملف.');
-        }
+        $handle = $this->open($path);
 
         try {
             $columns = $this->columns($this->row($handle) ?? []);
@@ -66,14 +64,25 @@ class SalesFileReader
     }
 
     /**
-     * @param  resource  $handle
-     * @return list<string|null>|null
+     * Whether the file carries the columns of a sales file at all.
      */
-    private function row($handle): ?array
+    public function recognises(string $path): bool
     {
-        $row = fgetcsv($handle, null, ',', '"', '');
+        try {
+            $handle = $this->open($path);
+        } catch (UnreadableSalesFile) {
+            return false;
+        }
 
-        return $row === false ? null : $row;
+        try {
+            $this->columns($this->row($handle) ?? []);
+
+            return true;
+        } catch (UnreadableSalesFile) {
+            return false;
+        } finally {
+            fclose($handle);
+        }
     }
 
     /**
@@ -86,18 +95,7 @@ class SalesFileReader
      */
     private function columns(array $header): array
     {
-        $headings = [];
-
-        foreach ($header as $position => $heading) {
-            $heading = (string) $heading;
-
-            if (! mb_check_encoding($heading, 'UTF-8')) {
-                throw new UnreadableSalesFile('ترميز الملف ليس UTF-8. نزّل ملف CSV من منصة البيانات المفتوحة كما هو دون فتحه في Excel.');
-            }
-
-            $headings[(string) preg_replace('/[\s\x{FEFF}]+/u', '', $heading)] = $position;
-        }
-
+        $headings = $this->headings($header);
         $columns = [];
 
         foreach (self::COLUMNS as $column => $names) {
@@ -110,7 +108,7 @@ class SalesFileReader
             }
 
             if (! isset($columns[$column]) && ! in_array($column, self::OPTIONAL, true)) {
-                throw new UnreadableSalesFile('هذا ليس ملف الصفقات العقارية الذي تنشره وزارة العدل: لا يوجد فيه عمود «'.$names[0].'».');
+                throw new UnreadableSalesFile('هذا ليس ملف الصفقات العقارية لوزارة العدل ولا ملف مؤشرات صفقات البيع لهيئة العقار: لا يوجد فيه عمود «'.$names[0].'».');
             }
         }
 
@@ -172,15 +170,5 @@ class SalesFileReader
         }
 
         return [$year, intdiv($month - 1, 3) + 1];
-    }
-
-    /**
-     * A figure written with thousands separators, as «1,800,000».
-     */
-    private function number(string $value): ?float
-    {
-        $value = str_replace([',', ' ', "\u{00A0}"], '', $value);
-
-        return is_numeric($value) ? (float) $value : null;
     }
 }

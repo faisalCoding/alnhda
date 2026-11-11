@@ -3,16 +3,16 @@
 namespace App\Console\Commands;
 
 use App\Exceptions\UnreadableSalesFile;
-use App\Services\Market\SalesImporter;
+use App\Services\Market\MarketFileImporter;
 use Illuminate\Console\Command;
 
 class ImportMarketSales extends Command
 {
-    protected $signature = 'market:import {path : A sales CSV from the open data portal, or a folder of them}';
+    protected $signature = 'market:import {path : A CSV from the open data portal, or a folder of them}';
 
-    protected $description = 'Read quarters of Ministry of Justice sale deeds into the market prices screen';
+    protected $description = 'Read Ministry of Justice sale deeds or authority sale indicators into the market prices screen';
 
-    public function handle(SalesImporter $importer): int
+    public function handle(MarketFileImporter $importer): int
     {
         $path = (string) $this->argument('path');
         $files = is_dir($path) ? (glob(rtrim($path, '/').'/*.csv') ?: []) : [$path];
@@ -28,12 +28,15 @@ class ImportMarketSales extends Command
 
         foreach ($files as $file) {
             try {
-                foreach ($importer->import($file, basename($file)) as $quarter) {
+                $result = $importer->import($file, basename($file));
+
+                foreach ($result['periods'] as $period) {
                     $this->info(sprintf(
-                        '%d الربع %d: %s صفقة (%s)',
-                        $quarter->year,
-                        $quarter->quarter,
-                        number_format($quarter->deals_count),
+                        '%s%d الربع %d: %s صفقة (%s)',
+                        $result['kind'] === MarketFileImporter::INDICATORS ? 'مؤشرات '.$period['region'].' ' : '',
+                        $period['year'],
+                        $period['quarter'],
+                        number_format($period['deals']),
                         basename($file),
                     ));
                 }

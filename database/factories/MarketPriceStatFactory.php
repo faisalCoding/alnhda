@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\AreaBand;
 use App\Enums\MarketLevel;
 use App\Models\MarketPriceStat;
 use App\Models\MarketQuarter;
@@ -25,11 +26,15 @@ class MarketPriceStatFactory extends Factory
             'market_quarter_id' => MarketQuarter::factory(),
             'level' => MarketLevel::Country,
             'classification' => MarketPriceStat::ALL_CLASSIFICATIONS,
+            'area_band' => MarketPriceStat::ALL_AREAS,
             'deals_count' => fake()->numberBetween(10, 5000),
             'properties_count' => fake()->numberBetween(10, 5000),
             'total_price' => $area * $median,
             'total_area' => $area,
             'median_price_per_meter' => $median,
+            'lower_price_per_meter' => (int) round($median * 0.8),
+            'upper_price_per_meter' => (int) round($median * 1.2),
+            'median_price' => $median * 400,
         ];
     }
 
@@ -60,6 +65,11 @@ class MarketPriceStatFactory extends Factory
             'district' => $district,
             'district_key' => PlaceName::key($district),
         ]);
+    }
+
+    public function band(AreaBand $band): static
+    {
+        return $this->state(fn (): array => ['area_band' => $band->value]);
     }
 
     public function classified(string $classification): static

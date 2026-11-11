@@ -86,6 +86,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('traffic', [TrafficController::class, 'index'])->name('traffic.index');
         Route::get('market-prices', [MarketPriceController::class, 'index'])->name('market-prices.index');
         Route::post('market-prices/import', [MarketPriceController::class, 'store'])->name('market-prices.import');
+        Route::post('market-prices/check', [MarketPriceController::class, 'check'])->name('market-prices.check');
         Route::get('visitors', [VisitorController::class, 'index'])->name('visitors.index');
         Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
 
