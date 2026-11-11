@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\LawhatiController;
+use App\Http\Controllers\Api\MarketCatalogueController;
 use App\Http\Controllers\Api\TeamProgressController;
 use App\Http\Controllers\Api\WeeklyTaskController;
+use App\Models\Admin;
 use App\Models\Employee;
 use Illuminate\Support\Facades\Route;
 
@@ -48,3 +50,19 @@ Route::middleware(['auth:sanctum', 'abilities:'.Employee::LAWHATI_TOKEN, 'thrott
         Route::get('me', [LawhatiController::class, 'me'])->name('api.lawhati.me');
         Route::get('team', [LawhatiController::class, 'team'])->name('api.lawhati.team');
     });
+
+/*
+|--------------------------------------------------------------------------
+| Market catalogue
+|--------------------------------------------------------------------------
+|
+| The open data portal answers only from inside the Kingdom, so the server
+| cannot ask it which quarters have been published. A computer that can runs
+| `market:check --push` and sends what it found here, with a token that can
+| do nothing else.
+|
+*/
+
+Route::post('market/catalogue', MarketCatalogueController::class)
+    ->middleware(['auth:sanctum', 'abilities:'.Admin::MARKET_CATALOGUE_TOKEN, 'throttle:20,1'])
+    ->name('api.market.catalogue');

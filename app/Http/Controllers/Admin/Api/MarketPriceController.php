@@ -33,7 +33,7 @@ class MarketPriceController extends Controller
      */
     private const DEFAULT_CITY = 'جدة';
 
-    public function index(Request $request, PropertyTypeFigures $types): JsonResponse
+    public function index(Request $request, PropertyTypeFigures $types, CatalogueSync $sync): JsonResponse
     {
         $cityKey = PlaceName::key((string) $request->query('city', self::DEFAULT_CITY));
         $type = $request->query('type');
@@ -44,6 +44,8 @@ class MarketPriceController extends Controller
         $payload = [
             'has_data' => $imported->isNotEmpty(),
             'publisher_url' => OpenDataCatalogue::PUBLISHER_URL,
+            'catalogue_checked_at' => $sync->lastCheckedAt(),
+            'portal_unreachable' => $sync->portalUnreachable(),
             'quarters' => $imported->map(fn (MarketQuarter $quarter): array => $this->quarter($quarter))->all(),
             'waiting' => $quarters
                 ->reject(fn (MarketQuarter $quarter): bool => $quarter->isImported())
@@ -163,7 +165,12 @@ class MarketPriceController extends Controller
         try {
             $result = $sync->run();
         } catch (Throwable $e) {
-            return response()->json(['message' => 'تعذّر الوصول إلى منصة البيانات المفتوحة الآن: '.$e->getMessage()], 502);
+            // The portal answers only from inside the Kingdom. Where the
+            // server is not, the catalogue comes from a computer that is.
+            return response()->json([
+                'message' => 'الخادم لا يصل إلى منصة البيانات المفتوحة. حدّث القائمة من جهاز داخل المملكة بالأمر: php artisan market:check --push',
+                'reason' => $e->getMessage(),
+            ], 502);
         }
 
         return response()->json(['data' => $result]);

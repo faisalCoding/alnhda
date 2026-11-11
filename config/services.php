@@ -37,6 +37,17 @@ return [
     ],
 
     /**
+     * The open data portal answers only from inside the Kingdom, and the
+     * server is not there. So the portal's catalogue is read on a computer
+     * that is, and sent on to the live panel with a token the panel issued.
+     * Both are set only on that computer; the server needs neither.
+     */
+    'market' => [
+        'push_url' => env('MARKET_PUSH_URL'),
+        'push_token' => env('MARKET_PUSH_TOKEN'),
+    ],
+
+    /**
      * Reading the traffic the site already collects, rather than counting it a
      * second time on the server.
      */

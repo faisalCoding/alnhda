@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Market\CatalogueSync;
 use Carbon\CarbonInterface;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -44,5 +45,12 @@ Schedule::command('analytics:today')->everyFifteenMinutes()->withoutOverlapping(
  * The ministry publishes sale deeds once a quarter, a few weeks after it ends.
  * Only the portal's catalogue is asked, once a week, so the panel can say a new
  * quarter is waiting; the file itself is downloaded and uploaded by a person.
+ *
+ * The portal answers only from inside the Kingdom. A server that has already
+ * failed to reach it stops asking, and is told the catalogue instead by a
+ * computer that can, with `market:check --push`.
  */
-Schedule::command('market:check')->weeklyOn(CarbonInterface::SUNDAY, '04:10')->withoutOverlapping();
+Schedule::command('market:check')
+    ->weeklyOn(CarbonInterface::SUNDAY, '04:10')
+    ->skip(fn (): bool => app(CatalogueSync::class)->portalUnreachable())
+    ->withoutOverlapping();

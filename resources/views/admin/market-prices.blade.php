@@ -75,6 +75,14 @@
             </div>
         </div>
 
+        <p class="text-xs text-zinc-400" x-show="catalogueCheckedAt" x-cloak
+            x-text="'آخر تحديث لقائمة الملفات المنشورة على المنصة: ' + catalogueCheckedAt"></p>
+
+        <p class="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400" x-show="data?.portal_unreachable" x-cloak>
+            هذا الخادم لا يصل إلى منصة البيانات المفتوحة، فقائمة الملفات المنشورة تُحدَّث من جهاز داخل المملكة بالأمر
+            <span class="font-mono" dir="ltr">php artisan market:check --push</span>. رفع الملفات لا يتأثر.
+        </p>
+
         <p x-show="checkMessage" x-cloak class="rounded-xl bg-zinc-200/60 px-4 py-3 text-sm font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
             x-text="checkMessage"></p>
 

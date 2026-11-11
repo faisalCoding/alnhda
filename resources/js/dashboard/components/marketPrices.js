@@ -218,6 +218,14 @@ export default function marketPricesPage() {
             return this.data?.bands ?? [];
         },
 
+        /**
+         * When the list of published files was last brought up to date,
+         * whether by this server or by a computer that sent it.
+         */
+        get catalogueCheckedAt() {
+            return this.day(this.data?.catalogue_checked_at);
+        },
+
         /** The authority's figures by kind of property for the chosen city. */
         get types() {
             return this.data?.types ?? null;

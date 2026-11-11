@@ -2,16 +2,30 @@
 
 namespace App\Models;
 
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\HasApiTokens;
 
 class Admin extends Authenticatable
 {
+    /**
+     * Tokens are issued to an admin for machines that act for the panel from
+     * outside it, such as the computer that reads the open data portal's
+     * catalogue where the server cannot. Signing in is still by session.
+     */
+    use HasApiTokens;
+
     // hi all
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /**
+     * The one thing a market catalogue token may do.
+     */
+    public const MARKET_CATALOGUE_TOKEN = 'market:catalogue';
 
     protected $guard = 'admin';
 
