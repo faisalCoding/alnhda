@@ -31,6 +31,7 @@ class Properties extends Model
         'unit_youtube',
         'stages_building_youtube',
         'pdf_path',
+        'market_type',
     ];
 
     public function project()

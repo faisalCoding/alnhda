@@ -220,34 +220,65 @@ export default function marketDetail() {
             this.placing = null;
         },
 
-        /**
-         * The market figures a project is read against: its district's when
-         * it has been placed in one, the city's otherwise.
-         */
-        marketFor(project) {
-            return project.market?.district ?? project.market?.city ?? null;
+        /** Says what kind of property a unit is, or goes back to guessing. */
+        async setUnitKind(unit, kind) {
+            this.placing = `unit-${unit.id}`;
+            this.projectsError = '';
+
+            try {
+                const payload = await request('PUT', `/api/market-prices/units/${unit.id}`, {
+                    city: this.city,
+                    kind: kind || null,
+                });
+                this.projects = payload?.data ?? this.projects;
+            } catch (error) {
+                this.projectsError = error.errors?.kind?.[0] ?? error.message;
+            }
+
+            this.placing = null;
+        },
+
+        /** How many units a project has, in words, for its heading row. */
+        unitCount(project) {
+            const count = project.units?.length ?? 0;
+
+            return count ? `${NUMBER.format(count)} وحدة` : 'لا وحدات';
         },
 
         /**
-         * How far the project's price per metre sits from the market's middle
-         * one, in percent. Nothing where either side is missing, or where the
-         * market is too few deeds to be a market.
+         * Where a market figure is from, in a few words: the district or the
+         * whole city, and for the authority's figures which quarter.
          */
-        gap(project) {
-            const market = this.marketFor(project);
+        scopeNote(figure, project) {
+            if (!figure) {
+                return '';
+            }
 
-            if (!project.rate || !market?.median || market.deals < 5) {
+            const place = figure.scope === 'district' ? `حي ${project.district_label}` : 'المدينة كلها';
+
+            return figure.quarter ? `${place} · ${this.quarterLabel(figure.quarter)}` : place;
+        },
+
+        /**
+         * How far a unit's price per metre sits from what its kind of
+         * property sold for, in percent. Nothing where the unit has no price,
+         * no kind, or the market for that kind is too few sales to be one.
+         */
+        gap(unit) {
+            const market = unit.market?.kind;
+
+            if (!unit.rate || !market?.average || market.deals < 5) {
                 return null;
             }
 
-            const percent = Math.round(((project.rate - market.median) / market.median) * 100);
+            const percent = Math.round(((unit.rate - market.average) / market.average) * 100);
 
             return {
                 direction: percent > 0 ? 'above' : percent < 0 ? 'below' : 'level',
                 label:
                     percent === 0
-                        ? 'عند وسيط السوق'
-                        : `${NUMBER.format(Math.abs(percent))}٪ ${percent > 0 ? 'فوق' : 'تحت'} وسيط السوق`,
+                        ? 'عند متوسط السوق'
+                        : `${NUMBER.format(Math.abs(percent))}٪ ${percent > 0 ? 'فوق' : 'تحت'} متوسط السوق`,
             };
         },
     };

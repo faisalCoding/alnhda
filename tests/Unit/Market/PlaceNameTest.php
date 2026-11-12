@@ -41,3 +41,16 @@ it('shows the usual spelling of the places written unusually', function () {
         ->and(PlaceName::preferred('مكة المكرمه'))->toBe('مكة المكرمة')
         ->and(PlaceName::preferred('الصفا'))->toBe('الصفا');
 });
+
+it('matches one publisher\'s spelling of a place against another\'s', function (string $one, string $other) {
+    expect(PlaceName::loose($one))->toBe(PlaceName::loose($other));
+})->with([
+    ['الصفا', 'الصفاء'],
+    ['الأمير عبد المجيد', 'الامير عبدالمجيد'],
+]);
+
+it('still tells unlike places apart when matching loosely', function () {
+    expect(PlaceName::loose('الصفا'))->not->toBe(PlaceName::loose('الصالحية'))
+        // Loose matching is for looking a place up, never for grouping one file.
+        ->and(PlaceName::key('الصفا'))->not->toBe(PlaceName::key('الصفاء'));
+});

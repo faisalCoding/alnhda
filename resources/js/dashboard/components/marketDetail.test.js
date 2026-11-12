@@ -156,27 +156,36 @@ test('scales the months and the brackets against their own tallest', () => {
     assert.equal(component.bracketWidth({ deals: 0 }), '0%', 'an empty screen still needs a divisor');
 });
 
-test('reads a project against its district when it has one, the city otherwise', () => {
+test('says where a market figure is from', () => {
     const component = page();
-    const district = { deals: 30, median: 4000 };
-    const city = { deals: 900, median: 3500 };
+    const project = { district_label: 'الصفا' };
 
-    assert.equal(component.marketFor({ market: { district, city } }), district);
-    assert.equal(component.marketFor({ market: { district: null, city } }), city);
-    assert.equal(component.marketFor({ market: null }), null);
+    assert.ok(component.scopeNote({ scope: 'district', quarter: '2025-3' }, project).includes('حي الصفا'));
+    assert.ok(component.scopeNote({ scope: 'district', quarter: '2025-3' }, project).includes('الربع الثالث 2025'));
+    assert.equal(component.scopeNote({ scope: 'city' }, project), 'المدينة كلها', 'deeds carry no single quarter');
+    assert.equal(component.scopeNote(null, project), '');
 });
 
-test('says how far a project sits from the market, and nothing where it cannot', () => {
+test('counts the units of a project in words', () => {
     const component = page();
-    const market = (median, deals = 30) => ({ district: { deals, median }, city: null });
+
+    assert.ok(component.unitCount({ units: [{}, {}] }).includes('وحدة'));
+    assert.equal(component.unitCount({ units: [] }), 'لا وحدات');
+    assert.equal(component.unitCount({}), 'لا وحدات');
+});
+
+test('says how far a unit sits from what its kind of property sold for, and nothing where it cannot', () => {
+    const component = page();
+    const market = (average, deals = 300) => ({ kind: { scope: 'city', deals, average }, similar: { deals: 900, median: 1 } });
 
     assert.equal(component.gap({ rate: 4400, market: market(4000) }).direction, 'above');
     assert.ok(component.gap({ rate: 4400, market: market(4000) }).label.includes('فوق'));
     assert.equal(component.gap({ rate: 3600, market: market(4000) }).direction, 'below');
     assert.equal(component.gap({ rate: 4000, market: market(4000) }).direction, 'level');
 
-    assert.equal(component.gap({ rate: null, market: market(4000) }), null, 'a project with nothing priced');
-    assert.equal(component.gap({ rate: 4400, market: market(null, 0) }), null, 'no comparable deeds');
-    assert.equal(component.gap({ rate: 4400, market: market(4000, 4) }), null, 'four deeds are not a market');
-    assert.equal(component.gap({ rate: 4400, market: null }), null);
+    assert.equal(component.gap({ rate: null, market: market(4000) }), null, 'a unit with no price');
+    assert.equal(component.gap({ rate: 4400, market: { kind: null, similar: { deals: 900, median: 3000 } } }), null, 'no kind: similar deeds are not the same kind');
+    assert.equal(component.gap({ rate: 4400, market: market(null) }), null);
+    assert.equal(component.gap({ rate: 4400, market: market(4000, 4) }), null, 'four sales are not a market');
+    assert.equal(component.gap({ rate: 4400 }), null);
 });

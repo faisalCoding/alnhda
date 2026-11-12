@@ -92,6 +92,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('market-prices/deeds', [MarketDeedController::class, 'index'])->name('market-prices.deeds');
         Route::get('market-prices/projects', [MarketProjectController::class, 'index'])->name('market-prices.projects.index');
         Route::put('market-prices/projects/{project}', [MarketProjectController::class, 'update'])->name('market-prices.projects.update');
+        Route::put('market-prices/units/{unit}', [MarketProjectController::class, 'updateUnit'])->name('market-prices.units.update');
         Route::get('visitors', [VisitorController::class, 'index'])->name('visitors.index');
         Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
 

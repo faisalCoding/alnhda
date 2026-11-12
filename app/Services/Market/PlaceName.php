@@ -46,6 +46,19 @@ class PlaceName
     }
 
     /**
+     * A looser form, for matching one publisher's name for a place against
+     * another's. The ministry writes «الصفا» and «الأمير عبد المجيد» where
+     * the authority writes «الصفاء» and «الأمير عبدالمجيد»: spacing and a
+     * closing hamza are dropped. Too loose to group a single file by, where
+     * two districts could differ by exactly that, so it is used only across
+     * sources.
+     */
+    public static function loose(string $name): string
+    {
+        return rtrim(str_replace(' ', '', self::key($name)), 'ء');
+    }
+
+    /**
      * A region without the word «منطقة» some quarters put in front of it.
      */
     public static function region(string $name): string

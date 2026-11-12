@@ -75,6 +75,60 @@ class PropertyTypeFigures
     }
 
     /**
+     * The kinds of property the authority prices in a city, busiest first.
+     * «أخرى» is left out: it is not a kind a unit can be.
+     *
+     * @return list<string>
+     */
+    public function kinds(string $cityKey): array
+    {
+        return MarketTypeStat::query()
+            ->where('level', MarketLevel::City)
+            ->where('city_key', $cityKey)
+            ->where('property_type', '!=', 'أخرى')
+            ->get(['property_type', 'deals_count'])
+            ->groupBy('property_type')
+            ->map(fn (Collection $rows): int => (int) $rows->sum('deals_count'))
+            ->sortDesc()
+            ->keys()
+            ->all();
+    }
+
+    /**
+     * What one kind of property last sold for in a city, or in one district
+     * of it, with the quarter that figure is from. The authority stopped
+     * publishing by district in late 2025, so a district's figure can be
+     * older than its city's; the quarter is returned so the screen can say.
+     *
+     * @return array{deals: int, value: int, area: float, average: float|null, lowest: float|null, highest: float|null, quarter: string}|null
+     */
+    public function reference(string $cityKey, string $type, ?string $districtKey = null): ?array
+    {
+        $rows = MarketTypeStat::query()
+            ->with('file')
+            ->where('level', $districtKey === null ? MarketLevel::City : MarketLevel::District)
+            ->where('city_key', $cityKey)
+            ->where('property_type', $type)
+            ->get()
+            // The district is named by the ministry's deeds and looked for in
+            // the authority's files, which do not always spell it the same.
+            ->when($districtKey !== null, fn (Collection $rows): Collection => $rows->filter(
+                fn (MarketTypeStat $row): bool => PlaceName::loose($row->district_key) === PlaceName::loose($districtKey)
+            ));
+
+        $latest = $rows
+            ->sortBy(fn (MarketTypeStat $row): array => [$row->file->year, $row->file->quarter])
+            ->last()
+            ?->file;
+
+        if ($latest === null) {
+            return null;
+        }
+
+        return $this->merge($rows->where('market_indicator_file_id', $latest->id)) + ['quarter' => $latest->key()];
+    }
+
+    /**
      * The latest quarter the authority covers that is no later than the one
      * the screen is on; failing that, the earliest it covers at all.
      *

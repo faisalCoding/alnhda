@@ -553,15 +553,21 @@
                             </section>
                         </template>
 
-                        {{-- The company's own projects beside the deeds around them --}}
+                        {{-- The company's own units beside what the market paid for the same kind of property --}}
                         <template x-if="projects?.projects.length && deeds?.available">
                             <section class="space-y-4">
-                                <h2 class="text-lg font-extrabold">مشاريعنا مقابل السوق</h2>
+                                <h2 class="text-lg font-extrabold">وحداتنا مقابل السوق</h2>
 
                                 <p class="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                                    اختر لكل مشروع حيّه كما تسمّيه وزارة العدل. يُقارَن وسيط سعر المتر في وحداته المسعَّرة بصفقات الحي
-                                    التي مساحتها قريبة من مساحات وحداته (أقل أو أكثر بالخُمس) خلال آخر 4 أرباع مرفوعة. قبل اختيار الحي
-                                    تُعرض أرقام المدينة كلها. الصفقات تشمل أراضي ووحدات مبنية معًا، فالمقارنة تقريبية.
+                                    كل وحدة تُقارَن بسعر السوق لنفس نوعها. اختر لكل مشروع حيّه، ولكل وحدة نوعها إن لم يكن التخمين صحيحًا.
+                                    «متوسط السوق لنفس النوع» من مؤشرات الهيئة العامة للعقار: للحي حين نشرته الهيئة، وللمدينة كلها غير ذلك.
+                                    «صفقات مماثلة بالمساحة» من صكوك وزارة العدل القريبة من مساحة الوحدة (أقل أو أكثر بالخُمس) خلال آخر
+                                    4 أرباع، وهي لا تميّز النوع. الفرق محسوب عن متوسط نفس النوع.
+                                </p>
+
+                                <p x-show="!projects.has_type_figures" x-cloak
+                                    class="rounded-xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                                    لم تُرفع ملفات مؤشرات الهيئة بعد، فلا سعر للسوق حسب النوع. ارفعها لتظهر المقارنة بنفس النوع.
                                 </p>
 
                                 <p x-show="projectsError" x-cloak class="rounded-xl bg-red-500/10 px-4 py-3 text-sm font-bold text-red-600" x-text="projectsError"></p>
@@ -571,48 +577,78 @@
                                         <table class="sheet">
                                             <thead>
                                                 <tr>
-                                                    <th>المشروع</th>
-                                                    <th>الحي في الصفقات</th>
-                                                    <th>الوحدات المسعَّرة</th>
-                                                    <th>مساحاتها (م²)</th>
+                                                    <th>الوحدة</th>
+                                                    <th>نوعها</th>
+                                                    <th>المساحة (م²)</th>
+                                                    <th>السعر (ر.س)</th>
                                                     <th>سعر المتر عندنا</th>
-                                                    <th>وسيط السوق</th>
-                                                    <th>نطاق السوق</th>
-                                                    <th>صفقات مماثلة</th>
+                                                    <th>متوسط السوق لنفس النوع</th>
+                                                    <th>أدنى – أعلى (ر.س/م²)</th>
+                                                    <th>صفقات مماثلة بالمساحة</th>
                                                     <th>الفرق</th>
                                                 </tr>
                                             </thead>
-                                            <tbody>
-                                                <template x-for="project in projects.projects" :key="project.id">
-                                                    <tr>
-                                                        <td>
-                                                            <span class="font-bold" x-text="project.name"></span>
-                                                            <span class="block text-[11px] text-zinc-400" x-text="project.location"></span>
+
+                                            <template x-for="project in projects.projects" :key="project.id">
+                                                <tbody>
+                                                    <tr class="bg-zinc-50 dark:bg-zinc-800/60">
+                                                        <td colspan="9">
+                                                            <div class="flex flex-wrap items-center gap-3">
+                                                                <span class="font-extrabold" x-text="project.name"></span>
+                                                                <span class="text-[11px] text-zinc-400" x-text="project.location"></span>
+                                                                <span class="text-[11px] font-bold text-zinc-500" x-text="unitCount(project)"></span>
+
+                                                                <label class="mr-auto flex items-center gap-2 text-[11px] font-bold text-zinc-500">
+                                                                    الحي في الصفقات
+                                                                    <select class="{{ $select }} py-1" :disabled="placing === project.id"
+                                                                        @change="placeProject(project, $event.target.value)">
+                                                                        <option value="" :selected="!project.district">— لم يُحدَّد —</option>
+                                                                        <template x-for="item in projects.districts" :key="item.key">
+                                                                            <option :value="item.key" :selected="item.key === project.district" x-text="item.label"></option>
+                                                                        </template>
+                                                                    </select>
+                                                                </label>
+                                                            </div>
                                                         </td>
-                                                        <td>
-                                                            <select class="{{ $select }} py-1" :disabled="placing === project.id"
-                                                                @change="placeProject(project, $event.target.value)" aria-label="حي المشروع">
-                                                                <option value="" :selected="!project.district">— لم يُحدَّد —</option>
-                                                                <template x-for="item in projects.districts" :key="item.key">
-                                                                    <option :value="item.key" :selected="item.key === project.district" x-text="item.label"></option>
-                                                                </template>
-                                                            </select>
-                                                        </td>
-                                                        <td x-text="project.units ? number(project.units) : '—'"></td>
-                                                        <td x-text="project.units ? (project.area_min === project.area_max ? number(project.area_min) : `${number(project.area_min)} – ${number(project.area_max)}`) : '—'"></td>
-                                                        <td class="font-bold" x-text="rate(project.rate)"></td>
-                                                        <td x-text="rate(marketFor(project)?.median)"></td>
-                                                        <td class="text-zinc-500" x-text="range(marketFor(project))"></td>
-                                                        <td>
-                                                            <span x-text="marketFor(project) ? number(marketFor(project).deals) : '—'"></span>
-                                                            <span class="text-[11px] text-zinc-400" x-show="project.market && !project.market.district">في المدينة كلها</span>
-                                                        </td>
-                                                        <td class="font-bold"
-                                                            :class="{ 'text-red-500': gap(project)?.direction === 'above', 'text-primary-600 dark:text-primary-300': gap(project)?.direction === 'below', 'text-zinc-400': !gap(project) || gap(project).direction === 'level' }"
-                                                            x-text="gap(project)?.label ?? '—'"></td>
                                                     </tr>
-                                                </template>
-                                            </tbody>
+
+                                                    <template x-for="unit in project.units" :key="unit.id">
+                                                        <tr>
+                                                            <td class="font-bold" x-text="unit.name"></td>
+                                                            <td>
+                                                                <select class="{{ $select }} py-1" :disabled="placing === `unit-${unit.id}`"
+                                                                    @change="setUnitKind(unit, $event.target.value)" aria-label="نوع الوحدة">
+                                                                    <option value="" :selected="!unit.kind || unit.kind_source !== 'set'"
+                                                                        x-text="unit.kind && unit.kind_source !== 'set' ? `${unit.kind} (تخمين)` : '— لم يُحدَّد —'"></option>
+                                                                    <template x-for="kind in projects.kinds" :key="kind">
+                                                                        <option :value="kind" :selected="unit.kind_source === 'set' && kind === unit.kind" x-text="kind"></option>
+                                                                    </template>
+                                                                </select>
+                                                            </td>
+                                                            <td x-text="unit.area ? number(unit.area) : '—'"></td>
+                                                            <td x-text="unit.price ? number(unit.price) : '—'"></td>
+                                                            <td class="font-bold" x-text="rate(unit.rate)"></td>
+                                                            <td>
+                                                                <span x-text="rate(unit.market.kind?.average)"></span>
+                                                                <span class="block text-[11px] text-zinc-400" x-text="scopeNote(unit.market.kind, project)"></span>
+                                                            </td>
+                                                            <td class="text-zinc-500" x-text="extremes(unit.market.kind)"></td>
+                                                            <td>
+                                                                <span x-text="rate(unit.market.similar?.median)"></span>
+                                                                <span class="block text-[11px] text-zinc-400" x-show="unit.market.similar"
+                                                                    x-text="unit.market.similar ? `${number(unit.market.similar.deals)} صفقة · ${scopeNote(unit.market.similar, project)}` : ''"></span>
+                                                            </td>
+                                                            <td class="font-bold"
+                                                                :class="{ 'text-red-500': gap(unit)?.direction === 'above', 'text-primary-600 dark:text-primary-300': gap(unit)?.direction === 'below', 'text-zinc-400': !gap(unit) || gap(unit).direction === 'level' }"
+                                                                x-text="gap(unit)?.label ?? '—'"></td>
+                                                        </tr>
+                                                    </template>
+
+                                                    <tr x-show="!project.units.length">
+                                                        <td colspan="9" class="text-zinc-400">لا وحدات في هذا المشروع.</td>
+                                                    </tr>
+                                                </tbody>
+                                            </template>
                                         </table>
                                     </div>
                                 </div>
