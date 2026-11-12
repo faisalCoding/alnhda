@@ -44,7 +44,10 @@ it('serves the market prices screen to an admin', function () {
         ->get(panelUrl('/market-prices'))
         ->assertOk()
         ->assertSee('أسعار السوق')
-        ->assertSee('marketPricesPage()', false);
+        ->assertSee('marketPricesPage()', false)
+        ->assertSee('وحدات السوق المضافة يدويًا')
+        ->assertSee('بيانات وزارة العدل')
+        ->assertSee('الوحدات المضافة يدويًا');
 });
 
 it('lays the screen out as a board of groups, each opened in place', function () {

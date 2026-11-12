@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\ComparisonSource;
 use App\Services\Market\PlaceName;
 use App\Services\Market\ProjectMarketComparison;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -27,6 +28,7 @@ class UpdateUnitMarketTypeRequest extends FormRequest
 
         return [
             'city' => 'required|string|max:80',
+            'source' => ['nullable', 'string', Rule::in(ComparisonSource::values())],
             'kind' => ['present', 'nullable', 'string', 'max:30', Rule::in($kinds)],
         ];
     }
@@ -38,6 +40,7 @@ class UpdateUnitMarketTypeRequest extends FormRequest
     {
         return [
             'city.required' => 'المدينة مطلوبة.',
+            'source.in' => 'اختر مصدر المقارنة: بيانات وزارة العدل أو الوحدات المضافة يدويًا.',
             'kind.present' => 'اختر نوعًا أو أرسله فارغًا للعودة إلى التخمين.',
             'kind.in' => 'هذا النوع ليس من الأنواع التي تُسعَّر بها السوق.',
         ];

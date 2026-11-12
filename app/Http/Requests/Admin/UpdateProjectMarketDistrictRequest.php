@@ -2,11 +2,13 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\ComparisonSource;
 use App\Models\MarketDeed;
 use App\Services\Market\PlaceName;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateProjectMarketDistrictRequest extends FormRequest
 {
@@ -25,6 +27,7 @@ class UpdateProjectMarketDistrictRequest extends FormRequest
     {
         return [
             'city' => 'required|string|max:80',
+            'source' => ['nullable', 'string', Rule::in(ComparisonSource::values())],
             'district' => [
                 'present',
                 'nullable',
@@ -51,6 +54,7 @@ class UpdateProjectMarketDistrictRequest extends FormRequest
     {
         return [
             'city.required' => 'المدينة مطلوبة.',
+            'source.in' => 'اختر مصدر المقارنة: بيانات وزارة العدل أو الوحدات المضافة يدويًا.',
             'district.present' => 'اختر حيًّا أو أرسله فارغًا لإلغاء الربط.',
         ];
     }

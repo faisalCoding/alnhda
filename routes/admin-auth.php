@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\Api\DashboardController;
 use App\Http\Controllers\Admin\Api\HomeContentController;
 use App\Http\Controllers\Admin\Api\LawhatiCodeController;
 use App\Http\Controllers\Admin\Api\LeadController;
+use App\Http\Controllers\Admin\Api\ManualMarketUnitController;
 use App\Http\Controllers\Admin\Api\MarketDeedController;
 use App\Http\Controllers\Admin\Api\MarketingChecklistController;
 use App\Http\Controllers\Admin\Api\MarketingMethodController;
@@ -95,6 +96,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('market-prices/projects', [MarketProjectController::class, 'index'])->name('market-prices.projects.index');
         Route::put('market-prices/projects/{project}', [MarketProjectController::class, 'update'])->name('market-prices.projects.update');
         Route::put('market-prices/units/{unit}', [MarketProjectController::class, 'updateUnit'])->name('market-prices.units.update');
+        Route::get('market-prices/manual-units', [ManualMarketUnitController::class, 'index'])->name('market-prices.manual-units.index');
         Route::get('visitors', [VisitorController::class, 'index'])->name('visitors.index');
         Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
 
@@ -202,6 +204,9 @@ Route::prefix('api')->name('panel.api.')->group(function () {
             Route::post('subscriptions', [SubscriptionController::class, 'store'])->name('subscriptions.store');
             Route::put('subscriptions/{subscription}', [SubscriptionController::class, 'update'])->name('subscriptions.update');
             Route::delete('subscriptions/{subscription}', [SubscriptionController::class, 'destroy'])->name('subscriptions.destroy');
+
+            Route::post('market-prices/manual-units', [ManualMarketUnitController::class, 'store'])->name('market-prices.manual-units.store');
+            Route::delete('market-prices/manual-units/{manualMarketUnit}', [ManualMarketUnitController::class, 'destroy'])->name('market-prices.manual-units.destroy');
 
             Route::post('useful-links', [UsefulLinkController::class, 'store'])->name('useful-links.store');
             Route::put('useful-links/{usefulLink}', [UsefulLinkController::class, 'update'])->name('useful-links.update');

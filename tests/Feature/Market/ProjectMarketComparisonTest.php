@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Admin;
+use App\Models\ManualMarketUnit;
 use App\Models\MarketDeed;
 use App\Models\MarketIndicatorFile;
 use App\Models\MarketQuarter;
@@ -423,6 +424,74 @@ it('keeps the market placement out of what the public site says about a project 
     $project = Project::factory()->create(['market_city_key' => 'جده', 'market_district_key' => 'الصفا']);
     $unit = unit($project, 600000, 150, marketType: 'دور');
 
+    $this->withoutVite();
     $this->get(route('project', $project))->assertOk()->assertDontSee('market_district_key');
     $this->get(route('properties', $unit))->assertOk()->assertDontSee('market_type');
+});
+
+it('keeps the ministry deeds when a hand-entered unit would say something else', function () {
+    $project = Project::factory()->create();
+    unit($project, 600000, 150, type: 'شقة');
+    marketDeed($this->quarter, 'الصفا', 150, 4000);
+    ManualMarketUnit::factory()->offered('الصفا', 150, 9000)->create();
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(projectsUrl())
+        ->assertJsonPath('data.comparison_source', 'ministry')
+        ->assertJsonPath('data.projects.0.units.0.market.similar.median', 4000)
+        ->assertJsonPath('data.projects.0.units.0.market.similar.deals', 1);
+});
+
+it('reads the hand-entered units when the report asks for them', function () {
+    $project = Project::factory()->create();
+    unit($project, 600000, 150, type: 'شقة');
+    marketDeed($this->quarter, 'الصفا', 150, 4000);
+
+    foreach ([3000, 5000] as $rate) {
+        ManualMarketUnit::factory()->offered('الصفا', 150, $rate)->create();
+    }
+    ManualMarketUnit::factory()->offered('الصفا', 150, 9000, kind: 'فيلا')->create();
+    ManualMarketUnit::factory()->offered('الصفا', 900, 1000)->create();
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(projectsUrl('?source=manual'))
+        ->assertSuccessful()
+        ->assertJsonPath('data.comparison_source', 'manual')
+        // The flat's size, not the plot; the villa is another kind.
+        ->assertJsonPath('data.projects.0.units.0.market.similar.scope', 'city')
+        ->assertJsonPath('data.projects.0.units.0.market.similar.deals', 2)
+        ->assertJsonPath('data.projects.0.units.0.market.similar.median', 4000);
+});
+
+it('reads hand-entered units in the project district, then the city', function () {
+    $project = Project::factory()->create(['market_city_key' => 'جده', 'market_district_key' => 'الصفا']);
+    unit($project, 600000, 150, type: 'شقة');
+    ManualMarketUnit::factory()->offered('الصفا', 150, 5000)->create();
+    ManualMarketUnit::factory()->offered('الصفا', 160, 5200)->create();
+    ManualMarketUnit::factory()->offered('الواحة', 150, 2000)->create();
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(projectsUrl('?source=manual'))
+        ->assertJsonPath('data.projects.0.units.0.market.similar.scope', 'district')
+        ->assertJsonPath('data.projects.0.units.0.market.similar.deals', 2)
+        ->assertJsonPath('data.projects.0.units.0.market.similar.median', 5100);
+});
+
+it('falls back to the city when the district has no hand-entered unit of that size', function () {
+    $project = Project::factory()->create(['market_city_key' => 'جده', 'market_district_key' => 'الصفا']);
+    unit($project, 600000, 150, type: 'شقة');
+    ManualMarketUnit::factory()->offered('الواحة', 150, 3000)->create();
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(projectsUrl('?source=manual'))
+        ->assertJsonPath('data.projects.0.units.0.market.similar.scope', 'city')
+        ->assertJsonPath('data.projects.0.units.0.market.similar.deals', 1)
+        ->assertJsonPath('data.projects.0.units.0.market.similar.median', 3000);
+});
+
+it('rejects a comparison source it does not know', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(projectsUrl('?source=portal'))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('source');
 });

@@ -189,3 +189,50 @@ test('says how far a unit sits from what its kind of property sold for, and noth
     assert.equal(component.gap({ rate: 4400, market: market(4000, 4) }), null, 'four sales are not a market');
     assert.equal(component.gap({ rate: 4400 }), null);
 });
+
+test('asks the comparison for the ministry until the source is switched', async () => {
+    const component = page();
+    let reads = 0;
+    component.loadProjects = async () => {
+        reads++;
+    };
+
+    assert.equal(component.comparisonSource, 'ministry');
+    assert.equal(new URLSearchParams(component.projectsQuery()).get('source'), 'ministry');
+
+    await component.setComparisonSource('manual');
+    assert.equal(component.comparisonSource, 'manual');
+    assert.equal(new URLSearchParams(component.projectsQuery()).get('source'), 'manual');
+    assert.equal(reads, 1);
+
+    await component.setComparisonSource('manual');
+    assert.equal(reads, 1, 'choosing the source that is already on does not read the report again');
+
+    await component.setComparisonSource('nope');
+    assert.equal(component.comparisonSource, 'manual');
+});
+
+test('names a comparable as a deed or as a hand-entered unit', () => {
+    const component = page();
+    const figure = { deals: 5, scope: 'city' };
+    const project = { district_label: 'الصفا' };
+
+    assert.ok(component.similarCaption(figure, project).includes('صفقة'));
+
+    component.comparisonSource = 'manual';
+    assert.ok(component.similarCaption(figure, project).includes('وحدة'));
+    assert.equal(component.similarCaption(null, project), '');
+});
+
+test('reads the projects without deeds when the comparison source is the units entered by hand', async () => {
+    const component = page();
+    component.comparisonSource = 'manual';
+    component.deeds = { available: true };
+    component.projects = { projects: [] };
+    component.data = { deeds_available: false };
+
+    await component.refreshDetail();
+
+    assert.equal(component.deeds, null);
+    assert.equal(component.calls.projects, 1);
+});

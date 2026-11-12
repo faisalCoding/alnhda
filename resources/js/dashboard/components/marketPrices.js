@@ -72,7 +72,7 @@ export default function marketPricesPage() {
                 });
             }
 
-            await this.load();
+            await Promise.all([this.load(), this.loadManualUnits()]);
             this.loading = false;
         },
 
@@ -121,8 +121,9 @@ export default function marketPricesPage() {
                 },
                 units: () => {
                     const units = (this.projects?.projects ?? []).reduce((sum, project) => sum + project.units.length, 0);
+                    const ours = units ? `${this.number(units)} وحدة` : 'لا وحدات للمقارنة';
 
-                    return units ? `${this.number(units)} وحدة` : 'لا وحدات للمقارنة';
+                    return this.manualUnits.length ? `${ours} · ${this.number(this.manualUnits.length)} مضافة` : ours;
                 },
                 files: () =>
                     this.filesNeedingAttention
