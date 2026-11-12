@@ -13,6 +13,20 @@ const QUARTER_NAMES = ['', 'الأول', 'الثاني', 'الثالث', 'الر
 export const THIN_MARKET = 5;
 
 /**
+ * The groups the screen is split into, and the filters each one reads by. A
+ * filter a group does not read by is not shown inside it: the deeds have their
+ * own span of quarters, the units are not narrowed by classification.
+ */
+export const GROUPS = {
+    kingdom: ['quarter', 'classification', 'band'],
+    city: ['quarter', 'classification', 'band', 'city'],
+    deeds: ['classification', 'city'],
+    types: ['quarter', 'classification', 'city'],
+    units: ['city'],
+    files: [],
+};
+
+/**
  * Reads figures that were worked out when each quarter's file was uploaded.
  * The screen never opens a file itself: an upload hands the file to the server
  * and the screen is read again once it has been counted.
@@ -24,6 +38,9 @@ export default function marketPricesPage() {
         loading: true,
         error: '',
         data: null,
+
+        /** The group that is open; empty is the board of all of them. */
+        view: '',
 
         quarter: '',
         classification: '',
@@ -46,8 +63,89 @@ export default function marketPricesPage() {
         checkMessage: '',
 
         async init() {
+            // The open group lives in the address, so the browser's back
+            // button returns to the board and a reload stays where it was.
+            if (typeof window !== 'undefined') {
+                this.view = this.groupIn(window.location.hash);
+                window.addEventListener('hashchange', () => {
+                    this.view = this.groupIn(window.location.hash);
+                });
+            }
+
             await this.load();
             this.loading = false;
+        },
+
+        /** The group an address fragment names, or the board when it names none. */
+        groupIn(hash) {
+            const name = String(hash ?? '').replace(/^#/, '');
+
+            return Object.hasOwn(GROUPS, name) ? name : '';
+        },
+
+        /** Opens a group, or the board when given nothing. */
+        go(group) {
+            this.view = Object.hasOwn(GROUPS, group) ? group : '';
+
+            if (typeof window !== 'undefined') {
+                window.location.hash = this.view;
+                window.scrollTo?.({ top: 0 });
+            }
+        },
+
+        /** Whether the open group reads by a filter. */
+        shows(filter) {
+            return (GROUPS[this.view] ?? []).includes(filter);
+        },
+
+        /**
+         * What a square on the board says about its group at a glance: the one
+         * figure that group is mostly opened for.
+         */
+        tileFigure(group) {
+            const none = 'لا بيانات بعد';
+
+            const figures = {
+                kingdom: () =>
+                    this.data?.country?.current ? `${this.rate(this.data.country.current.median)} ر.س/م²` : none,
+                city: () =>
+                    this.data?.city?.current
+                        ? `${this.data.city.label}: ${this.rate(this.data.city.current.median)} ر.س/م²`
+                        : none,
+                deeds: () =>
+                    this.deeds?.available ? `${this.number(this.deeds.summary.deals)} صفقة` : 'لا صفقات فردية بعد',
+                types: () => {
+                    const top = this.types?.rows?.[0];
+
+                    return top ? `${top.type}: ${this.rate(top.average)} ر.س/م²` : 'لم تُرفع مؤشرات الهيئة';
+                },
+                units: () => {
+                    const units = (this.projects?.projects ?? []).reduce((sum, project) => sum + project.units.length, 0);
+
+                    return units ? `${this.number(units)} وحدة` : 'لا وحدات للمقارنة';
+                },
+                files: () =>
+                    this.filesNeedingAttention
+                        ? `${this.number(this.filesNeedingAttention)} ملفًا ينتظر الرفع`
+                        : 'كل ما نُشر مرفوع',
+            };
+
+            return figures[group]?.() ?? '';
+        },
+
+        /**
+         * Files that want something done: published and never uploaded,
+         * replaced by their publisher since, or counted before the importer
+         * kept what it keeps now.
+         */
+        get filesNeedingAttention() {
+            return (
+                this.waiting.length +
+                this.changed.length +
+                this.outdated.length +
+                (this.types?.waiting?.length ?? 0) +
+                (this.types?.changed?.length ?? 0)
+            );
         },
 
         async load() {
@@ -150,6 +248,8 @@ export default function marketPricesPage() {
         /** Files let go of anywhere on the screen are uploaded like chosen ones. */
         async drop(event) {
             this.dragging = false;
+            // What happens to the files is shown in the files group.
+            this.go('files');
             await this.upload({ target: { files: event.dataTransfer?.files ?? [] } });
         },
 

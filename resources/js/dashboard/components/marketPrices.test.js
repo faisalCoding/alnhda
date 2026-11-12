@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert';
 
-import marketPricesPage, { THIN_MARKET } from './marketPrices.js';
+import marketPricesPage, { GROUPS, THIN_MARKET } from './marketPrices.js';
 
 function district(label, deals, median, previousMedian = null, value = deals * 1000) {
     return { key: label, label, deals, median, previous_median: previousMedian, value };
@@ -259,4 +259,94 @@ test('sums up what an upload brought in', () => {
     assert.ok(summary.includes('الربع الرابع 2025'));
     assert.ok(summary.includes('الربع الأول 2026'));
     assert.equal(page.importSummary([]), '');
+});
+
+test('opens on the board and reads a group out of the address', () => {
+    const page = marketPricesPage();
+
+    assert.equal(page.view, '');
+    assert.equal(page.groupIn('#city'), 'city');
+    assert.equal(page.groupIn('city'), 'city');
+    assert.equal(page.groupIn(''), '');
+    assert.equal(page.groupIn('#nowhere'), '', 'an address that names no group is the board');
+    assert.equal(page.groupIn('#constructor'), '', 'a name every object has is not a group');
+    assert.equal(page.groupIn(undefined), '');
+});
+
+test('opens a group and goes back to the board', () => {
+    const page = marketPricesPage();
+
+    page.go('deeds');
+    assert.equal(page.view, 'deeds');
+
+    page.go('');
+    assert.equal(page.view, '');
+
+    page.go('nowhere');
+    assert.equal(page.view, '', 'a group that does not exist opens the board');
+});
+
+test('shows each group only the filters it reads by', () => {
+    const page = marketPricesPage();
+
+    assert.equal(page.shows('quarter'), false, 'the board has no filters');
+
+    page.go('kingdom');
+    assert.equal(page.shows('band'), true);
+    assert.equal(page.shows('city'), false);
+
+    page.go('deeds');
+    assert.equal(page.shows('quarter'), false, 'the deeds have their own span of quarters');
+    assert.equal(page.shows('city'), true);
+
+    page.go('units');
+    assert.equal(page.shows('classification'), false);
+
+    page.go('files');
+    assert.deepEqual(GROUPS.files, []);
+    assert.equal(page.shows('city'), false);
+});
+
+test('says something on every square before anything has loaded', () => {
+    const page = marketPricesPage();
+
+    for (const group of Object.keys(GROUPS)) {
+        assert.ok(page.tileFigure(group).length > 0, `the ${group} square is blank`);
+    }
+
+    assert.equal(page.tileFigure('nowhere'), '');
+    assert.equal(page.filesNeedingAttention, 0);
+});
+
+test('puts the figure each group is opened for on its square', () => {
+    const page = marketPricesPage();
+    page.data = {
+        country: { current: { median: 928 } },
+        city: { label: 'جدة', current: { median: 3236 } },
+        quarters: [{ key: '2025-4', outdated: true, file_changed: false }, { key: '2026-1', outdated: false, file_changed: true }],
+        waiting: [{ key: '2026-2' }, { key: '2026-3' }],
+        types: { rows: [{ type: 'شقة', average: 3876 }], waiting: [{ key: '2026-2' }], changed: [] },
+    };
+    page.deeds = { available: true, summary: { deals: 5616 } };
+    page.projects = { projects: [{ units: [{}, {}] }, { units: [{}] }] };
+
+    assert.ok(page.tileFigure('kingdom').includes('ر.س/م²'));
+    assert.ok(page.tileFigure('city').startsWith('جدة'));
+    assert.ok(page.tileFigure('deeds').includes('صفقة'));
+    assert.ok(page.tileFigure('types').startsWith('شقة'));
+    assert.ok(page.tileFigure('units').includes('وحدة'));
+
+    // Two never uploaded, one replaced, one out of date, one of the authority's waiting.
+    assert.equal(page.filesNeedingAttention, 5);
+    assert.ok(page.tileFigure('files').includes('ينتظر'));
+});
+
+test('takes dropped files to the files group', async () => {
+    const page = marketPricesPage();
+    page.upload = async () => {};
+    page.go('city');
+
+    await page.drop({ dataTransfer: { files: [] } });
+
+    assert.equal(page.view, 'files');
 });

@@ -47,6 +47,31 @@ it('serves the market prices screen to an admin', function () {
         ->assertSee('marketPricesPage()', false);
 });
 
+it('lays the screen out as a board of groups, each opened in place', function () {
+    $html = $this->actingAs($this->admin, 'admin')
+        ->withoutVite()
+        ->get(panelUrl('/market-prices'))
+        ->assertOk()
+        ->getContent();
+
+    foreach (['kingdom' => 'المملكة', 'city' => 'المدينة وأحياؤها', 'deeds' => 'الصفقات الفردية', 'types' => 'حسب نوع العقار', 'units' => 'وحداتنا مقابل السوق', 'files' => 'الملفات والتحديث'] as $group => $title) {
+        expect($html)->toContain("go('{$group}')")
+            ->and($html)->toContain($title)
+            ->and($html)->toContain("tileFigure('{$group}')");
+    }
+
+    // Six squares, each with its own icon, and one way back from any group.
+    expect(substr_count($html, 'aspect-square'))->toBe(6)
+        ->and(substr_count($html, "@click=\"go('')\""))->toBe(1)
+        // Every group's content is on this one page, shown by the group that is open.
+        ->and($html)->toContain("x-show=\"view === 'kingdom'\"")
+        ->and($html)->toContain("x-show=\"view === 'city'\"")
+        ->and($html)->toContain("x-show=\"view === 'deeds'\"")
+        ->and($html)->toContain("x-show=\"view === 'types'\"")
+        ->and($html)->toContain("x-show=\"view === 'units'\"")
+        ->and($html)->toContain("x-show=\"view === 'files'\"");
+});
+
 it('explains itself before any quarter has been uploaded', function () {
     $waiting = MarketQuarter::factory()->pending()->period(2026, 2)->create(['dataset_id' => 'q2-2026']);
 
