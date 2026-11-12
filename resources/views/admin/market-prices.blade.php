@@ -1,11 +1,16 @@
 @extends('admin.layouts.panel')
 
+@push('head')
+    @include('partials.fonts')
+@endpush
+
 @section('title', 'أسعار السوق')
 @section('heading', 'أسعار السوق')
 
 @php
     $card = 'rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900';
     $tile = 'rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900';
+    $input = 'w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-sm outline-none focus:border-primary-500 dark:border-zinc-700 dark:bg-zinc-800';
     $select = 'rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-sm outline-none focus:border-primary-500 dark:border-zinc-700 dark:bg-zinc-800';
     $pill = 'rounded-lg px-4 py-1.5 text-sm font-bold transition-colors';
     $pillOn = 'bg-primary-500 text-white';
@@ -27,7 +32,7 @@
         ['city', 'المدينة وأحياؤها', 'أسعار المدينة وترتيب أحيائها وتاريخ كل حي', 'M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z'],
         ['deeds', 'الصفقات الفردية', 'كل صفقة بحيّها ومساحتها وسعرها، مع تصفية حرة', 'M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z'],
         ['types', 'حسب نوع العقار', 'شقة وفيلا ودور وأرض: متوسط كل نوع وتاريخه', 'm2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25'],
-        ['units', 'وحداتنا مقابل السوق', 'كل وحدة من مشاريعنا أمام سعر السوق لنفس نوعها', 'M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z'],
+        ['units', 'وحداتنا مقابل السوق', 'مقارنة أسعارنا بالسوق، مع وحدات تُضاف يدويًا', 'M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z'],
         ['files', 'الملفات والتحديث', 'رفع ملفات المنصة وما لم يُرفع منها بعد', 'M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z'],
     ];
 @endphp
@@ -232,7 +237,7 @@
                                 هذه الصفحة تقرأ صفقات البيع التي تنشرها وزارة العدل كل ربع سنة على منصة البيانات المفتوحة.
                                 المنصة لا تسلّم الملفات إلا لمتصفح يفتحه شخص، فيُنزَّل كل ربع يدويًا ثم يُرفع هنا.
                             </p>
-                            <ol class="list-inside list-decimal space-y-1.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                            <ol class="list-decimal space-y-1.5 ps-5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
                                 <li>افتح <a :href="data.publisher_url" target="_blank" rel="noopener" class="font-bold text-primary-600 hover:underline dark:text-primary-300">صفحة وزارة العدل على منصة البيانات المفتوحة</a> وابحث عن «الصفقات العقارية».</li>
                                 <li>من كل ربع، نزّل الملف <span class="font-mono text-xs" dir="ltr">Transactions sale for real estate CSV</span>.</li>
                                 <li>ارفع الملفات من زر «رفع ملفات الصفقات» أعلاه، كما هي دون فتحها في Excel.</li>
@@ -272,6 +277,124 @@
                         </div>
                     </template>
                 </div>
+
+                @include('admin.partials.manual-market-units')
+
+                        {{-- The company's own units beside what the market paid for the same kind of property --}}
+                        <template x-if="projects?.projects.length && (deeds?.available || comparisonSource === 'manual')">
+                            <section x-show="view === 'units'" class="space-y-4">
+                                <h2 class="text-lg font-extrabold">وحداتنا مقابل السوق</h2>
+
+                                <p class="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                                    كل وحدة تُقارَن بسعر السوق لنفس نوعها. اختر لكل مشروع حيّه، ولكل وحدة نوعها إن لم يكن التخمين صحيحًا.
+                                    «متوسط السوق لنفس النوع» من مؤشرات الهيئة العامة للعقار: للحي حين نشرته الهيئة، وللمدينة كلها غير ذلك.
+                                    <span x-show="comparisonSource !== 'manual'">
+                                        «صفقات مماثلة بالمساحة» من صكوك وزارة العدل القريبة من مساحة الوحدة (أقل أو أكثر بالخُمس) خلال آخر
+                                        4 أرباع، وهي لا تميّز النوع.
+                                    </span>
+                                    <span x-show="comparisonSource === 'manual'" x-cloak>
+                                        «وحدات مماثلة بالمساحة» من الوحدات المضافة يدويًا أعلاه: نفس النوع، ومساحة قريبة (أقل أو أكثر بالخُمس)،
+                                        في حي المشروع إن وُجدت وإلا في المدينة.
+                                    </span>
+                                    الفرق محسوب عن متوسط نفس النوع.
+                                </p>
+
+                                <p x-show="!projects.has_type_figures" x-cloak
+                                    class="rounded-xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                                    لم تُرفع ملفات مؤشرات الهيئة بعد، فلا سعر للسوق حسب النوع. ارفعها لتظهر المقارنة بنفس النوع.
+                                </p>
+
+                                <p x-show="projectsError" x-cloak class="rounded-xl bg-red-500/10 px-4 py-3 text-sm font-bold text-red-600" x-text="projectsError"></p>
+
+                                <div class="{{ $card }}">
+                                    <div class="sheet-wrap is-inset">
+                                        <table class="sheet">
+                                            <thead>
+                                                <tr>
+                                                    <th>الوحدة</th>
+                                                    <th>نوعها</th>
+                                                    <th>المساحة (م²)</th>
+                                                    <th>السعر (ر.س)</th>
+                                                    <th>سعر المتر عندنا</th>
+                                                    <th>متوسط السوق لنفس النوع</th>
+                                                    <th>أدنى – أعلى (ر.س/م²)</th>
+                                                    <th x-text="comparisonSource === 'manual' ? 'وحدات مماثلة بالمساحة' : 'صفقات مماثلة بالمساحة'">صفقات مماثلة بالمساحة</th>
+                                                    <th>الفرق</th>
+                                                </tr>
+                                            </thead>
+
+                                            <template x-for="project in projects.projects" :key="project.id">
+                                                <tbody>
+                                                    <tr class="bg-zinc-50 dark:bg-zinc-800/60">
+                                                        <td colspan="9">
+                                                            <div class="flex flex-wrap items-center gap-3">
+                                                                <span class="font-extrabold" x-text="project.name"></span>
+                                                                <span class="text-[11px] text-zinc-400" x-text="project.location"></span>
+                                                                <span class="text-[11px] font-bold text-zinc-500" x-text="unitCount(project)"></span>
+
+                                                                <label class="mr-auto flex items-center gap-2 text-[11px] font-bold text-zinc-500">
+                                                                    الحي في الصفقات
+                                                                    <select class="{{ $select }} py-1" :disabled="placing === project.id"
+                                                                        @change="placeProject(project, $event.target.value)">
+                                                                        <option value="" :selected="!project.district">— لم يُحدَّد —</option>
+                                                                        <template x-for="item in projects.districts" :key="item.key">
+                                                                            <option :value="item.key" :selected="item.key === project.district" x-text="item.label"></option>
+                                                                        </template>
+                                                                    </select>
+                                                                </label>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+
+                                                    <template x-for="unit in project.units" :key="unit.id">
+                                                        <tr>
+                                                            <td class="font-bold" x-text="unit.name"></td>
+                                                            <td>
+                                                                <select class="{{ $select }} py-1" :disabled="placing === `unit-${unit.id}`"
+                                                                    @change="setUnitKind(unit, $event.target.value)" aria-label="نوع الوحدة">
+                                                                    <option value="" :selected="!unit.kind || unit.kind_source !== 'set'"
+                                                                        x-text="unit.kind && unit.kind_source !== 'set' ? `${unit.kind} (تخمين)` : '— لم يُحدَّد —'"></option>
+                                                                    <template x-for="kind in projects.kinds" :key="kind">
+                                                                        <option :value="kind" :selected="unit.kind_source === 'set' && kind === unit.kind" x-text="kind"></option>
+                                                                    </template>
+                                                                </select>
+                                                            </td>
+                                                            <td x-text="unit.area ? number(unit.area) : '—'"></td>
+                                                            <td x-text="unit.price ? number(unit.price) : '—'"></td>
+                                                            <td class="font-bold" x-text="rate(unit.rate)"></td>
+                                                            <td>
+                                                                <span x-text="rate(unit.market.kind?.average)"></span>
+                                                                <span class="block text-[11px] text-zinc-400" x-text="scopeNote(unit.market.kind, project)"></span>
+                                                            </td>
+                                                            <td class="text-zinc-500" x-text="extremes(unit.market.kind)"></td>
+                                                            <td>
+                                                                <span x-text="rate(unit.market.similar?.median)"></span>
+                                                                <span class="block text-[11px] text-zinc-400" x-show="unit.market.similar"
+                                                                    x-text="similarCaption(unit.market.similar, project)"></span>
+                                                            </td>
+                                                            <td class="font-bold"
+                                                                :class="{ 'text-red-500': gap(unit)?.direction === 'above', 'text-primary-600 dark:text-primary-300': gap(unit)?.direction === 'below', 'text-zinc-400': !gap(unit) || gap(unit).direction === 'level' }"
+                                                                x-text="gap(unit)?.label ?? '—'"></td>
+                                                        </tr>
+                                                    </template>
+
+                                                    <tr x-show="!project.units.length">
+                                                        <td colspan="9" class="text-zinc-400">لا وحدات في هذا المشروع.</td>
+                                                    </tr>
+                                                </tbody>
+                                            </template>
+                                        </table>
+                                    </div>
+                                </div>
+                            </section>
+                        </template>
+
+                        <template x-if="view === 'units' && !(projects?.projects.length && (deeds?.available || comparisonSource === 'manual'))">
+                            <p class="rounded-2xl border border-dashed border-zinc-300 px-6 py-10 text-center text-sm leading-relaxed text-zinc-400 dark:border-zinc-700">
+                                لا شيء للمقارنة بعد. بيانات وزارة العدل تحتاج مشاريع مسجّلة وصفقات فردية مرفوعة لهذه المدينة.
+                                يمكنك إضافة وحدات أعلاه واختيار «الوحدات المضافة يدويًا» مصدرًا للمقارنة.
+                            </p>
+                        </template>
 
                 <template x-if="hasData">
                     <div class="space-y-6">
@@ -636,118 +759,11 @@
                             </p>
                         </template>
 
-                        {{-- The company's own units beside what the market paid for the same kind of property --}}
-                        <template x-if="projects?.projects.length && deeds?.available">
-                            <section x-show="view === 'units'" class="space-y-4">
-                                <h2 class="text-lg font-extrabold">وحداتنا مقابل السوق</h2>
-
-                                <p class="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                                    كل وحدة تُقارَن بسعر السوق لنفس نوعها. اختر لكل مشروع حيّه، ولكل وحدة نوعها إن لم يكن التخمين صحيحًا.
-                                    «متوسط السوق لنفس النوع» من مؤشرات الهيئة العامة للعقار: للحي حين نشرته الهيئة، وللمدينة كلها غير ذلك.
-                                    «صفقات مماثلة بالمساحة» من صكوك وزارة العدل القريبة من مساحة الوحدة (أقل أو أكثر بالخُمس) خلال آخر
-                                    4 أرباع، وهي لا تميّز النوع. الفرق محسوب عن متوسط نفس النوع.
-                                </p>
-
-                                <p x-show="!projects.has_type_figures" x-cloak
-                                    class="rounded-xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
-                                    لم تُرفع ملفات مؤشرات الهيئة بعد، فلا سعر للسوق حسب النوع. ارفعها لتظهر المقارنة بنفس النوع.
-                                </p>
-
-                                <p x-show="projectsError" x-cloak class="rounded-xl bg-red-500/10 px-4 py-3 text-sm font-bold text-red-600" x-text="projectsError"></p>
-
-                                <div class="{{ $card }}">
-                                    <div class="sheet-wrap is-inset">
-                                        <table class="sheet">
-                                            <thead>
-                                                <tr>
-                                                    <th>الوحدة</th>
-                                                    <th>نوعها</th>
-                                                    <th>المساحة (م²)</th>
-                                                    <th>السعر (ر.س)</th>
-                                                    <th>سعر المتر عندنا</th>
-                                                    <th>متوسط السوق لنفس النوع</th>
-                                                    <th>أدنى – أعلى (ر.س/م²)</th>
-                                                    <th>صفقات مماثلة بالمساحة</th>
-                                                    <th>الفرق</th>
-                                                </tr>
-                                            </thead>
-
-                                            <template x-for="project in projects.projects" :key="project.id">
-                                                <tbody>
-                                                    <tr class="bg-zinc-50 dark:bg-zinc-800/60">
-                                                        <td colspan="9">
-                                                            <div class="flex flex-wrap items-center gap-3">
-                                                                <span class="font-extrabold" x-text="project.name"></span>
-                                                                <span class="text-[11px] text-zinc-400" x-text="project.location"></span>
-                                                                <span class="text-[11px] font-bold text-zinc-500" x-text="unitCount(project)"></span>
-
-                                                                <label class="mr-auto flex items-center gap-2 text-[11px] font-bold text-zinc-500">
-                                                                    الحي في الصفقات
-                                                                    <select class="{{ $select }} py-1" :disabled="placing === project.id"
-                                                                        @change="placeProject(project, $event.target.value)">
-                                                                        <option value="" :selected="!project.district">— لم يُحدَّد —</option>
-                                                                        <template x-for="item in projects.districts" :key="item.key">
-                                                                            <option :value="item.key" :selected="item.key === project.district" x-text="item.label"></option>
-                                                                        </template>
-                                                                    </select>
-                                                                </label>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-
-                                                    <template x-for="unit in project.units" :key="unit.id">
-                                                        <tr>
-                                                            <td class="font-bold" x-text="unit.name"></td>
-                                                            <td>
-                                                                <select class="{{ $select }} py-1" :disabled="placing === `unit-${unit.id}`"
-                                                                    @change="setUnitKind(unit, $event.target.value)" aria-label="نوع الوحدة">
-                                                                    <option value="" :selected="!unit.kind || unit.kind_source !== 'set'"
-                                                                        x-text="unit.kind && unit.kind_source !== 'set' ? `${unit.kind} (تخمين)` : '— لم يُحدَّد —'"></option>
-                                                                    <template x-for="kind in projects.kinds" :key="kind">
-                                                                        <option :value="kind" :selected="unit.kind_source === 'set' && kind === unit.kind" x-text="kind"></option>
-                                                                    </template>
-                                                                </select>
-                                                            </td>
-                                                            <td x-text="unit.area ? number(unit.area) : '—'"></td>
-                                                            <td x-text="unit.price ? number(unit.price) : '—'"></td>
-                                                            <td class="font-bold" x-text="rate(unit.rate)"></td>
-                                                            <td>
-                                                                <span x-text="rate(unit.market.kind?.average)"></span>
-                                                                <span class="block text-[11px] text-zinc-400" x-text="scopeNote(unit.market.kind, project)"></span>
-                                                            </td>
-                                                            <td class="text-zinc-500" x-text="extremes(unit.market.kind)"></td>
-                                                            <td>
-                                                                <span x-text="rate(unit.market.similar?.median)"></span>
-                                                                <span class="block text-[11px] text-zinc-400" x-show="unit.market.similar"
-                                                                    x-text="unit.market.similar ? `${number(unit.market.similar.deals)} صفقة · ${scopeNote(unit.market.similar, project)}` : ''"></span>
-                                                            </td>
-                                                            <td class="font-bold"
-                                                                :class="{ 'text-red-500': gap(unit)?.direction === 'above', 'text-primary-600 dark:text-primary-300': gap(unit)?.direction === 'below', 'text-zinc-400': !gap(unit) || gap(unit).direction === 'level' }"
-                                                                x-text="gap(unit)?.label ?? '—'"></td>
-                                                        </tr>
-                                                    </template>
-
-                                                    <tr x-show="!project.units.length">
-                                                        <td colspan="9" class="text-zinc-400">لا وحدات في هذا المشروع.</td>
-                                                    </tr>
-                                                </tbody>
-                                            </template>
-                                        </table>
-                                    </div>
-                                </div>
-                            </section>
-                        </template>
-
-                        <template x-if="view === 'units' && !(projects?.projects.length && deeds?.available)">
-                            <p class="rounded-2xl border border-dashed border-zinc-300 px-6 py-10 text-center text-sm leading-relaxed text-zinc-400 dark:border-zinc-700">
-                                لا شيء للمقارنة بعد: المقارنة تحتاج مشاريع مسجّلة وصفقات فردية مرفوعة لهذه المدينة.
-                            </p>
-                        </template>
                     </div>
                 </template>
 
                 {{-- A group opened before any quarter of deeds has been uploaded --}}
-                <template x-if="!hasData && ['kingdom', 'city', 'deeds', 'units'].includes(view)">
+                <template x-if="!hasData && ['kingdom', 'city', 'deeds'].includes(view)">
                     <div class="rounded-2xl border border-dashed border-zinc-300 px-6 py-10 text-center dark:border-zinc-700">
                         <p class="mb-4 text-sm text-zinc-400">لا بيانات لهذه المجموعة بعد: لم يُرفع أي ربع من صفقات وزارة العدل.</p>
                         <button type="button" class="{{ $primaryButton }} mx-auto" @click="go('files')">إلى الملفات والتحديث</button>

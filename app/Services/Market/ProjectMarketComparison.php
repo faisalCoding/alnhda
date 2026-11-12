@@ -2,6 +2,8 @@
 
 namespace App\Services\Market;
 
+use App\Enums\ComparisonSource;
+use App\Models\ManualMarketUnit;
 use App\Models\MarketDeed;
 use App\Models\Project;
 use App\Models\Properties;
@@ -20,8 +22,10 @@ use Illuminate\Support\Collection;
  * Each unit is then read against two things. The first is what the authority
  * says its kind sold for, in the project's district where the authority went
  * that far and in the city otherwise: that is the price of the same kind of
- * property. The second is the ministry's deeds of about the same size nearby,
- * which do not name a kind but are counted deed by deed.
+ * property. The second is a price of about the same size nearby. By default
+ * that is the ministry's deeds, which do not name a kind but are counted deed
+ * by deed. Asked for the manual source, it is the units an admin entered by
+ * hand, and those do keep a kind.
  */
 class ProjectMarketComparison
 {
@@ -45,9 +49,9 @@ class ProjectMarketComparison
     ) {}
 
     /**
-     * @return array{city: array{key: string, label: string}, districts: list<array{key: string, label: string}>, kinds: list<string>, has_type_figures: bool, projects: list<array<string, mixed>>}
+     * @return array{city: array{key: string, label: string}, districts: list<array{key: string, label: string}>, kinds: list<string>, has_type_figures: bool, comparison_source: string, projects: list<array<string, mixed>>}
      */
-    public function forCity(string $cityKey): array
+    public function forCity(string $cityKey, ComparisonSource $source = ComparisonSource::Ministry): array
     {
         $districts = MarketDeed::query()
             ->where('city_key', $cityKey)
@@ -67,11 +71,12 @@ class ProjectMarketComparison
             'districts' => $districts->all(),
             'kinds' => $kinds,
             'has_type_figures' => $published !== [],
+            'comparison_source' => $source->value,
             'projects' => Project::query()
                 ->ordered()
                 ->with('properties')
                 ->get()
-                ->map(fn (Project $project): array => $this->project($project, $cityKey, $districts, $kinds))
+                ->map(fn (Project $project): array => $this->project($project, $cityKey, $districts, $kinds, $source))
                 ->all(),
         ];
     }
@@ -91,7 +96,7 @@ class ProjectMarketComparison
      * @param  list<string>  $kinds
      * @return array<string, mixed>
      */
-    private function project(Project $project, string $cityKey, Collection $districts, array $kinds): array
+    private function project(Project $project, string $cityKey, Collection $districts, array $kinds, ComparisonSource $source): array
     {
         $placed = $project->market_city_key === $cityKey && filled($project->market_district_key);
         $district = $placed ? $project->market_district_key : null;
@@ -108,7 +113,7 @@ class ProjectMarketComparison
                 ? ($districts->firstWhere('key', $district)['label'] ?? $district)
                 : null,
             'units' => $project->properties
-                ->map(fn (Properties $unit): array => $this->unit($unit, $project, $cityKey, $district, $kinds))
+                ->map(fn (Properties $unit): array => $this->unit($unit, $project, $cityKey, $district, $kinds, $source))
                 ->values()
                 ->all(),
         ];
@@ -118,13 +123,13 @@ class ProjectMarketComparison
      * @param  list<string>  $kinds
      * @return array<string, mixed>
      */
-    private function unit(Properties $unit, Project $project, string $cityKey, ?string $district, array $kinds): array
+    private function unit(Properties $unit, Project $project, string $cityKey, ?string $district, array $kinds, ComparisonSource $comparison): array
     {
         $area = (float) $unit->area;
         // The offer is what is actually being asked when there is one.
         $price = (int) ($unit->offer ?: $unit->price);
         $priced = $area > 0 && $price > 0;
-        [$kind, $source] = $this->kind($unit, $project, $kinds);
+        [$kind, $kindSource] = $this->kind($unit, $project, $kinds);
 
         return [
             'id' => $unit->id,
@@ -132,13 +137,13 @@ class ProjectMarketComparison
             'status' => $unit->status,
             'kind' => $kind,
             // 'set' by hand, or guessed from the 'unit' or its 'project'.
-            'kind_source' => $source,
+            'kind_source' => $kindSource,
             'area' => $area > 0 ? $area : null,
             'price' => $price > 0 ? $price : null,
             'rate' => $priced ? round($price / $area, 2) : null,
             'market' => [
                 'kind' => $kind === null ? null : $this->kindFigure($cityKey, $kind, $district),
-                'similar' => $area > 0 ? $this->similarDeeds($cityKey, $district, $area) : null,
+                'similar' => $area > 0 ? $this->similar($cityKey, $district, $area, $kind, $comparison) : null,
             ],
         ];
     }
@@ -181,6 +186,21 @@ class ProjectMarketComparison
     }
 
     /**
+     * A price of about the same size: the ministry's deeds, unless the report
+     * was asked to read the units entered by hand.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function similar(string $cityKey, ?string $district, float $area, ?string $kind, ComparisonSource $source): ?array
+    {
+        if ($source === ComparisonSource::Manual) {
+            return $this->similarManual($cityKey, $district, $area, $kind);
+        }
+
+        return $this->similarDeeds($cityKey, $district, $area);
+    }
+
+    /**
      * The ministry's deeds within a fifth of a unit's size over the latest
      * four quarters: in the district when the project is placed and anything
      * of that size sold there, in the city otherwise.
@@ -201,6 +221,48 @@ class ProjectMarketComparison
                 return $city['deals'] > 0 ? $city : null;
             },
         );
+    }
+
+    /**
+     * Hand-entered units within a fifth of a unit's size, and of its kind when
+     * it has one: in the district when the project is placed and any such unit
+     * was entered there, in the city otherwise.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function similarManual(string $cityKey, ?string $district, float $area, ?string $kind): ?array
+    {
+        $from = $area * (1 - self::AREA_MARGIN);
+        $to = $area * (1 + self::AREA_MARGIN);
+        $nearby = $district === null ? null : $this->manualSpread($cityKey, $district, $kind, $from, $to);
+
+        return $this->found['manual|'.($kind ?? '').'|'.$area.'|'.$district] ??= $this->scoped(
+            $nearby !== null && $nearby['deals'] > 0 ? $nearby : null,
+            function () use ($cityKey, $kind, $from, $to): ?array {
+                $city = $this->manualSpread($cityKey, null, $kind, $from, $to);
+
+                return $city['deals'] > 0 ? $city : null;
+            },
+        );
+    }
+
+    /**
+     * The middle price per metre of the hand-entered units in one place.
+     *
+     * @return array{deals: int, lower: float|null, median: float|null, upper: float|null}
+     */
+    private function manualSpread(string $cityKey, ?string $district, ?string $kind, float $from, float $to): array
+    {
+        $rates = ManualMarketUnit::query()
+            ->where('city_key', $cityKey)
+            ->when($district !== null, fn ($query) => $query->where('district_key', $district))
+            ->when(filled($kind), fn ($query) => $query->where('kind', $kind))
+            ->whereBetween('area', [$from, $to])
+            ->pluck('price_per_meter')
+            ->map(fn (mixed $rate): float => (float) $rate)
+            ->all();
+
+        return ['deals' => count($rates)] + Quantiles::spread($rates);
     }
 
     /**
