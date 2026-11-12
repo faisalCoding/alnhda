@@ -188,6 +188,31 @@ it('counts a property listed on several sites once when comparing', function () 
         ->and($sizes->only(['6', '7'])->unique()->values()->all())->toBe([1]);
 });
 
+it('counts what the file holds apart from what the city holds in all', function () {
+    $importer = app(ListingFileImporter::class);
+
+    // Read before: three listings of two properties.
+    $importer->import(listingsFile([
+        listingRow('aqar', '1'),
+        listingRow('bayut', '2', duplicates: 'aqar:1'),
+        listingRow('aqar', '3'),
+    ]));
+
+    $report = $importer->import(listingsFile([
+        listingRow('aqar', '10', district: 'حي الأجواد'),
+        listingRow('aqar', '11', district: 'حي الأجواد', duplicates: 'aqar:10'),
+        listingRow('aqar', '12', district: 'حي الأجواد'),
+        // The same villa as one read before, now listed on another site.
+        listingRow('haraj', '13', duplicates: 'aqar:3'),
+    ]));
+
+    expect($report['added'])->toBe(4)
+        // The file's four listings are three properties, two of them listed more than once.
+        ->and($report['properties'])->toBe(3)
+        ->and($report['repeated'])->toBe(2)
+        ->and($report['totals'])->toBe([['city' => 'جدة', 'listings' => 7, 'properties' => 4]]);
+});
+
 it('reports the rows it could not read and the districts the market does not know', function () {
     $quarter = MarketQuarter::factory()->period(2026, 1)->create();
     MarketPriceStat::factory()->for($quarter, 'quarter')->district('المنار')->create();
@@ -217,7 +242,8 @@ it('refuses a file that is not a listings file', function () {
 
 it('imports a listings file from the command line', function () {
     $this->artisan('market:import-listings', ['path' => listingsFile([listingRow('aqar', '1'), listingRow('aqar', '2', price: '')])])
-        ->expectsOutputToContain('أُضيف 1 إعلانًا')
+        ->expectsOutputToContain('من هذا الملف: أُضيف 1 إعلانًا')
+        ->expectsOutputToContain('أصبح في جدة 1 إعلانًا لـ 1 عقارًا')
         ->expectsOutputToContain('السطر 3')
         ->assertSuccessful();
 

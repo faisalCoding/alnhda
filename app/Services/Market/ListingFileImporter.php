@@ -57,8 +57,14 @@ class ListingFileImporter
     ) {}
 
     /**
+     * What is reported is about the file: how many properties its listings
+     * are, and how many of those are listed more than once — on its own rows
+     * or alongside listings read before. What the cities it touched now hold
+     * in all is reported apart, in «totals», so the two are not mistaken for
+     * each other.
+     *
      * @param  string|null  $kind  The kind for a listing whose title does not say.
-     * @return array{added: int, updated: int, skipped: list<array{row: int, reason: string}>, properties: int, repeated: int, unknown_districts: list<string>}
+     * @return array{added: int, updated: int, skipped: list<array{row: int, reason: string}>, properties: int, repeated: int, unknown_districts: list<string>, totals: list<array{city: string, listings: int, properties: int}>}
      *
      * @throws UnreadableSalesFile
      */
@@ -67,6 +73,7 @@ class ListingFileImporter
         $handle = $this->open($path);
         $report = ['added' => 0, 'updated' => 0, 'skipped' => [], 'unknown_districts' => []];
         $cities = [];
+        $read = [];
         $kinds = array_values(array_unique([...$this->places->kinds(), ...MarketPlaces::USUAL_KINDS]));
 
         try {
@@ -78,7 +85,7 @@ class ListingFileImporter
                 }
             }
 
-            DB::transaction(function () use ($handle, $columns, $kind, $kinds, &$report, &$cities): void {
+            DB::transaction(function () use ($handle, $columns, $kind, $kinds, &$report, &$cities, &$read): void {
                 $line = 1;
 
                 while (($row = $this->row($handle)) !== null) {
@@ -104,6 +111,7 @@ class ListingFileImporter
                     $report[$unit->exists ? 'updated' : 'added']++;
                     $unit->fill($attributes)->save();
                     $cities[$attributes['city_key']] = true;
+                    $read[$unit->id] = true;
 
                     $known = array_column($this->places->districts($attributes['city_key']), 'key');
 
@@ -120,16 +128,41 @@ class ListingFileImporter
             throw new UnreadableSalesFile('لم يُقرأ من الملف أي إعلان: '.($report['skipped'][0]['reason'] ?? 'الملف فارغ.'));
         }
 
-        $repeated = $this->duplicates->regroup(array_keys($cities));
+        $this->duplicates->regroup(array_keys($cities));
+
+        // The file's own listings, now grouped with whatever they repeat.
+        $fromFile = ManualMarketUnit::query()->whereKey(array_keys($read))->get();
 
         return [
             'added' => $report['added'],
             'updated' => $report['updated'],
             'skipped' => $report['skipped'],
-            'properties' => ManualMarketUnit::oneEach(ManualMarketUnit::query()->whereIn('city_key', array_keys($cities))->get())->count(),
-            'repeated' => $repeated,
+            'properties' => ManualMarketUnit::oneEach($fromFile)->count(),
+            'repeated' => $fromFile->whereNotNull('duplicate_group')->pluck('duplicate_group')->unique()->count(),
             'unknown_districts' => array_keys($report['unknown_districts']),
+            'totals' => $this->totals(array_keys($cities)),
         ];
+    }
+
+    /**
+     * What each city now holds in all: its listings, and the properties they are.
+     *
+     * @param  list<string>  $cityKeys
+     * @return list<array{city: string, listings: int, properties: int}>
+     */
+    private function totals(array $cityKeys): array
+    {
+        return ManualMarketUnit::query()
+            ->whereIn('city_key', $cityKeys)
+            ->get()
+            ->groupBy('city_key')
+            ->map(fn ($units): array => [
+                'city' => $units->first()->city,
+                'listings' => $units->count(),
+                'properties' => ManualMarketUnit::oneEach($units)->count(),
+            ])
+            ->values()
+            ->all();
     }
 
     /**

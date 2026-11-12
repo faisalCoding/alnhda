@@ -283,8 +283,14 @@ test('puts every field of a listing back into the form, and nothing as the word 
 test('sums up a listings import and a listing in a few words', () => {
     const component = page();
 
-    const summary = component.listingSummary({ added: 44, updated: 0, properties: 30, repeated: 9 });
+    const summary = component.listingSummary({
+        added: 18, updated: 0, properties: 15, repeated: 2,
+        totals: [{ city: 'جدة', listings: 62, properties: 45 }],
+    });
+    assert.ok(summary.includes('من هذا الملف'));
     assert.ok(summary.includes('مرة واحدة'));
+    assert.ok(summary.includes('أصبح في جدة'), 'the city total is told apart from the file');
+    assert.ok(summary.indexOf('١٥') < summary.indexOf('٤٥'));
     assert.ok(!component.listingSummary({ added: 1, updated: 0, properties: 1, repeated: 0 }).includes('مرة واحدة'));
     assert.equal(component.listingSummary(null), '');
 

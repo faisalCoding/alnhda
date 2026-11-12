@@ -365,15 +365,20 @@ export default function marketDetail() {
             }
 
             const parts = [
-                `أُضيف ${NUMBER.format(report.added)} إعلانًا وحُدّث ${NUMBER.format(report.updated)}`,
-                `تمثّل ${NUMBER.format(report.properties)} عقارًا مختلفًا`,
+                `من هذا الملف: أُضيف ${NUMBER.format(report.added)} إعلانًا وحُدّث ${NUMBER.format(report.updated)}`,
+                `وهي ${NUMBER.format(report.properties)} عقارًا مختلفًا`,
             ];
 
             if (report.repeated) {
                 parts.push(`${NUMBER.format(report.repeated)} منها معروض في أكثر من إعلان ويُحسب مرة واحدة`);
             }
 
-            return `${parts.join('، ')}.`;
+            // What the city holds now in all, apart from what this file added to it.
+            const totals = (report.totals ?? []).map(
+                (total) => `أصبح في ${total.city} ${NUMBER.format(total.listings)} إعلانًا لـ ${NUMBER.format(total.properties)} عقارًا`,
+            );
+
+            return [`${parts.join('، ')}.`, ...totals.map((total) => `${total}.`)].join(' ');
         },
 
         /** A unit's rooms, bathrooms and age, in a few words. */

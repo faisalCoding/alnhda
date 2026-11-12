@@ -33,12 +33,16 @@ class ImportMarketListings extends Command
         }
 
         $this->info(sprintf(
-            'أُضيف %d إعلانًا وحُدّث %d. تمثّل %d عقارًا مختلفًا، منها %d معروض في أكثر من إعلان.',
+            'من هذا الملف: أُضيف %d إعلانًا وحُدّث %d، وهي %d عقارًا مختلفًا، منها %d معروض في أكثر من إعلان.',
             $report['added'],
             $report['updated'],
             $report['properties'],
             $report['repeated'],
         ));
+
+        foreach ($report['totals'] as $total) {
+            $this->line(sprintf('أصبح في %s %d إعلانًا لـ %d عقارًا.', $total['city'], $total['listings'], $total['properties']));
+        }
 
         foreach ($report['skipped'] as $skipped) {
             $this->warn(sprintf('السطر %d لم يُستورد: %s', $skipped['row'], $skipped['reason']));
