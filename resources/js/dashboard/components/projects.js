@@ -1,5 +1,6 @@
 import { request } from '../api';
 import { isTemp } from '../ids';
+import { composeLocation, kindChoices, labelOf } from '../marketPlaces';
 import * as storage from '../storage';
 import { isAbsoluteUrl } from '../validation';
 
@@ -7,6 +8,8 @@ const PROJECT_DEFAULTS = () => ({
     name: '',
     description: '',
     location: '',
+    market_city_key: '',
+    market_district_key: '',
     status: 'جديد',
     project_type: 'فيلا',
     map_url: '',
@@ -43,8 +46,50 @@ export default function projectsPage() {
         errors: {},
         search: '',
 
+        /**
+         * The cities, districts and kinds of property the market figures are
+         * kept by. A project's place and a unit's type are picked from these,
+         * so they match what the market screen compares them with.
+         */
+        market: { cities: [], districts: [], kinds: [] },
+
         init() {
             this.refresh();
+            this.loadMarket();
+        },
+
+        /**
+         * Asks for the market's choices, with the districts of one city when
+         * one is given. Offline, or before any market file has been uploaded,
+         * the lists stay empty and the forms fall back to what they had.
+         */
+        async loadMarket(cityKey = '') {
+            if (!navigator.onLine) {
+                return;
+            }
+
+            try {
+                const payload = await request('GET', `/api/market-prices/places?city=${encodeURIComponent(cityKey)}`);
+
+                this.market = {
+                    cities: payload?.data?.cities ?? [],
+                    districts: payload?.data?.districts ?? [],
+                    kinds: payload?.data?.kinds ?? [],
+                };
+            } catch {
+                // The forms still work without the lists.
+            }
+        },
+
+        /** A new city has other districts; the one chosen before is not among them. */
+        async pickCity() {
+            this.form.market_district_key = '';
+            await this.loadMarket(this.form.market_city_key);
+        },
+
+        /** The kinds a unit may be, with the one being edited kept on the list. */
+        get unitKinds() {
+            return kindChoices(this.market.kinds, this.form?.type);
         },
 
         async refresh() {
@@ -184,6 +229,7 @@ export default function projectsPage() {
             this.errors = {};
             this.form = PROJECT_DEFAULTS();
             this.guarantees = [''];
+            this.market.districts = [];
         },
 
         openEditProject(record) {
@@ -194,11 +240,14 @@ export default function projectsPage() {
                 name: record.name ?? '',
                 description: record.description ?? '',
                 location: record.location ?? '',
+                market_city_key: record.market_city_key ?? '',
+                market_district_key: record.market_district_key ?? '',
                 status: record.status ?? 'جديد',
                 project_type: record.project_type ?? 'فيلا',
                 map_url: record.map_url ?? '',
             };
             this.guarantees = (record.guarantees ?? []).length ? [...record.guarantees] : [''];
+            this.loadMarket(this.form.market_city_key);
         },
 
         addGuarantee() {
@@ -230,10 +279,19 @@ export default function projectsPage() {
                 return;
             }
 
+            // Placed in a city of the market, the location is written from the
+            // market's own names; otherwise it stays as it was typed.
+            const placed = composeLocation(
+                labelOf(this.market.cities, this.form.market_city_key),
+                labelOf(this.market.districts, this.form.market_district_key),
+            );
+
             const attributes = {
                 ...this.form,
                 map_url: mapUrl || null,
-                location: (this.form.location ?? '').trim() || null,
+                market_city_key: this.form.market_city_key || null,
+                market_district_key: (this.form.market_city_key && this.form.market_district_key) || null,
+                location: placed || (this.form.location ?? '').trim() || null,
                 guarantees: this.guarantees.map((guarantee) => guarantee.trim()).filter(Boolean),
             };
 

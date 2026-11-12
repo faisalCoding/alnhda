@@ -224,10 +224,40 @@
                             </div>
 
                             <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="{{ $label }}">الموقع</label>
-                                    <input type="text" x-model="form.location" class="{{ $input }}" placeholder="جدة حي المنار">
-                                </div>
+                                {{-- Picked from the market's own cities and districts, so the project can be set beside what sold around it --}}
+                                <template x-if="market.cities.length">
+                                    <div class="col-span-2 grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="{{ $label }}">المدينة</label>
+                                            <select x-model="form.market_city_key" @change="pickCity()" class="{{ $input }}">
+                                                <option value="">— اختر المدينة —</option>
+                                                <template x-for="city in market.cities" :key="city.key">
+                                                    <option :value="city.key" :selected="city.key === form.market_city_key" x-text="city.label"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="{{ $label }}">الحي</label>
+                                            <select x-model="form.market_district_key" class="{{ $input }}" :disabled="!form.market_city_key">
+                                                <option value="">— اختر الحي —</option>
+                                                <template x-for="district in market.districts" :key="district.key">
+                                                    <option :value="district.key" :selected="district.key === form.market_district_key" x-text="district.label"></option>
+                                                </template>
+                                            </select>
+                                            <p class="{{ $error }}" x-show="errors.market_district_key" x-text="errors.market_district_key"></p>
+                                        </div>
+                                        <p class="col-span-2 text-xs text-zinc-500 dark:text-zinc-400" x-show="!form.market_city_key && form.location" x-cloak
+                                            x-text="`الموقع الحالي: «${form.location}». اختر المدينة والحي ليُكتب منهما ويُقارَن المشروع بسوقه.`"></p>
+                                    </div>
+                                </template>
+
+                                {{-- Before any market file has been uploaded there is nothing to pick from --}}
+                                <template x-if="!market.cities.length">
+                                    <div>
+                                        <label class="{{ $label }}">الموقع</label>
+                                        <input type="text" x-model="form.location" class="{{ $input }}" placeholder="جدة حي المنار">
+                                    </div>
+                                </template>
                                 <div>
                                     <label class="{{ $label }}">رابط الخريطة</label>
                                     <input type="url" x-model="form.map_url" class="{{ $input }}" dir="ltr" placeholder="https://maps.google.com/…">
@@ -369,11 +399,11 @@
                                 </div>
                                 <div>
                                     <label class="{{ $label }}">النوع</label>
+                                    {{-- The kinds the market prices by, so a unit is compared with its own kind --}}
                                     <select x-model="form.type" class="{{ $input }}">
-                                        <option value="شقة">شقة</option>
-                                        <option value="فيلا">فيلا</option>
-                                        <option value="دور">دور</option>
-                                        <option value="ملحق">ملحق</option>
+                                        <template x-for="kind in unitKinds" :key="kind">
+                                            <option :value="kind" :selected="kind === form.type" x-text="kind"></option>
+                                        </template>
                                     </select>
                                 </div>
 

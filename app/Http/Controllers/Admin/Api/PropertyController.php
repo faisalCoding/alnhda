@@ -36,7 +36,15 @@ class PropertyController extends Controller
 
     public function update(UpdatePropertyRequest $request, Properties $property): PropertyResource
     {
-        $property->update($this->propertyData($request->validated()));
+        $attributes = $this->propertyData($request->validated());
+
+        // A kind set by hand on the market screen spoke for the old type. Once
+        // the type itself is changed here, it is the type that speaks.
+        if ($property->type !== $attributes['type']) {
+            $attributes['market_type'] = null;
+        }
+
+        $property->update($attributes);
 
         return new PropertyResource($property->load('propertiesImages'));
     }

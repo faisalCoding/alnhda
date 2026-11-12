@@ -23,6 +23,8 @@ class ProjectResource extends JsonResource
             'sort_order' => $this->sort_order,
             'description' => $this->description,
             'location' => $this->location,
+            'market_city_key' => $this->market_city_key,
+            'market_district_key' => $this->market_district_key,
             'status' => $this->status,
             'project_type' => $this->project_type,
             'map_url' => $this->map_url,

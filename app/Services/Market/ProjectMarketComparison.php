@@ -32,14 +32,6 @@ class ProjectMarketComparison
     private const AREA_MARGIN = 0.2;
 
     /**
-     * The kinds offered when the authority's indicators have not been
-     * uploaded, so a unit can still be given one.
-     *
-     * @var list<string>
-     */
-    private const USUAL_KINDS = ['شقة', 'فيلا', 'دور', 'دوبلكس', 'أرض', 'عمارة'];
-
-    /**
      * Figures already looked up in this reading: units of one project mostly
      * share a kind and a size, and ask the same questions.
      *
@@ -68,7 +60,7 @@ class ProjectMarketComparison
             ->map(fn (object $row): array => ['key' => $row->key, 'label' => $row->label]);
 
         $published = $this->types->kinds($cityKey);
-        $kinds = $published === [] ? self::USUAL_KINDS : $published;
+        $kinds = $published === [] ? MarketPlaces::USUAL_KINDS : $published;
 
         return [
             'city' => ['key' => $cityKey, 'label' => PlaceName::preferred($cityKey)],
@@ -91,7 +83,7 @@ class ProjectMarketComparison
      */
     public function kinds(string $cityKey): array
     {
-        return $this->types->kinds($cityKey) ?: self::USUAL_KINDS;
+        return $this->types->kinds($cityKey) ?: MarketPlaces::USUAL_KINDS;
     }
 
     /**

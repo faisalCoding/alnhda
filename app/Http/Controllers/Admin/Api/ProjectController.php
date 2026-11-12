@@ -8,6 +8,8 @@ use App\Http\Requests\Admin\StoreProjectRequest;
 use App\Http\Requests\Admin\UpdateProjectRequest;
 use App\Http\Resources\Admin\ProjectResource;
 use App\Models\Project;
+use App\Services\Market\MarketPlaces;
+use App\Services\Market\PlaceName;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
@@ -83,7 +85,9 @@ class ProjectController extends Controller
             ->values()
             ->all();
 
-        return [
+        // The placement goes last: a location written from the market's names
+        // replaces whatever was typed.
+        return array_merge([
             'name' => $validated['name'],
             'description' => $validated['description'],
             'location' => $validated['location'] ?? null,
@@ -91,6 +95,37 @@ class ProjectController extends Controller
             'project_type' => $validated['project_type'],
             'map_url' => $validated['map_url'] ?? null,
             'guarantees' => $guarantees ?: null,
+        ], $this->marketPlace($validated));
+    }
+
+    /**
+     * Where the project stands in the market's own terms, and the location a
+     * buyer reads written from those same names.
+     *
+     * A request that does not mention the city at all — one queued by an
+     * older copy of the panel — leaves the placement as it was. One that
+     * names no city clears it and keeps whatever location was typed.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    protected function marketPlace(array $validated): array
+    {
+        if (! array_key_exists('market_city_key', $validated)) {
+            return [];
+        }
+
+        if (blank($validated['market_city_key'])) {
+            return ['market_city_key' => null, 'market_district_key' => null];
+        }
+
+        $cityKey = PlaceName::key($validated['market_city_key']);
+        $districtKey = filled($validated['market_district_key'] ?? null) ? PlaceName::key($validated['market_district_key']) : null;
+
+        return [
+            'market_city_key' => $cityKey,
+            'market_district_key' => $districtKey,
+            'location' => app(MarketPlaces::class)->location($cityKey, $districtKey) ?? $validated['location'] ?? null,
         ];
     }
 }

@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\Api\LeadController;
 use App\Http\Controllers\Admin\Api\MarketDeedController;
 use App\Http\Controllers\Admin\Api\MarketingChecklistController;
 use App\Http\Controllers\Admin\Api\MarketingMethodController;
+use App\Http\Controllers\Admin\Api\MarketPlaceController;
 use App\Http\Controllers\Admin\Api\MarketPriceController;
 use App\Http\Controllers\Admin\Api\MarketProjectController;
 use App\Http\Controllers\Admin\Api\ProjectController;
@@ -90,6 +91,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::post('market-prices/import', [MarketPriceController::class, 'store'])->name('market-prices.import');
         Route::post('market-prices/check', [MarketPriceController::class, 'check'])->name('market-prices.check');
         Route::get('market-prices/deeds', [MarketDeedController::class, 'index'])->name('market-prices.deeds');
+        Route::get('market-prices/places', MarketPlaceController::class)->name('market-prices.places');
         Route::get('market-prices/projects', [MarketProjectController::class, 'index'])->name('market-prices.projects.index');
         Route::put('market-prices/projects/{project}', [MarketProjectController::class, 'update'])->name('market-prices.projects.update');
         Route::put('market-prices/units/{unit}', [MarketProjectController::class, 'updateUnit'])->name('market-prices.units.update');
