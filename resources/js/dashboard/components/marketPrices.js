@@ -1,4 +1,5 @@
 import { request, uploadWithProgress } from '../api.js';
+import marketDetail from './marketDetail.js';
 
 const NUMBER = new Intl.NumberFormat('ar-SA');
 const DECIMAL = new Intl.NumberFormat('ar-SA', { maximumFractionDigits: 1 });
@@ -18,6 +19,8 @@ export const THIN_MARKET = 5;
  */
 export default function marketPricesPage() {
     return {
+        ...marketDetail(),
+
         loading: true,
         error: '',
         data: null,
@@ -80,7 +83,11 @@ export default function marketPricesPage() {
                 this.type = this.data?.types?.selected ?? '';
             } catch (error) {
                 this.error = error.message;
+
+                return;
             }
+
+            await this.refreshDetail();
         },
 
         async setClassification(value) {
@@ -104,6 +111,7 @@ export default function marketPricesPage() {
         async openDistrict(key) {
             this.district = this.district === key ? '' : key;
             await this.load();
+            await this.followDistrict(this.district);
         },
 
         async openType(name) {
@@ -181,8 +189,10 @@ export default function marketPricesPage() {
             }
 
             this.uploading = false;
-            // Back to the newest quarter, which is usually the one just added.
+            // Back to the newest quarter, which is usually the one just added,
+            // and the deeds are read again whatever the city: they changed.
             this.quarter = '';
+            this.detailKey = '';
             await this.load();
         },
 

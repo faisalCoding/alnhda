@@ -158,9 +158,10 @@
                 <template x-if="outdated.length">
                     <div class="{{ $notice }}">
                         <h2 class="mb-2 font-extrabold text-amber-700 dark:text-amber-400"
-                            x-text="`${number(outdated.length)} من الأرباع بلا تفصيل المساحات ونطاق الأسعار`"></h2>
+                            x-text="`${number(outdated.length)} من الأرباع رُفع قبل آخر تحديث للتفاصيل`"></h2>
                         <p class="mb-4 text-sm leading-relaxed text-amber-700/80 dark:text-amber-300/80">
-                            رُفعت قبل إضافة هذا التفصيل، فتظهر فارغة عند اختيار فئة مساحة. ارفع ملفاتها مرة أخرى لتُحسب من جديد.
+                            أرقامها الإجمالية ظاهرة، لكن ينقصها ما أُضيف بعد رفعها: فئات المساحة ونطاق الأسعار والصفقات
+                            الفردية. ارفع ملفاتها مرة أخرى لتُحسب من جديد.
                         </p>
                         <div class="flex flex-wrap gap-2">
                             <template x-for="item in outdated" :key="item.key">
@@ -381,6 +382,242 @@
                                 <p class="mt-4 text-center text-sm text-zinc-400" x-show="!districts.length">لا أحياء مطابقة.</p>
                             </div>
                         </section>
+
+                        {{-- Deed by deed, for the cities whose deeds are kept --}}
+                        <template x-if="deeds?.available">
+                            <section class="space-y-4">
+                                <h2 class="text-lg font-extrabold" x-text="`الصفقات الفردية — ${data.city.label}`"></h2>
+
+                                <p class="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                                    كل صفقة كما سجّلتها وزارة العدل. اختر الحي ومدى المساحة والسعر الذي يهمّك، وتتبع الأرقام والمخططات
+                                    والجدول ما اخترته. يطبَّق عليها مرشّح التصنيف أعلى الصفحة، لا مرشّح فئة المساحة.
+                                </p>
+
+                                <form class="{{ $card }} flex flex-wrap items-end gap-3" @submit.prevent="filterDeeds()">
+                                    <label class="flex flex-col gap-1 text-xs font-bold text-zinc-500">
+                                        الحي
+                                        <select x-model="deedFilters.district" @change="filterDeeds()" class="{{ $select }}">
+                                            <option value="">كل الأحياء</option>
+                                            <template x-for="item in deeds.districts" :key="item.key">
+                                                <option :value="item.key" :selected="item.key === deedFilters.district"
+                                                    x-text="`${item.label} (${number(item.deals)})`"></option>
+                                            </template>
+                                        </select>
+                                    </label>
+
+                                    <label class="flex flex-col gap-1 text-xs font-bold text-zinc-500">
+                                        المدة
+                                        <select x-model.number="deedFilters.quarters" @change="filterDeeds()" class="{{ $select }}">
+                                            <option value="4">آخر 4 أرباع</option>
+                                            <option value="8">آخر 8 أرباع</option>
+                                            <option value="12">آخر 12 ربعًا</option>
+                                            <option value="0">كل ما رُفع</option>
+                                        </select>
+                                    </label>
+
+                                    @foreach ([['area_min', 'المساحة من (م²)'], ['area_max', 'إلى'], ['price_min', 'السعر من (ر.س)'], ['price_max', 'إلى']] as [$field, $label])
+                                        <label class="flex flex-col gap-1 text-xs font-bold text-zinc-500">
+                                            {{ $label }}
+                                            <input type="number" min="0" inputmode="numeric" x-model="deedFilters.{{ $field }}"
+                                                class="{{ $select }} w-32" dir="ltr">
+                                        </label>
+                                    @endforeach
+
+                                    <button type="submit" class="{{ $primaryButton }}" :disabled="deedsLoading"
+                                        x-text="deedsLoading ? 'جارٍ القراءة…' : 'تطبيق'"></button>
+                                    <button type="button" class="{{ $ghostButton }}" @click="clearDeedFilters()">مسح</button>
+                                </form>
+
+                                <p x-show="deedsError" x-cloak class="rounded-xl bg-red-500/10 px-4 py-3 text-sm font-bold text-red-600" x-text="deedsError"></p>
+
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400" x-show="deeds.period.from"
+                                    x-text="`من ${quarterLabel(deeds.period.from)} إلى ${quarterLabel(deeds.period.to)}.`"></p>
+
+                                <template x-if="!deeds.summary.deals">
+                                    <p class="rounded-2xl border border-dashed border-zinc-300 px-6 py-10 text-center text-sm text-zinc-400 dark:border-zinc-700">
+                                        لا صفقات بهذه الشروط.
+                                    </p>
+                                </template>
+
+                                <template x-if="deeds.summary.deals">
+                                    <div class="space-y-4">
+                                        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                            <div class="{{ $tile }}">
+                                                <p class="text-sm font-bold text-zinc-500 dark:text-zinc-400">الصفقات</p>
+                                                <p class="mt-2 text-2xl font-extrabold" x-text="number(deeds.summary.deals)"></p>
+                                                <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400" x-text="`بقيمة ${money(deeds.summary.value)} ر.س`"></p>
+                                            </div>
+                                            <div class="{{ $tile }}">
+                                                <p class="text-sm font-bold text-zinc-500 dark:text-zinc-400">وسيط سعر المتر</p>
+                                                <p class="mt-2 text-2xl font-extrabold">
+                                                    <span x-text="rate(deeds.summary.median)"></span>
+                                                    <span class="text-sm font-bold text-zinc-400">ر.س/م²</span>
+                                                </p>
+                                                <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400" x-text="'النطاق ' + range(deeds.summary)"></p>
+                                            </div>
+                                            <div class="{{ $tile }}">
+                                                <p class="text-sm font-bold text-zinc-500 dark:text-zinc-400">وسيط قيمة الصفقة</p>
+                                                <p class="mt-2 text-2xl font-extrabold">
+                                                    <span x-text="money(deeds.summary.median_price)"></span>
+                                                    <span class="text-sm font-bold text-zinc-400">ر.س</span>
+                                                </p>
+                                            </div>
+                                            <div class="{{ $tile }}">
+                                                <p class="text-sm font-bold text-zinc-500 dark:text-zinc-400">وسيط المساحة</p>
+                                                <p class="mt-2 text-2xl font-extrabold">
+                                                    <span x-text="number(deeds.summary.median_area)"></span>
+                                                    <span class="text-sm font-bold text-zinc-400">م²</span>
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div class="grid gap-4 lg:grid-cols-2">
+                                            <div class="{{ $card }}">
+                                                <h3 class="mb-6 font-extrabold">وسيط سعر المتر شهرًا بشهر</h3>
+                                                <div class="flex h-40 items-end gap-1" dir="ltr">
+                                                    <template x-for="point in deeds.monthly" :key="point.key">
+                                                        <div class="group relative flex h-full flex-1 items-end justify-center">
+                                                            <div class="w-full rounded-t bg-primary-500/60 transition-colors group-hover:bg-primary-500"
+                                                                :style="`height: ${monthHeight(point)}`"></div>
+                                                            <div class="pointer-events-none absolute bottom-full z-10 mb-2 hidden whitespace-nowrap rounded-lg bg-zinc-900 px-2 py-1 text-[11px] text-white group-hover:block"
+                                                                dir="rtl" x-text="`${monthLabel(point.key)} — ${rate(point.median)} ر.س/م² · ${number(point.deals)} صفقة`"></div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                                <div class="mt-2 flex justify-between text-[11px] text-zinc-400" dir="ltr">
+                                                    <span x-text="monthLabel(deeds.monthly[0]?.key)"></span>
+                                                    <span x-text="monthLabel(deeds.monthly[deeds.monthly.length - 1]?.key)"></span>
+                                                </div>
+                                            </div>
+
+                                            <div class="{{ $card }}">
+                                                <h3 class="mb-4 font-extrabold">توزيع الصفقات حسب قيمتها</h3>
+                                                <ul class="flex flex-col gap-3">
+                                                    <template x-for="bracket in deeds.distribution" :key="bracket.from">
+                                                        <li>
+                                                            <div class="mb-1 flex items-center justify-between gap-3 text-sm">
+                                                                <span class="font-medium" x-text="bracketLabel(bracket)"></span>
+                                                                <span class="shrink-0 font-bold text-zinc-500" x-text="number(bracket.deals)"></span>
+                                                            </div>
+                                                            <div class="h-1.5 w-full rounded-full bg-zinc-100 dark:bg-zinc-800">
+                                                                <div class="h-full rounded-full bg-primary-500" :style="`width: ${bracketWidth(bracket)}`"></div>
+                                                            </div>
+                                                        </li>
+                                                    </template>
+                                                </ul>
+                                            </div>
+                                        </div>
+
+                                        <div class="{{ $card }}">
+                                            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                                <h3 class="font-extrabold">الصفقات</h3>
+                                                <div class="flex items-center gap-2 text-xs font-bold text-zinc-500">
+                                                    <button type="button" class="{{ $ghostButton }} px-3 py-1" :disabled="deedFilters.page <= 1" @click="turnDeedPage(-1)">السابق</button>
+                                                    <span x-text="`صفحة ${number(deeds.page)} من ${number(deeds.pages)}`"></span>
+                                                    <button type="button" class="{{ $ghostButton }} px-3 py-1" :disabled="deedFilters.page >= deeds.pages" @click="turnDeedPage(1)">التالي</button>
+                                                </div>
+                                            </div>
+
+                                            <div class="sheet-wrap is-inset">
+                                                <table class="sheet">
+                                                    <thead>
+                                                        <tr>
+                                                            @foreach ([['date', 'التاريخ'], [null, 'الحي'], [null, 'التصنيف'], ['area', 'المساحة (م²)'], ['price', 'السعر (ر.س)'], ['rate', 'سعر المتر']] as [$column, $label])
+                                                                @if ($column)
+                                                                    <th class="cursor-pointer select-none" @click="sortDeeds('{{ $column }}')">
+                                                                        {{ $label }}<span x-text="sortMark('{{ $column }}')"></span>
+                                                                    </th>
+                                                                @else
+                                                                    <th>{{ $label }}</th>
+                                                                @endif
+                                                            @endforeach
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <template x-for="deed in deeds.deeds" :key="deed.id">
+                                                            <tr>
+                                                                <td dir="ltr" class="text-right" x-text="deed.date"></td>
+                                                                <td class="font-bold" x-text="deed.district || '—'"></td>
+                                                                <td x-text="deed.classification || '—'"></td>
+                                                                <td x-text="number(deed.area)"></td>
+                                                                <td x-text="number(deed.price)"></td>
+                                                                <td class="font-bold" x-text="rate(deed.rate)"></td>
+                                                            </tr>
+                                                        </template>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </section>
+                        </template>
+
+                        {{-- The company's own projects beside the deeds around them --}}
+                        <template x-if="projects?.projects.length && deeds?.available">
+                            <section class="space-y-4">
+                                <h2 class="text-lg font-extrabold">مشاريعنا مقابل السوق</h2>
+
+                                <p class="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                                    اختر لكل مشروع حيّه كما تسمّيه وزارة العدل. يُقارَن وسيط سعر المتر في وحداته المسعَّرة بصفقات الحي
+                                    التي مساحتها قريبة من مساحات وحداته (أقل أو أكثر بالخُمس) خلال آخر 4 أرباع مرفوعة. قبل اختيار الحي
+                                    تُعرض أرقام المدينة كلها. الصفقات تشمل أراضي ووحدات مبنية معًا، فالمقارنة تقريبية.
+                                </p>
+
+                                <p x-show="projectsError" x-cloak class="rounded-xl bg-red-500/10 px-4 py-3 text-sm font-bold text-red-600" x-text="projectsError"></p>
+
+                                <div class="{{ $card }}">
+                                    <div class="sheet-wrap is-inset">
+                                        <table class="sheet">
+                                            <thead>
+                                                <tr>
+                                                    <th>المشروع</th>
+                                                    <th>الحي في الصفقات</th>
+                                                    <th>الوحدات المسعَّرة</th>
+                                                    <th>مساحاتها (م²)</th>
+                                                    <th>سعر المتر عندنا</th>
+                                                    <th>وسيط السوق</th>
+                                                    <th>نطاق السوق</th>
+                                                    <th>صفقات مماثلة</th>
+                                                    <th>الفرق</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template x-for="project in projects.projects" :key="project.id">
+                                                    <tr>
+                                                        <td>
+                                                            <span class="font-bold" x-text="project.name"></span>
+                                                            <span class="block text-[11px] text-zinc-400" x-text="project.location"></span>
+                                                        </td>
+                                                        <td>
+                                                            <select class="{{ $select }} py-1" :disabled="placing === project.id"
+                                                                @change="placeProject(project, $event.target.value)" aria-label="حي المشروع">
+                                                                <option value="" :selected="!project.district">— لم يُحدَّد —</option>
+                                                                <template x-for="item in projects.districts" :key="item.key">
+                                                                    <option :value="item.key" :selected="item.key === project.district" x-text="item.label"></option>
+                                                                </template>
+                                                            </select>
+                                                        </td>
+                                                        <td x-text="project.units ? number(project.units) : '—'"></td>
+                                                        <td x-text="project.units ? (project.area_min === project.area_max ? number(project.area_min) : `${number(project.area_min)} – ${number(project.area_max)}`) : '—'"></td>
+                                                        <td class="font-bold" x-text="rate(project.rate)"></td>
+                                                        <td x-text="rate(marketFor(project)?.median)"></td>
+                                                        <td class="text-zinc-500" x-text="range(marketFor(project))"></td>
+                                                        <td>
+                                                            <span x-text="marketFor(project) ? number(marketFor(project).deals) : '—'"></span>
+                                                            <span class="text-[11px] text-zinc-400" x-show="project.market && !project.market.district">في المدينة كلها</span>
+                                                        </td>
+                                                        <td class="font-bold"
+                                                            :class="{ 'text-red-500': gap(project)?.direction === 'above', 'text-primary-600 dark:text-primary-300': gap(project)?.direction === 'below', 'text-zinc-400': !gap(project) || gap(project).direction === 'level' }"
+                                                            x-text="gap(project)?.label ?? '—'"></td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </section>
+                        </template>
                     </div>
                 </template>
 

@@ -23,6 +23,8 @@ class Project extends Model
         'pdf_path',
         'guarantees',
         'sort_order',
+        'market_city_key',
+        'market_district_key',
     ];
 
     protected $casts = [

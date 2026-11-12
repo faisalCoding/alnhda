@@ -1,5 +1,9 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -11,9 +15,13 @@
 |
 */
 
-pest()->extend(Tests\TestCase::class)
-    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
     ->in('Feature');
+
+// Reading a market file keeps a copy of it. In a test that copy goes to a
+// disk that is thrown away, not into the project's own storage.
+pest()->beforeEach(fn () => Storage::fake('local'))->in('Feature/Market');
 
 /*
 |--------------------------------------------------------------------------

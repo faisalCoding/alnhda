@@ -7,6 +7,7 @@ use App\Enums\MarketLevel;
 use App\Exceptions\UnreadableSalesFile;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ImportMarketSalesRequest;
+use App\Models\MarketDeed;
 use App\Models\MarketPriceStat;
 use App\Models\MarketQuarter;
 use App\Services\Market\CatalogueSync;
@@ -46,6 +47,9 @@ class MarketPriceController extends Controller
             'publisher_url' => OpenDataCatalogue::PUBLISHER_URL,
             'catalogue_checked_at' => $sync->lastCheckedAt(),
             'portal_unreachable' => $sync->portalUnreachable(),
+            // Deeds are kept one by one only for some cities; the screen shows
+            // its deed-by-deed part only where there are any.
+            'deeds_available' => MarketDeed::query()->where('city_key', $cityKey)->exists(),
             'quarters' => $imported->map(fn (MarketQuarter $quarter): array => $this->quarter($quarter))->all(),
             'waiting' => $quarters
                 ->reject(fn (MarketQuarter $quarter): bool => $quarter->isImported())

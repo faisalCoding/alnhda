@@ -12,9 +12,11 @@ use App\Http\Controllers\Admin\Api\DashboardController;
 use App\Http\Controllers\Admin\Api\HomeContentController;
 use App\Http\Controllers\Admin\Api\LawhatiCodeController;
 use App\Http\Controllers\Admin\Api\LeadController;
+use App\Http\Controllers\Admin\Api\MarketDeedController;
 use App\Http\Controllers\Admin\Api\MarketingChecklistController;
 use App\Http\Controllers\Admin\Api\MarketingMethodController;
 use App\Http\Controllers\Admin\Api\MarketPriceController;
+use App\Http\Controllers\Admin\Api\MarketProjectController;
 use App\Http\Controllers\Admin\Api\ProjectController;
 use App\Http\Controllers\Admin\Api\ProjectFileController;
 use App\Http\Controllers\Admin\Api\PropertyController;
@@ -87,6 +89,9 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::get('market-prices', [MarketPriceController::class, 'index'])->name('market-prices.index');
         Route::post('market-prices/import', [MarketPriceController::class, 'store'])->name('market-prices.import');
         Route::post('market-prices/check', [MarketPriceController::class, 'check'])->name('market-prices.check');
+        Route::get('market-prices/deeds', [MarketDeedController::class, 'index'])->name('market-prices.deeds');
+        Route::get('market-prices/projects', [MarketProjectController::class, 'index'])->name('market-prices.projects.index');
+        Route::put('market-prices/projects/{project}', [MarketProjectController::class, 'update'])->name('market-prices.projects.update');
         Route::get('visitors', [VisitorController::class, 'index'])->name('visitors.index');
         Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
 

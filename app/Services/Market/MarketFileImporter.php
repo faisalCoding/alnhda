@@ -21,14 +21,34 @@ class MarketFileImporter
         private readonly SalesImporter $sales,
         private readonly IndicatorImporter $indicators,
         private readonly IndicatorFileReader $indicatorReader,
+        private readonly UploadedFileArchive $archive,
     ) {}
+
+    /**
+     * @param  bool  $keep  Whether to keep a copy for working the figures out again; false when reading such a copy.
+     * @return array{kind: string, periods: list<array{key: string, year: int, quarter: int, deals: int, region: string|null}>}
+     *
+     * @throws UnreadableSalesFile
+     */
+    public function import(string $path, ?string $sourceName = null, bool $keep = true): array
+    {
+        $result = $this->read($path, $sourceName);
+
+        if ($keep) {
+            // The figures are in; a copy that could not be kept costs a
+            // re-upload some day, not this import.
+            rescue(fn () => $this->archive->keep($path, $result));
+        }
+
+        return $result;
+    }
 
     /**
      * @return array{kind: string, periods: list<array{key: string, year: int, quarter: int, deals: int, region: string|null}>}
      *
      * @throws UnreadableSalesFile
      */
-    public function import(string $path, ?string $sourceName = null): array
+    private function read(string $path, ?string $sourceName): array
     {
         if ($this->indicatorReader->recognises($path)) {
             return [

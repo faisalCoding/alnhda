@@ -44,7 +44,7 @@ class SalesFileReader
      * Yields one deed per row, or null for a row that could not be read: a
      * blank line, a total, a deed with no price or no area.
      *
-     * @return Generator<int, array{year: int, quarter: int, region: string, city: string, district: string, classification: string, properties: int, price: float, area: float}|null>
+     * @return Generator<int, array{year: int, quarter: int, date: string, region: string, city: string, district: string, classification: string, properties: int, price: float, area: float}|null>
      *
      * @throws UnreadableSalesFile
      */
@@ -118,24 +118,25 @@ class SalesFileReader
     /**
      * @param  list<string|null>  $row
      * @param  array<string, int>  $columns
-     * @return array{year: int, quarter: int, region: string, city: string, district: string, classification: string, properties: int, price: float, area: float}|null
+     * @return array{year: int, quarter: int, date: string, region: string, city: string, district: string, classification: string, properties: int, price: float, area: float}|null
      */
     private function deal(array $row, array $columns): ?array
     {
         $value = fn (string $column): string => isset($columns[$column]) ? trim((string) ($row[$columns[$column]] ?? '')) : '';
 
-        $period = $this->period($value('date'));
+        $date = $this->date($value('date'));
         $price = $this->number($value('price'));
         $area = $this->number($value('area'));
         $city = PlaceName::label($value('city'));
 
-        if ($period === null || $price === null || $area === null || $price <= 0 || $area <= 0 || $city === '') {
+        if ($date === null || $price === null || $area === null || $price <= 0 || $area <= 0 || $city === '') {
             return null;
         }
 
         return [
-            'year' => $period[0],
-            'quarter' => $period[1],
+            'year' => $date[0],
+            'quarter' => intdiv($date[1] - 1, 3) + 1,
+            'date' => sprintf('%04d-%02d-%02d', ...$date),
             'region' => PlaceName::region($value('region')),
             'city' => $city,
             'district' => PlaceName::district($value('district'), $city),
@@ -147,28 +148,28 @@ class SalesFileReader
     }
 
     /**
-     * The year and quarter a deed was registered in.
+     * The day a deed was registered, as year, month and day.
      *
      * Dates are written year first («2026/01/31») in every quarter but the
      * first of 2023, which wrote them month first («1/31/2023»). A Hijri date
      * read by mistake falls before 2000 and is refused.
      *
-     * @return array{0: int, 1: int}|null
+     * @return array{0: int, 1: int, 2: int}|null
      */
-    private function period(string $date): ?array
+    private function date(string $date): ?array
     {
-        if (preg_match('#^(\d{4})[/-](\d{1,2})[/-]\d{1,2}#', $date, $parts)) {
-            [$year, $month] = [(int) $parts[1], (int) $parts[2]];
-        } elseif (preg_match('#^(\d{1,2})/\d{1,2}/(\d{4})#', $date, $parts)) {
-            [$year, $month] = [(int) $parts[2], (int) $parts[1]];
+        if (preg_match('#^(\d{4})[/-](\d{1,2})[/-](\d{1,2})#', $date, $parts)) {
+            [$year, $month, $day] = [(int) $parts[1], (int) $parts[2], (int) $parts[3]];
+        } elseif (preg_match('#^(\d{1,2})/(\d{1,2})/(\d{4})#', $date, $parts)) {
+            [$year, $month, $day] = [(int) $parts[3], (int) $parts[1], (int) $parts[2]];
         } else {
             return null;
         }
 
-        if ($year < 2000 || $month < 1 || $month > 12) {
+        if ($year < 2000 || ! checkdate($month, $day, $year)) {
             return null;
         }
 
-        return [$year, intdiv($month - 1, 3) + 1];
+        return [$year, $month, $day];
     }
 }

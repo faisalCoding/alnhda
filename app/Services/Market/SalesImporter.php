@@ -5,6 +5,7 @@ namespace App\Services\Market;
 use App\Enums\AreaBand;
 use App\Enums\MarketLevel;
 use App\Exceptions\UnreadableSalesFile;
+use App\Models\MarketDeed;
 use App\Models\MarketPriceStat;
 use App\Models\MarketQuarter;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,14 @@ class SalesImporter
 
     private const ROWS_PER_INSERT = 500;
 
+    /**
+     * The cities whose deeds are kept one by one as well as added up: the
+     * ones the company builds in. A deed anywhere else is counted and let go.
+     *
+     * @var list<string>
+     */
+    public const DETAILED_CITIES = ['جدة'];
+
     public function __construct(private readonly SalesFileReader $reader) {}
 
     /**
@@ -43,6 +52,7 @@ class SalesImporter
         $labels = [];
         $skipped = 0;
         $read = 0;
+        $detailed = array_map(PlaceName::key(...), self::DETAILED_CITIES);
 
         foreach ($this->reader->deals($path) as $deal) {
             if ($deal === null) {
@@ -53,10 +63,22 @@ class SalesImporter
 
             $read++;
             $period = $deal['year'].'-'.$deal['quarter'];
-            $periods[$period] ??= ['year' => $deal['year'], 'quarter' => $deal['quarter'], 'deals' => 0, 'groups' => []];
+            $periods[$period] ??= ['year' => $deal['year'], 'quarter' => $deal['quarter'], 'deals' => 0, 'groups' => [], 'deeds' => []];
             $periods[$period]['deals']++;
 
             $this->count($periods[$period]['groups'], $labels, $deal);
+
+            if (in_array(PlaceName::key($deal['city']), $detailed, true)) {
+                $periods[$period]['deeds'][] = [
+                    PlaceName::key($deal['city']),
+                    PlaceName::key($deal['district']),
+                    $deal['classification'],
+                    $deal['date'],
+                    $deal['price'],
+                    $deal['area'],
+                    $deal['properties'],
+                ];
+            }
         }
 
         if ($read === 0) {
@@ -146,7 +168,7 @@ class SalesImporter
     }
 
     /**
-     * @param  array{year: int, quarter: int, deals: int, groups: array<string, array<string, mixed>>}  $period
+     * @param  array{year: int, quarter: int, deals: int, groups: array<string, array<string, mixed>>, deeds: list<array{0: string, 1: string, 2: string, 3: string, 4: float, 5: float, 6: int}>}  $period
      * @param  array<string, array<string, array<string, int>>>  $labels
      */
     private function store(array $period, array $labels, int $skipped, ?string $sourceName): MarketQuarter
@@ -163,6 +185,7 @@ class SalesImporter
             ])->save();
 
             $quarter->stats()->delete();
+            $quarter->deeds()->delete();
 
             $now = now();
             $rows = [];
@@ -186,10 +209,10 @@ class SalesImporter
                     'properties_count' => $group['properties'],
                     'total_price' => (int) round($group['price']),
                     'total_area' => round($group['area'], 2),
-                    'median_price_per_meter' => round($this->quantile($group['rates'], 0.5), 2),
-                    'lower_price_per_meter' => round($this->quantile($group['rates'], 0.25), 2),
-                    'upper_price_per_meter' => round($this->quantile($group['rates'], 0.75), 2),
-                    'median_price' => (int) round($this->quantile($group['prices'], 0.5)),
+                    'median_price_per_meter' => round(Quantiles::of($group['rates'], 0.5), 2),
+                    'lower_price_per_meter' => round(Quantiles::of($group['rates'], 0.25), 2),
+                    'upper_price_per_meter' => round(Quantiles::of($group['rates'], 0.75), 2),
+                    'median_price' => (int) round(Quantiles::of($group['prices'], 0.5)),
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
@@ -197,6 +220,24 @@ class SalesImporter
 
             foreach (array_chunk($rows, self::ROWS_PER_INSERT) as $chunk) {
                 MarketPriceStat::query()->insert($chunk);
+            }
+
+            $deeds = array_map(fn (array $deed): array => [
+                'market_quarter_id' => $quarter->id,
+                'city_key' => $deed[0],
+                'city' => $this->label($labels, 'city', $deed[0]),
+                'district_key' => $deed[1],
+                'district' => $this->label($labels, 'district', $deed[0].'|'.$deed[1]),
+                'classification' => $deed[2],
+                'deed_date' => $deed[3],
+                'price' => (int) round($deed[4]),
+                'area' => round($deed[5], 2),
+                'price_per_meter' => round($deed[4] / $deed[5], 2),
+                'properties_count' => $deed[6],
+            ], $period['deeds']);
+
+            foreach (array_chunk($deeds, self::ROWS_PER_INSERT) as $chunk) {
+                MarketDeed::query()->insert($chunk);
             }
 
             return $quarter;
@@ -219,24 +260,5 @@ class SalesImporter
         arsort($spellings);
 
         return PlaceName::preferred((string) array_key_first($spellings));
-    }
-
-    /**
-     * The value a given share of a sorted list falls below: 0.5 is the median,
-     * 0.25 and 0.75 the quarters either side of it.
-     *
-     * The median is kept rather than the mean because deeds include gifts
-     * recorded at a token price and farmland sold by the square kilometre, and
-     * a mean follows those. The quarters say how wide the ordinary range is.
-     *
-     * @param  list<float>  $sorted
-     */
-    private function quantile(array $sorted, float $share): float
-    {
-        $position = (count($sorted) - 1) * $share;
-        $below = (int) floor($position);
-        $above = (int) ceil($position);
-
-        return $sorted[$below] + ($sorted[$above] - $sorted[$below]) * ($position - $below);
     }
 }

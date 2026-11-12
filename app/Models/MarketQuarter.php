@@ -21,7 +21,7 @@ class MarketQuarter extends Model
      * before. A quarter counted with an older version is still shown, and the
      * panel asks for its file again so it can catch up.
      */
-    public const FIGURES_VERSION = 2;
+    public const FIGURES_VERSION = 3;
 
     protected $fillable = [
         'year',
@@ -58,6 +58,14 @@ class MarketQuarter extends Model
     public function stats(): HasMany
     {
         return $this->hasMany(MarketPriceStat::class);
+    }
+
+    /**
+     * @return HasMany<MarketDeed, $this>
+     */
+    public function deeds(): HasMany
+    {
+        return $this->hasMany(MarketDeed::class);
     }
 
     /**
