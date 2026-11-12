@@ -46,8 +46,7 @@ it('serves the market prices screen to an admin', function () {
         ->assertSee('أسعار السوق')
         ->assertSee('marketPricesPage()', false)
         ->assertSee('وحدات السوق المضافة يدويًا')
-        ->assertSee('بيانات وزارة العدل')
-        ->assertSee('الوحدات المضافة يدويًا');
+        ->assertSee('عروض مماثلة');
 });
 
 it('lays the screen out as a board of groups, each opened in place', function () {
@@ -57,14 +56,14 @@ it('lays the screen out as a board of groups, each opened in place', function ()
         ->assertOk()
         ->getContent();
 
-    foreach (['kingdom' => 'المملكة', 'city' => 'المدينة وأحياؤها', 'deeds' => 'الصفقات الفردية', 'types' => 'حسب نوع العقار', 'units' => 'وحداتنا مقابل السوق', 'files' => 'الملفات والتحديث'] as $group => $title) {
+    foreach (['kingdom' => 'المملكة', 'city' => 'المدينة وأحياؤها', 'deeds' => 'الصفقات الفردية', 'types' => 'حسب نوع العقار', 'units' => 'وحداتنا مقابل السوق', 'offers' => 'وحدات السوق المضافة يدويًا', 'files' => 'الملفات والتحديث'] as $group => $title) {
         expect($html)->toContain("go('{$group}')")
             ->and($html)->toContain($title)
             ->and($html)->toContain("tileFigure('{$group}')");
     }
 
-    // Six squares, each with its own icon, and one way back from any group.
-    expect(substr_count($html, 'aspect-square'))->toBe(6)
+    // Seven squares, each with its own icon, and one way back from any group.
+    expect(substr_count($html, 'aspect-square'))->toBe(7)
         ->and(substr_count($html, "@click=\"go('')\""))->toBe(1)
         // Every group's content is on this one page, shown by the group that is open.
         ->and($html)->toContain("x-show=\"view === 'kingdom'\"")
@@ -72,6 +71,9 @@ it('lays the screen out as a board of groups, each opened in place', function ()
         ->and($html)->toContain("x-show=\"view === 'deeds'\"")
         ->and($html)->toContain("x-show=\"view === 'types'\"")
         ->and($html)->toContain("x-show=\"view === 'units'\"")
+        // The hand-entered units have a group of their own, not a corner of another.
+        ->and($html)->toContain("x-show=\"view === 'offers'\"")
+        ->and(substr_count($html, "view === 'offers'"))->toBe(1)
         ->and($html)->toContain("x-show=\"view === 'files'\"");
 });
 

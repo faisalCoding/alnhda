@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Api;
 
-use App\Enums\ComparisonSource;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\MarketComparisonRequest;
 use App\Http\Requests\Admin\UpdateProjectMarketDistrictRequest;
 use App\Http\Requests\Admin\UpdateUnitMarketTypeRequest;
 use App\Models\Project;
@@ -13,6 +11,7 @@ use App\Services\Market\PlaceName;
 use App\Services\Market\ProjectMarketComparison;
 use App\Services\Market\SalesImporter;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * The company's own units beside what the market paid for the same kind of
@@ -20,15 +19,12 @@ use Illuminate\Http\JsonResponse;
  */
 class MarketProjectController extends Controller
 {
-    public function index(MarketComparisonRequest $request, ProjectMarketComparison $comparison): JsonResponse
+    public function index(Request $request, ProjectMarketComparison $comparison): JsonResponse
     {
-        $city = $request->validated('city');
+        $city = $request->query('city');
 
         return response()->json([
-            'data' => $comparison->forCity(
-                PlaceName::key(is_string($city) && $city !== '' ? $city : SalesImporter::DETAILED_CITIES[0]),
-                $request->source(),
-            ),
+            'data' => $comparison->forCity(PlaceName::key(is_string($city) && $city !== '' ? $city : SalesImporter::DETAILED_CITIES[0])),
         ]);
     }
 
@@ -44,7 +40,7 @@ class MarketProjectController extends Controller
             ? ['market_city_key' => $cityKey, 'market_district_key' => PlaceName::key($district)]
             : ['market_city_key' => null, 'market_district_key' => null])->save();
 
-        return response()->json(['data' => $comparison->forCity($cityKey, ComparisonSource::fromRequest($request->validated('source')))]);
+        return response()->json(['data' => $comparison->forCity($cityKey)]);
     }
 
     /**
@@ -54,11 +50,6 @@ class MarketProjectController extends Controller
     {
         $unit->forceFill(['market_type' => $request->validated('kind') ?: null])->save();
 
-        return response()->json([
-            'data' => $comparison->forCity(
-                PlaceName::key($request->validated('city')),
-                ComparisonSource::fromRequest($request->validated('source')),
-            ),
-        ]);
+        return response()->json(['data' => $comparison->forCity(PlaceName::key($request->validated('city')))]);
     }
 }

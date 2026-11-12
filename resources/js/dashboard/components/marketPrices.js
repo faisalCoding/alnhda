@@ -23,6 +23,7 @@ export const GROUPS = {
     deeds: ['classification', 'city'],
     types: ['quarter', 'classification', 'city'],
     units: ['city'],
+    offers: ['city'],
     files: [],
 };
 
@@ -72,7 +73,7 @@ export default function marketPricesPage() {
                 });
             }
 
-            await Promise.all([this.load(), this.loadManualUnits()]);
+            await this.load();
             this.loading = false;
         },
 
@@ -121,9 +122,21 @@ export default function marketPricesPage() {
                 },
                 units: () => {
                     const units = (this.projects?.projects ?? []).reduce((sum, project) => sum + project.units.length, 0);
-                    const ours = units ? `${this.number(units)} وحدة` : 'لا وحدات للمقارنة';
 
-                    return this.manualUnits.length ? `${ours} · ${this.number(this.manualUnits.length)} مضافة` : ours;
+                    return units ? `${this.number(units)} وحدة` : 'لا وحدات للمقارنة';
+                },
+                offers: () => {
+                    const listings = this.offers?.units?.length ?? 0;
+                    const properties = this.offers?.properties ?? listings;
+
+                    if (!listings) {
+                        return 'لم تُضف وحدات بعد';
+                    }
+
+                    // A property listed on several sites is one property.
+                    return properties === listings
+                        ? `${this.number(listings)} وحدة مرصودة`
+                        : `${this.number(properties)} عقارًا في ${this.number(listings)} إعلانًا`;
                 },
                 files: () =>
                     this.filesNeedingAttention

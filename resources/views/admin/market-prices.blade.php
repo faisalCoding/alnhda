@@ -1,9 +1,5 @@
 @extends('admin.layouts.panel')
 
-@push('head')
-    @include('partials.fonts')
-@endpush
-
 @section('title', 'أسعار السوق')
 @section('heading', 'أسعار السوق')
 
@@ -32,7 +28,8 @@
         ['city', 'المدينة وأحياؤها', 'أسعار المدينة وترتيب أحيائها وتاريخ كل حي', 'M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z'],
         ['deeds', 'الصفقات الفردية', 'كل صفقة بحيّها ومساحتها وسعرها، مع تصفية حرة', 'M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z'],
         ['types', 'حسب نوع العقار', 'شقة وفيلا ودور وأرض: متوسط كل نوع وتاريخه', 'm2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25'],
-        ['units', 'وحداتنا مقابل السوق', 'مقارنة أسعارنا بالسوق، مع وحدات تُضاف يدويًا', 'M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z'],
+        ['units', 'وحداتنا مقابل السوق', 'كل وحدة من مشاريعنا أمام سعر السوق لنفس نوعها', 'M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z'],
+        ['offers', 'وحدات السوق المضافة يدويًا', 'أسعار معروضة رصدتها في السوق، تُقارَن بها وحداتنا', 'M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3ZM6 6h.008v.008H6V6Z'],
         ['files', 'الملفات والتحديث', 'رفع ملفات المنصة وما لم يُرفع منها بعد', 'M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z'],
     ];
 @endphp
@@ -281,22 +278,22 @@
                 @include('admin.partials.manual-market-units')
 
                         {{-- The company's own units beside what the market paid for the same kind of property --}}
-                        <template x-if="projects?.projects.length && (deeds?.available || comparisonSource === 'manual')">
+                        <template x-if="projects?.projects.length">
                             <section x-show="view === 'units'" class="space-y-4">
                                 <h2 class="text-lg font-extrabold">وحداتنا مقابل السوق</h2>
 
                                 <p class="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
                                     كل وحدة تُقارَن بسعر السوق لنفس نوعها. اختر لكل مشروع حيّه، ولكل وحدة نوعها إن لم يكن التخمين صحيحًا.
                                     «متوسط السوق لنفس النوع» من مؤشرات الهيئة العامة للعقار: للحي حين نشرته الهيئة، وللمدينة كلها غير ذلك.
-                                    <span x-show="comparisonSource !== 'manual'">
-                                        «صفقات مماثلة بالمساحة» من صكوك وزارة العدل القريبة من مساحة الوحدة (أقل أو أكثر بالخُمس) خلال آخر
-                                        4 أرباع، وهي لا تميّز النوع.
-                                    </span>
-                                    <span x-show="comparisonSource === 'manual'" x-cloak>
-                                        «وحدات مماثلة بالمساحة» من الوحدات المضافة يدويًا أعلاه: نفس النوع، ومساحة قريبة (أقل أو أكثر بالخُمس)،
-                                        في حي المشروع إن وُجدت وإلا في المدينة.
-                                    </span>
-                                    الفرق محسوب عن متوسط نفس النوع.
+                                    «صفقات مماثلة بالمساحة» من صكوك وزارة العدل القريبة من مساحة الوحدة (أقل أو أكثر بالخُمس) خلال آخر
+                                    4 أرباع، وهي لا تميّز النوع. «عروض مماثلة» من وحدات السوق المضافة يدويًا: نفس النوع ومساحة قريبة، مما
+                                    رُصد خلال آخر سنة، وهي أسعار معروضة لا صفقات تمّت. الفرق محسوب عن متوسط نفس النوع.
+                                </p>
+
+                                <p x-show="!projects.has_offers" x-cloak class="text-xs text-zinc-500 dark:text-zinc-400">
+                                    لا عروض مرصودة لهذه المدينة بعد.
+                                    <button type="button" class="font-bold text-primary-600 hover:underline dark:text-primary-300" @click="go('offers')">أضف وحدات رأيتها في السوق</button>
+                                    لتظهر في عمود «عروض مماثلة».
                                 </p>
 
                                 <p x-show="!projects.has_type_figures" x-cloak
@@ -318,7 +315,8 @@
                                                     <th>سعر المتر عندنا</th>
                                                     <th>متوسط السوق لنفس النوع</th>
                                                     <th>أدنى – أعلى (ر.س/م²)</th>
-                                                    <th x-text="comparisonSource === 'manual' ? 'وحدات مماثلة بالمساحة' : 'صفقات مماثلة بالمساحة'">صفقات مماثلة بالمساحة</th>
+                                                    <th>صفقات مماثلة بالمساحة</th>
+                                                    <th>عروض مماثلة</th>
                                                     <th>الفرق</th>
                                                 </tr>
                                             </thead>
@@ -326,7 +324,7 @@
                                             <template x-for="project in projects.projects" :key="project.id">
                                                 <tbody>
                                                     <tr class="bg-zinc-50 dark:bg-zinc-800/60">
-                                                        <td colspan="9">
+                                                        <td colspan="10">
                                                             <div class="flex flex-wrap items-center gap-3">
                                                                 <span class="font-extrabold" x-text="project.name"></span>
                                                                 <span class="text-[11px] text-zinc-400" x-text="project.location"></span>
@@ -370,7 +368,12 @@
                                                             <td>
                                                                 <span x-text="rate(unit.market.similar?.median)"></span>
                                                                 <span class="block text-[11px] text-zinc-400" x-show="unit.market.similar"
-                                                                    x-text="similarCaption(unit.market.similar, project)"></span>
+                                                                    x-text="countCaption(unit.market.similar, project, 'صفقة')"></span>
+                                                            </td>
+                                                            <td>
+                                                                <span x-text="rate(unit.market.offers?.median)"></span>
+                                                                <span class="block text-[11px] text-zinc-400" x-show="unit.market.offers"
+                                                                    x-text="countCaption(unit.market.offers, project, 'وحدة')"></span>
                                                             </td>
                                                             <td class="font-bold"
                                                                 :class="{ 'text-red-500': gap(unit)?.direction === 'above', 'text-primary-600 dark:text-primary-300': gap(unit)?.direction === 'below', 'text-zinc-400': !gap(unit) || gap(unit).direction === 'level' }"
@@ -379,7 +382,7 @@
                                                     </template>
 
                                                     <tr x-show="!project.units.length">
-                                                        <td colspan="9" class="text-zinc-400">لا وحدات في هذا المشروع.</td>
+                                                        <td colspan="10" class="text-zinc-400">لا وحدات في هذا المشروع.</td>
                                                     </tr>
                                                 </tbody>
                                             </template>
@@ -389,10 +392,9 @@
                             </section>
                         </template>
 
-                        <template x-if="view === 'units' && !(projects?.projects.length && (deeds?.available || comparisonSource === 'manual'))">
+                        <template x-if="view === 'units' && !projects?.projects.length">
                             <p class="rounded-2xl border border-dashed border-zinc-300 px-6 py-10 text-center text-sm leading-relaxed text-zinc-400 dark:border-zinc-700">
-                                لا شيء للمقارنة بعد. بيانات وزارة العدل تحتاج مشاريع مسجّلة وصفقات فردية مرفوعة لهذه المدينة.
-                                يمكنك إضافة وحدات أعلاه واختيار «الوحدات المضافة يدويًا» مصدرًا للمقارنة.
+                                لا مشاريع مسجّلة للمقارنة بعد.
                             </p>
                         </template>
 

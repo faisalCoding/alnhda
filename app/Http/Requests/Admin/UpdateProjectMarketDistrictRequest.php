@@ -2,13 +2,11 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Enums\ComparisonSource;
-use App\Models\MarketDeed;
+use App\Services\Market\MarketPlaces;
 use App\Services\Market\PlaceName;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateProjectMarketDistrictRequest extends FormRequest
 {
@@ -18,8 +16,9 @@ class UpdateProjectMarketDistrictRequest extends FormRequest
     }
 
     /**
-     * A project can only be placed in a district the deeds know, since a
-     * district they do not know has nothing to compare the project with.
+     * A project can only be placed in a district the market figures know,
+     * since a district they do not know has nothing to compare the project
+     * with. These are the same districts the project form offers.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -27,19 +26,18 @@ class UpdateProjectMarketDistrictRequest extends FormRequest
     {
         return [
             'city' => 'required|string|max:80',
-            'source' => ['nullable', 'string', Rule::in(ComparisonSource::values())],
             'district' => [
                 'present',
                 'nullable',
                 'string',
                 'max:120',
                 function (string $attribute, mixed $value, Closure $fail): void {
-                    $known = MarketDeed::query()
-                        ->where('city_key', PlaceName::key((string) $this->input('city')))
-                        ->where('district_key', PlaceName::key((string) $value))
-                        ->exists();
+                    $known = array_column(
+                        app(MarketPlaces::class)->districts(PlaceName::key((string) $this->input('city'))),
+                        'key',
+                    );
 
-                    if (filled($value) && ! $known) {
+                    if (filled($value) && ! in_array(PlaceName::key((string) $value), $known, true)) {
                         $fail('هذا الحي غير موجود في صفقات المدينة المرفوعة.');
                     }
                 },
@@ -54,7 +52,6 @@ class UpdateProjectMarketDistrictRequest extends FormRequest
     {
         return [
             'city.required' => 'المدينة مطلوبة.',
-            'source.in' => 'اختر مصدر المقارنة: بيانات وزارة العدل أو الوحدات المضافة يدويًا.',
             'district.present' => 'اختر حيًّا أو أرسله فارغًا لإلغاء الربط.',
         ];
     }

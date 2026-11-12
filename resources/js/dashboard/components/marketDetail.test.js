@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert';
 
+import { emptyOfferForm } from './marketDetail.js';
 import marketPricesPage from './marketPrices.js';
 
 /** The page with its requests replaced by counters, so nothing leaves the test. */
@@ -9,23 +10,11 @@ function page() {
     component.calls = { deeds: 0, projects: 0 };
     component.loadDeeds = async () => component.calls.deeds++;
     component.loadProjects = async () => component.calls.projects++;
+    component.loadOffers = async () => {};
     component.city = 'جده';
 
     return component;
 }
-
-test('reads no deeds and no projects for a city whose deeds are not kept', async () => {
-    const component = page();
-    component.deeds = { available: true };
-    component.projects = { projects: [] };
-    component.data = { deeds_available: false };
-
-    await component.refreshDetail();
-
-    assert.equal(component.deeds, null);
-    assert.equal(component.projects, null);
-    assert.deepEqual(component.calls, { deeds: 0, projects: 0 });
-});
 
 test('reads the detail once per city and classification, not on every reload', async () => {
     const component = page();
@@ -190,49 +179,143 @@ test('says how far a unit sits from what its kind of property sold for, and noth
     assert.equal(component.gap({ rate: 4400 }), null);
 });
 
-test('asks the comparison for the ministry until the source is switched', async () => {
+test('reads the company units and the hand-entered ones for a city whose deeds are not kept', async () => {
     const component = page();
-    let reads = 0;
-    component.loadProjects = async () => {
-        reads++;
-    };
-
-    assert.equal(component.comparisonSource, 'ministry');
-    assert.equal(new URLSearchParams(component.projectsQuery()).get('source'), 'ministry');
-
-    await component.setComparisonSource('manual');
-    assert.equal(component.comparisonSource, 'manual');
-    assert.equal(new URLSearchParams(component.projectsQuery()).get('source'), 'manual');
-    assert.equal(reads, 1);
-
-    await component.setComparisonSource('manual');
-    assert.equal(reads, 1, 'choosing the source that is already on does not read the report again');
-
-    await component.setComparisonSource('nope');
-    assert.equal(component.comparisonSource, 'manual');
-});
-
-test('names a comparable as a deed or as a hand-entered unit', () => {
-    const component = page();
-    const figure = { deals: 5, scope: 'city' };
-    const project = { district_label: 'الصفا' };
-
-    assert.ok(component.similarCaption(figure, project).includes('صفقة'));
-
-    component.comparisonSource = 'manual';
-    assert.ok(component.similarCaption(figure, project).includes('وحدة'));
-    assert.equal(component.similarCaption(null, project), '');
-});
-
-test('reads the projects without deeds when the comparison source is the units entered by hand', async () => {
-    const component = page();
-    component.comparisonSource = 'manual';
+    let offers = 0;
+    component.loadOffers = async () => offers++;
     component.deeds = { available: true };
-    component.projects = { projects: [] };
     component.data = { deeds_available: false };
 
     await component.refreshDetail();
 
-    assert.equal(component.deeds, null);
-    assert.equal(component.calls.projects, 1);
+    assert.equal(component.deeds, null, 'no deeds to show for this city');
+    assert.deepEqual(component.calls, { deeds: 0, projects: 1 });
+    assert.equal(offers, 1);
+});
+
+test('reads the detail for the city the screen opened on before there is a list to choose from', () => {
+    const component = page();
+    component.city = '';
+    component.data = { city: { key: 'جده', label: 'جدة' } };
+
+    assert.equal(component.detailCity(), 'جده');
+    assert.equal(new URLSearchParams(component.deedsQuery()).get('city'), 'جده');
+
+    component.city = 'الرياض';
+    assert.equal(component.detailCity(), 'الرياض');
+
+    component.city = '';
+    component.data = null;
+    assert.equal(component.detailCity(), '');
+});
+
+test('names what a count is a count of', () => {
+    const component = page();
+    const figure = { deals: 5, scope: 'city' };
+    const project = { district_label: 'الصفا' };
+
+    assert.ok(component.countCaption(figure, project, 'صفقة').includes('صفقة'));
+    assert.ok(component.countCaption(figure, project, 'وحدة').includes('وحدة'));
+    assert.ok(component.countCaption(figure, project, 'وحدة').includes('المدينة كلها'));
+    assert.equal(component.countCaption(null, project, 'وحدة'), '');
+});
+
+test('opens the offer form with every column a listings file has', () => {
+    const form = emptyOfferForm();
+
+    for (const field of ['source_site', 'listing_id', 'source_url', 'district', 'name', 'price', 'area', 'rooms', 'bedrooms',
+        'bathrooms', 'street_width', 'facade', 'posted_on', 'listing_updated_on', 'observed_on', 'duplicates',
+        'property_age', 'property_age_years']) {
+        assert.ok(field in form, `the form has no ${field}`);
+    }
+});
+
+test('puts every field of a listing back into the form, and nothing as the word null', () => {
+    const component = page();
+
+    component.editOffer({
+        id: 9, source_site: 'aqar', listing_id: '6662806', source_url: 'https://example.com', district: 'المنار',
+        district_key: 'المنار', name: 'فيلا', kind: 'فيلا', price: 3600000, area: 648, rooms: 10, bedrooms: 10,
+        bathrooms: null, street_width: '25 / 12', facade: 'شرق', posted_on: '2026-10-28', listing_updated_on: null,
+        observed_on: '2026-11-12', duplicates: null, property_age: '8 سنوات', property_age_years: 8, project_name: null,
+    });
+
+    assert.equal(component.offerForm.listing_id, '6662806');
+    assert.equal(component.offerForm.rooms, 10);
+    assert.equal(component.offerForm.bathrooms, '');
+    assert.equal(component.offerForm.listing_updated_on, '');
+    assert.equal(component.offerForm.street_width, '25 / 12');
+    assert.equal(component.offerForm.district, 'المنار');
+});
+
+test('sums up a listings import and a listing in a few words', () => {
+    const component = page();
+
+    const summary = component.listingSummary({ added: 44, updated: 0, properties: 30, repeated: 9 });
+    assert.ok(summary.includes('مرة واحدة'));
+    assert.ok(!component.listingSummary({ added: 1, updated: 0, properties: 1, repeated: 0 }).includes('مرة واحدة'));
+    assert.equal(component.listingSummary(null), '');
+
+    assert.ok(component.offerDetails({ bedrooms: 7, bathrooms: 5, property_age_years: 0 }).includes('جديد'));
+    assert.ok(component.offerDetails({ rooms: 7, property_age_years: null, property_age: 'أكثر من 10 سنوات' }).includes('أكثر من 10 سنوات'));
+    assert.equal(component.offerDetails({}), '');
+    assert.equal(component.offerStreet({ street_width: '25 / 12', facade: 'شرق' }), 'شارع 25 / 12 م · شرق');
+    assert.equal(component.offerStreet({}), '');
+});
+
+test('opens the offer form empty, dated today', () => {
+    const form = emptyOfferForm();
+
+    assert.equal(form.district, '');
+    assert.equal(form.kind, 'شقة');
+    assert.match(form.observed_on, /^\d{4}-\d{2}-\d{2}$/);
+    assert.equal(new Date(form.observed_on).toDateString(), new Date(new Date().setHours(12)).toDateString());
+});
+
+test('puts a unit back into the form to be corrected, and lets go of it', () => {
+    const component = page();
+
+    component.editOffer({
+        id: 7, name: null, project_name: 'مشروع الواحة', district_key: 'الصفا', kind: 'دور',
+        area: 200, price: 900000, observed_on: '2026-10-01', source_url: null,
+    });
+
+    assert.equal(component.editingOffer, 7);
+    assert.equal(component.offerForm.name, '', 'a unit with no name opens with an empty field, not the word null');
+    assert.equal(component.offerForm.district, 'الصفا', 'the district is chosen by its key');
+    assert.equal(component.offerForm.kind, 'دور');
+    assert.equal(component.offerForm.observed_on, '2026-10-01');
+    assert.equal(component.offerForm.source_url, '');
+
+    component.offerErrors = { area: ['المساحة مطلوبة.'] };
+    assert.equal(component.offerError('area'), 'المساحة مطلوبة.');
+    assert.equal(component.offerError('price'), '');
+
+    component.cancelOfferEdit();
+    assert.equal(component.editingOffer, null);
+    assert.equal(component.offerForm.project_name, '');
+    assert.deepEqual(component.offerErrors, {});
+});
+
+test('offers the market kinds for a hand-entered unit, and the usual ones before they are known', () => {
+    const component = page();
+
+    assert.ok(component.offerKinds().includes('شقة'));
+
+    component.offers = { kinds: ['أرض', 'شقة', 'مبنى'] };
+    assert.deepEqual(component.offerKinds(), ['أرض', 'شقة', 'مبنى']);
+
+    component.offers = { kinds: [] };
+    assert.ok(component.offerKinds().length > 0);
+});
+
+test('lets go of a half-typed correction when the city changes', async () => {
+    const component = page();
+    component.loadOffers = async () => {};
+    component.data = { deeds_available: true };
+    component.editOffer({ id: 7, kind: 'شقة', area: 150, price: 600000 });
+
+    await component.refreshDetail();
+
+    assert.equal(component.editingOffer, null, 'the unit being corrected belonged to the other city');
 });

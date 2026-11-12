@@ -30,7 +30,24 @@ class ManualMarketUnitFactory extends Factory
             'area' => $area,
             'price' => (int) round($area * $rate),
             'price_per_meter' => $rate,
+            'observed_on' => now()->toDateString(),
+            'source_url' => null,
         ];
+    }
+
+    /**
+     * Copied from a listing on a site, and said to repeat the given others.
+     *
+     * @param  list<string>  $repeats  Other listings as «site:number».
+     */
+    public function listed(string $site, string $id, array $repeats = [], ?string $group = null): static
+    {
+        return $this->state(fn (): array => [
+            'source_site' => $site,
+            'listing_id' => $id,
+            'duplicates' => $repeats === [] ? null : implode(';', $repeats),
+            'duplicate_group' => $group,
+        ]);
     }
 
     /**

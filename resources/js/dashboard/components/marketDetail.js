@@ -1,28 +1,45 @@
-import { request } from '../api.js';
-import { load, save } from '../storage.js';
+import { request, uploadWithProgress } from '../api.js';
+import { USUAL_KINDS } from '../marketPlaces.js';
 
-const COMPARISON_SOURCES = ['ministry', 'manual'];
+/** Today as a date field writes it, in the browser's own day. */
+function today() {
+    const now = new Date();
 
-/** The kinds offered before the authority's list has been loaded. Mirrors MarketPlaces::USUAL_KINDS. */
-const FALLBACK_KINDS = ['شقة', 'فيلا', 'دور', 'دوبلكس', 'أرض', 'عمارة'];
-
-function storedComparisonSource() {
-    const value = load('market.comparisonSource', 'ministry');
-
-    return COMPARISON_SOURCES.includes(value) ? value : 'ministry';
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
-function emptyManualForm() {
+/**
+ * A unit seen on the market, before anything has been typed into it. The
+ * fields are a listings file's columns, so a listing copied by hand and one
+ * read from a file say the same things.
+ */
+export function emptyOfferForm() {
     return {
-        name: '',
-        project_name: '',
-        city: 'جدة',
+        source_site: '',
+        listing_id: '',
+        source_url: '',
         district: '',
+        name: '',
         kind: 'شقة',
-        area: '',
         price: '',
+        area: '',
+        rooms: '',
+        bedrooms: '',
+        bathrooms: '',
+        street_width: '',
+        facade: '',
+        posted_on: '',
+        listing_updated_on: '',
+        observed_on: today(),
+        duplicates: '',
+        property_age: '',
+        property_age_years: '',
+        project_name: '',
     };
 }
+
+/** The fields of the offer form, as the form names them. */
+const OFFER_FIELDS = Object.keys(emptyOfferForm());
 
 const NUMBER = new Intl.NumberFormat('ar-SA');
 const DECIMAL = new Intl.NumberFormat('ar-SA', { maximumFractionDigits: 1 });
@@ -43,10 +60,10 @@ export function emptyDeedFilters() {
 }
 
 /**
- * The part of the market prices screen that reads deeds one by one, and sets
- * the company's own projects beside them. It exists only for the cities whose
- * deeds are kept; for any other city the screen is told there are none and
- * these stay empty.
+ * The part of the market prices screen that goes below the figures: the deeds
+ * one by one, the units someone saw offered on the market and entered by hand,
+ * and the company's own units set beside both. Deeds are kept only for some
+ * cities; where there are none the deeds stay empty and the rest still reads.
  *
  * Spread into the page component, so everything here is a plain property or a
  * method: a getter would be read once, at the spread, and frozen.
@@ -62,41 +79,35 @@ export default function marketDetail() {
         projectsError: '',
         placing: null,
 
-        /** ministry keeps the deeds; manual reads the units typed in below. */
-        comparisonSource: storedComparisonSource(),
-        manualUnits: [],
-        manualUnitsError: '',
-        manualErrors: {},
-        manualForm: emptyManualForm(),
-        savingManualUnit: false,
+        /** Units seen offered on the market and entered by hand, for the chosen city. */
+        offers: null,
+        offersError: '',
+        offerErrors: {},
+        offerForm: emptyOfferForm(),
+        /** The unit the form is correcting; null while it is adding a new one. */
+        editingOffer: null,
+        savingOffer: false,
+
+        /** A listings file being read, and what reading it did. */
+        importingListings: false,
+        listingKind: '',
+        listingReport: null,
+        listingError: '',
 
         /** The city and classification the detail was last read for. */
         detailKey: '',
 
         /**
-         * Reads the deeds and the projects again when the city or the
+         * Reads what hangs off the city again when the city or the
          * classification has changed, and only then: opening a district or
-         * switching the chart's metric leaves them as they are.
+         * switching the chart's metric leaves it as it is.
+         *
+         * The deeds are read only where they are kept. The company's units and
+         * the hand-entered ones are read for any city: they are compared with
+         * the authority's figures and with each other, not only with deeds.
          */
         async refreshDetail({ force = false } = {}) {
-            if (!this.data?.deeds_available) {
-                this.deeds = null;
-
-                // The ministry's deeds are not kept for this city. The manual
-                // source does not need them, so the company's units are still read.
-                if (this.comparisonSource !== 'manual') {
-                    this.projects = null;
-                    this.detailKey = '';
-
-                    return;
-                }
-
-                await this.loadProjects();
-
-                return;
-            }
-
-            const key = `${this.city}|${this.classification}`;
+            const key = `${this.detailCity()}|${this.classification}`;
 
             if (!force && key === this.detailKey) {
                 return;
@@ -104,13 +115,31 @@ export default function marketDetail() {
 
             this.detailKey = key;
             this.deedFilters = { ...emptyDeedFilters(), quarters: this.deedFilters.quarters };
+            this.cancelOfferEdit();
 
-            await Promise.all([this.loadDeeds(), this.loadProjects()]);
+            if (!this.data?.deeds_available) {
+                this.deeds = null;
+            }
+
+            await Promise.all([
+                this.data?.deeds_available ? this.loadDeeds() : null,
+                this.loadProjects(),
+                this.loadOffers(),
+            ]);
+        },
+
+        /**
+         * The city the detail is read for: the one chosen, or the one the
+         * screen opened on before any quarter of deeds gave it a list to
+         * choose from.
+         */
+        detailCity() {
+            return this.city || this.data?.city?.key || '';
         },
 
         /** The deeds request as a query string, empty filters left out. */
         deedsQuery() {
-            const query = new URLSearchParams({ city: this.city });
+            const query = new URLSearchParams({ city: this.detailCity() });
 
             if (this.classification) {
                 query.set('classification', this.classification);
@@ -232,125 +261,191 @@ export default function marketDetail() {
             return `${Math.round((bracket.deals / peak) * 100)}%`;
         },
 
-        /** The comparison request: the city, and which market the report reads. */
-        projectsQuery() {
-            const query = new URLSearchParams({
-                city: this.city,
-                source: COMPARISON_SOURCES.includes(this.comparisonSource) ? this.comparisonSource : 'ministry',
-            });
-
-            return query.toString();
-        },
-
         async loadProjects() {
             this.projectsError = '';
 
             try {
-                const payload = await request('GET', `/api/market-prices/projects?${this.projectsQuery()}`);
+                const payload = await request('GET', `/api/market-prices/projects?city=${encodeURIComponent(this.detailCity())}`);
                 this.projects = payload?.data ?? null;
-
-                if (COMPARISON_SOURCES.includes(this.projects?.comparison_source)) {
-                    this.comparisonSource = this.projects.comparison_source;
-                }
             } catch (error) {
                 this.projectsError = error.message;
             }
         },
 
+        async loadOffers() {
+            this.offersError = '';
+
+            try {
+                const payload = await request('GET', `/api/market-prices/manual-units?city=${encodeURIComponent(this.detailCity())}`);
+                this.offers = payload?.data ?? null;
+            } catch (error) {
+                this.offersError = error.message;
+            }
+        },
+
+        /** The kinds a hand-entered unit may be: the market's, or the usual ones before it has been asked. */
+        offerKinds() {
+            return this.offers?.kinds?.length ? this.offers.kinds : USUAL_KINDS;
+        },
+
+        offerError(field) {
+            return this.offerErrors?.[field]?.[0] ?? '';
+        },
+
+        /** Puts a unit back into the form to be corrected. */
+        editOffer(unit) {
+            this.editingOffer = unit.id;
+            this.offerErrors = {};
+            this.offerForm = Object.fromEntries(OFFER_FIELDS.map((field) => [field, unit[field] ?? '']));
+            this.offerForm.district = unit.district_key ?? '';
+            this.offerForm.observed_on = unit.observed_on ?? today();
+            globalThis.scrollTo?.({ top: 0 });
+        },
+
         /**
-         * Switches the report between the ministry's deeds and the units
-         * entered by hand, and keeps the choice for the next visit.
+         * Reads a file of listings collected from listing sites. Listings
+         * already entered are updated rather than added twice.
          */
-        async setComparisonSource(source) {
-            if (!COMPARISON_SOURCES.includes(source) || source === this.comparisonSource) {
+        async importListings(event) {
+            const file = event.target.files?.[0];
+            event.target.value = '';
+
+            if (!file || this.importingListings) {
                 return;
             }
 
-            this.comparisonSource = source;
-            save('market.comparisonSource', source);
-            await this.loadProjects();
-        },
+            this.importingListings = true;
+            this.listingReport = null;
+            this.listingError = '';
 
-        async loadManualUnits() {
-            this.manualUnitsError = '';
-
-            try {
-                const payload = await request('GET', '/api/market-prices/manual-units');
-                this.manualUnits = payload?.data ?? [];
-            } catch (error) {
-                this.manualUnitsError = error.message;
-            }
-        },
-
-        manualKindOptions() {
-            return this.projects?.kinds?.length ? this.projects.kinds : FALLBACK_KINDS;
-        },
-
-        manualError(field) {
-            return this.manualErrors?.[field]?.[0] ?? '';
-        },
-
-        async saveManualUnit() {
-            if (this.savingManualUnit) {
-                return;
-            }
-
-            this.savingManualUnit = true;
-            this.manualUnitsError = '';
-            this.manualErrors = {};
+            const form = new FormData();
+            form.append('file', file);
+            form.append('kind', this.listingKind);
 
             try {
-                await request('POST', '/api/market-prices/manual-units', {
-                    name: this.manualForm.name,
-                    project_name: this.manualForm.project_name || null,
-                    city: this.manualForm.city,
-                    district: this.manualForm.district,
-                    kind: this.manualForm.kind,
-                    area: this.manualForm.area,
-                    price: this.manualForm.price,
-                });
-                this.manualForm = emptyManualForm();
-                await this.loadManualUnits();
-
-                if (this.comparisonSource === 'manual') {
-                    await this.loadProjects();
-                }
+                const payload = await uploadWithProgress('/api/market-prices/manual-units/import', form);
+                this.listingReport = payload?.data ?? null;
+                await Promise.all([this.loadOffers(), this.loadProjects()]);
             } catch (error) {
-                this.manualErrors = error.errors ?? {};
-                this.manualUnitsError = error.errors ? '' : error.message;
+                this.listingError = error.errors?.file?.[0] ?? error.errors?.kind?.[0] ?? error.message;
             }
 
-            this.savingManualUnit = false;
+            this.importingListings = false;
         },
 
-        async removeManualUnit(unit) {
-            if (!confirm(`حذف «${unit.name}»؟`)) {
-                return;
-            }
-
-            this.manualUnitsError = '';
-
-            try {
-                await request('DELETE', `/api/market-prices/manual-units/${unit.id}`);
-                await this.loadManualUnits();
-
-                if (this.comparisonSource === 'manual') {
-                    await this.loadProjects();
-                }
-            } catch (error) {
-                this.manualUnitsError = error.message;
-            }
-        },
-
-        /** «٥ صفقة» from the deeds, «٥ وحدة» from the units entered by hand. */
-        similarCaption(similar, project) {
-            if (!similar) {
+        /** What reading a listings file did, in one sentence. */
+        listingSummary(report) {
+            if (!report) {
                 return '';
             }
 
-            const noun = this.comparisonSource === 'manual' ? 'وحدة' : 'صفقة';
+            const parts = [
+                `أُضيف ${NUMBER.format(report.added)} إعلانًا وحُدّث ${NUMBER.format(report.updated)}`,
+                `تمثّل ${NUMBER.format(report.properties)} عقارًا مختلفًا`,
+            ];
 
-            return `${NUMBER.format(similar.deals)} ${noun} · ${this.scopeNote(similar, project)}`;
+            if (report.repeated) {
+                parts.push(`${NUMBER.format(report.repeated)} منها معروض في أكثر من إعلان ويُحسب مرة واحدة`);
+            }
+
+            return `${parts.join('، ')}.`;
+        },
+
+        /** A unit's rooms, bathrooms and age, in a few words. */
+        offerDetails(unit) {
+            const parts = [];
+
+            if (unit.bedrooms ?? unit.rooms) {
+                parts.push(`${NUMBER.format(unit.bedrooms ?? unit.rooms)} غرف`);
+            }
+
+            if (unit.bathrooms) {
+                parts.push(`${NUMBER.format(unit.bathrooms)} دورات مياه`);
+            }
+
+            if (unit.property_age_years !== null && unit.property_age_years !== undefined) {
+                parts.push(unit.property_age_years === 0 ? 'جديد' : `عمره ${NUMBER.format(unit.property_age_years)} سنة`);
+            } else if (unit.property_age) {
+                parts.push(unit.property_age);
+            }
+
+            return parts.join(' · ');
+        },
+
+        /** The street and facade, in a few words. */
+        offerStreet(unit) {
+            return [unit.street_width ? `شارع ${unit.street_width} م` : '', unit.facade ?? ''].filter(Boolean).join(' · ');
+        },
+
+        cancelOfferEdit() {
+            this.editingOffer = null;
+            this.offerErrors = {};
+            this.offerForm = emptyOfferForm();
+        },
+
+        /**
+         * Adds the unit in the form, or saves the one being corrected. The
+         * company's units are read again afterwards: what they are set beside
+         * has just changed.
+         */
+        async saveOffer() {
+            if (this.savingOffer) {
+                return;
+            }
+
+            this.savingOffer = true;
+            this.offersError = '';
+            this.offerErrors = {};
+
+            const body = { ...this.offerForm, city: this.detailCity() };
+            const url = '/api/market-prices/manual-units';
+
+            try {
+                await (this.editingOffer
+                    ? request('PUT', `${url}/${this.editingOffer}`, body)
+                    : request('POST', url, body));
+
+                // The next unit is usually seen in the same place on the same day.
+                const { district, kind, observed_on } = this.offerForm;
+                this.cancelOfferEdit();
+                this.offerForm = { ...this.offerForm, district, kind, observed_on };
+
+                await Promise.all([this.loadOffers(), this.loadProjects()]);
+            } catch (error) {
+                this.offerErrors = error.errors ?? {};
+                this.offersError = error.errors ? '' : error.message;
+            }
+
+            this.savingOffer = false;
+        },
+
+        async removeOffer(unit) {
+            if (!confirm(`حذف «${unit.label}»؟`)) {
+                return;
+            }
+
+            this.offersError = '';
+
+            try {
+                await request('DELETE', `/api/market-prices/manual-units/${unit.id}`);
+
+                if (this.editingOffer === unit.id) {
+                    this.cancelOfferEdit();
+                }
+
+                await Promise.all([this.loadOffers(), this.loadProjects()]);
+            } catch (error) {
+                this.offersError = error.message;
+            }
+        },
+
+        /** «٥ صفقة · حي الصفا» under the deeds, «٥ وحدة · حي الصفا» under the offers. */
+        countCaption(figure, project, noun) {
+            if (!figure) {
+                return '';
+            }
+
+            return `${NUMBER.format(figure.deals)} ${noun} · ${this.scopeNote(figure, project)}`;
         },
 
         /** Places a project in a district, or takes it out of one. */
@@ -360,9 +455,8 @@ export default function marketDetail() {
 
             try {
                 const payload = await request('PUT', `/api/market-prices/projects/${project.id}`, {
-                    city: this.city,
+                    city: this.detailCity(),
                     district: district || null,
-                    source: this.comparisonSource,
                 });
                 this.projects = payload?.data ?? this.projects;
             } catch (error) {
@@ -379,9 +473,8 @@ export default function marketDetail() {
 
             try {
                 const payload = await request('PUT', `/api/market-prices/units/${unit.id}`, {
-                    city: this.city,
+                    city: this.detailCity(),
                     kind: kind || null,
-                    source: this.comparisonSource,
                 });
                 this.projects = payload?.data ?? this.projects;
             } catch (error) {

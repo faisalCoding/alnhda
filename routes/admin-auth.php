@@ -206,6 +206,8 @@ Route::prefix('api')->name('panel.api.')->group(function () {
             Route::delete('subscriptions/{subscription}', [SubscriptionController::class, 'destroy'])->name('subscriptions.destroy');
 
             Route::post('market-prices/manual-units', [ManualMarketUnitController::class, 'store'])->name('market-prices.manual-units.store');
+            Route::post('market-prices/manual-units/import', [ManualMarketUnitController::class, 'import'])->name('market-prices.manual-units.import');
+            Route::put('market-prices/manual-units/{manualMarketUnit}', [ManualMarketUnitController::class, 'update'])->name('market-prices.manual-units.update');
             Route::delete('market-prices/manual-units/{manualMarketUnit}', [ManualMarketUnitController::class, 'destroy'])->name('market-prices.manual-units.destroy');
 
             Route::post('useful-links', [UsefulLinkController::class, 'store'])->name('useful-links.store');

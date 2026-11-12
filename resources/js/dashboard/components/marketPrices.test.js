@@ -336,6 +336,12 @@ test('puts the figure each group is opened for on its square', () => {
     assert.ok(page.tileFigure('types').startsWith('شقة'));
     assert.ok(page.tileFigure('units').includes('وحدة'));
 
+    assert.equal(page.tileFigure('offers'), 'لم تُضف وحدات بعد');
+    page.offers = { units: [{}, {}, {}], properties: 3 };
+    assert.ok(page.tileFigure('offers').includes('مرصودة'));
+    page.offers = { units: Array(44).fill({}), properties: 30 };
+    assert.ok(page.tileFigure('offers').includes('إعلانًا'), 'a property listed twice is counted once');
+
     // Two never uploaded, one replaced, one out of date, one of the authority's waiting.
     assert.equal(page.filesNeedingAttention, 5);
     assert.ok(page.tileFigure('files').includes('ينتظر'));
