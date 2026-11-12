@@ -287,7 +287,25 @@
                                     «متوسط السوق لنفس النوع» من مؤشرات الهيئة العامة للعقار: للحي حين نشرته الهيئة، وللمدينة كلها غير ذلك.
                                     «صفقات مماثلة بالمساحة» من صكوك وزارة العدل القريبة من مساحة الوحدة (أقل أو أكثر بالخُمس) خلال آخر
                                     4 أرباع، وهي لا تميّز النوع. «عروض مماثلة» من وحدات السوق المضافة يدويًا: نفس النوع ومساحة قريبة، مما
-                                    رُصد خلال آخر سنة، وهي أسعار معروضة لا صفقات تمّت. الفرق محسوب عن متوسط نفس النوع.
+                                    رُصد خلال آخر سنة، وهي أسعار معروضة لا صفقات تمّت. اختر أدناه المرجع الذي يُحسب منه «الفرق».
+                                </p>
+
+                                {{-- Which of the three the verdict is measured against; all three stay shown --}}
+                                <div class="flex flex-wrap items-center gap-2" role="group" aria-label="مرجع الفرق">
+                                    <span class="text-xs font-bold text-zinc-500">احسب الفرق عن</span>
+                                    <div class="flex flex-wrap items-center gap-1 rounded-xl border border-zinc-200 p-1 dark:border-zinc-800">
+                                        @foreach (['kind' => 'متوسط الهيئة لنفس النوع', 'deeds' => 'صفقات وزارة العدل', 'offers' => 'العروض المضافة يدويًا'] as $reference => $referenceLabel)
+                                            <button type="button" class="{{ $pill }}" @click="setGapReference('{{ $reference }}')"
+                                                :class="gapReference === '{{ $reference }}' ? '{{ $pillOn }}' : '{{ $pillOff }}'"
+                                                :aria-pressed="gapReference === '{{ $reference }}'">{{ $referenceLabel }}</button>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400" x-show="gapReference === 'deeds'" x-cloak>
+                                    صفقات الوزارة لا تميّز نوع العقار، فالمقارنة بها تجمع الأراضي والوحدات المبنية القريبة من المساحة نفسها.
+                                </p>
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400" x-show="gapReference === 'offers'" x-cloak>
+                                    العروض أسعار يطلبها البائعون، وعادةً أعلى مما تُباع به فعلًا. يُشترط 3 عقارات على الأقل للمقارنة.
                                 </p>
 
                                 <p x-show="!projects.has_offers" x-cloak class="text-xs text-zinc-500 dark:text-zinc-400">
@@ -313,11 +331,11 @@
                                                     <th>المساحة (م²)</th>
                                                     <th>السعر (ر.س)</th>
                                                     <th>سعر المتر عندنا</th>
-                                                    <th>متوسط السوق لنفس النوع</th>
+                                                    <th :class="gapReference === 'kind' && 'bg-primary-500/10'">متوسط السوق لنفس النوع</th>
                                                     <th>أدنى – أعلى (ر.س/م²)</th>
-                                                    <th>صفقات مماثلة بالمساحة</th>
-                                                    <th>عروض مماثلة</th>
-                                                    <th>الفرق</th>
+                                                    <th :class="gapReference === 'deeds' && 'bg-primary-500/10'">صفقات مماثلة بالمساحة</th>
+                                                    <th :class="gapReference === 'offers' && 'bg-primary-500/10'">عروض مماثلة</th>
+                                                    <th x-text="`الفرق عن ${gapLabel()}`">الفرق</th>
                                                 </tr>
                                             </thead>
 
@@ -360,24 +378,26 @@
                                                             <td x-text="unit.area ? number(unit.area) : '—'"></td>
                                                             <td x-text="unit.price ? number(unit.price) : '—'"></td>
                                                             <td class="font-bold" x-text="rate(unit.rate)"></td>
-                                                            <td>
+                                                            <td :class="gapReference === 'kind' && 'bg-primary-500/5'">
                                                                 <span x-text="rate(unit.market.kind?.average)"></span>
                                                                 <span class="block text-[11px] text-zinc-400" x-text="scopeNote(unit.market.kind, project)"></span>
                                                             </td>
                                                             <td class="text-zinc-500" x-text="extremes(unit.market.kind)"></td>
-                                                            <td>
+                                                            <td :class="gapReference === 'deeds' && 'bg-primary-500/5'">
                                                                 <span x-text="rate(unit.market.similar?.median)"></span>
                                                                 <span class="block text-[11px] text-zinc-400" x-show="unit.market.similar"
                                                                     x-text="countCaption(unit.market.similar, project, 'صفقة')"></span>
                                                             </td>
-                                                            <td>
+                                                            <td :class="gapReference === 'offers' && 'bg-primary-500/5'">
                                                                 <span x-text="rate(unit.market.offers?.median)"></span>
                                                                 <span class="block text-[11px] text-zinc-400" x-show="unit.market.offers"
                                                                     x-text="countCaption(unit.market.offers, project, 'وحدة')"></span>
                                                             </td>
                                                             <td class="font-bold"
-                                                                :class="{ 'text-red-500': gap(unit)?.direction === 'above', 'text-primary-600 dark:text-primary-300': gap(unit)?.direction === 'below', 'text-zinc-400': !gap(unit) || gap(unit).direction === 'level' }"
-                                                                x-text="gap(unit)?.label ?? '—'"></td>
+                                                                :class="{ 'text-red-500': gap(unit)?.direction === 'above', 'text-primary-600 dark:text-primary-300': gap(unit)?.direction === 'below', 'text-zinc-400': !gap(unit) || gap(unit).direction === 'level' }">
+                                                                <span x-text="gap(unit)?.label ?? '—'"></span>
+                                                                <span class="block text-[11px] font-normal text-zinc-400" x-show="!gap(unit)" x-text="gapMissing(unit)"></span>
+                                                            </td>
                                                         </tr>
                                                     </template>
 

@@ -163,19 +163,51 @@ test('counts the units of a project in words', () => {
     assert.equal(component.unitCount({}), 'لا وحدات');
 });
 
-test('says how far a unit sits from what its kind of property sold for, and nothing where it cannot', () => {
+test('measures a unit against the reference chosen, and nothing where it cannot', () => {
     const component = page();
-    const market = (average, deals = 300) => ({ kind: { scope: 'city', deals, average }, similar: { deals: 900, median: 1 } });
+    const unit = {
+        rate: 4400,
+        market: {
+            kind: { scope: 'city', deals: 300, average: 4000 },
+            similar: { scope: 'district', deals: 40, median: 5500 },
+            offers: { scope: 'district', deals: 3, median: 4400 },
+        },
+    };
 
-    assert.equal(component.gap({ rate: 4400, market: market(4000) }).direction, 'above');
-    assert.ok(component.gap({ rate: 4400, market: market(4000) }).label.includes('فوق'));
-    assert.equal(component.gap({ rate: 3600, market: market(4000) }).direction, 'below');
-    assert.equal(component.gap({ rate: 4000, market: market(4000) }).direction, 'level');
+    assert.equal(component.gapReference, 'kind', 'the authority average until something else is chosen');
+    assert.equal(component.gap(unit).direction, 'above');
+    assert.ok(component.gap(unit).label.includes('فوق'));
+    assert.ok(component.gapLabel().includes('الهيئة'));
 
-    assert.equal(component.gap({ rate: null, market: market(4000) }), null, 'a unit with no price');
-    assert.equal(component.gap({ rate: 4400, market: { kind: null, similar: { deals: 900, median: 3000 } } }), null, 'no kind: similar deeds are not the same kind');
-    assert.equal(component.gap({ rate: 4400, market: market(null) }), null);
-    assert.equal(component.gap({ rate: 4400, market: market(4000, 4) }), null, 'four sales are not a market');
+    component.setGapReference('deeds');
+    assert.equal(component.gap(unit).direction, 'below');
+    assert.ok(component.gap(unit).label.startsWith('٢٠٪'));
+    assert.ok(component.gapLabel().includes('وزارة العدل'));
+
+    component.setGapReference('offers');
+    assert.equal(component.gap(unit).direction, 'level', 'three offered properties are enough');
+
+    component.setGapReference('nowhere');
+    assert.equal(component.gapReference, 'offers', 'a reference that does not exist changes nothing');
+});
+
+test('says why a unit has no gap', () => {
+    const component = page();
+    const market = (deals, average) => ({ kind: { deals, average }, similar: null, offers: { deals: 2, median: 4000 } });
+
+    assert.equal(component.gap({ rate: null, market: market(300, 4000) }), null);
+    assert.ok(component.gapMissing({ rate: null, market: market(300, 4000) }).includes('لا سعر'));
+
+    assert.equal(component.gap({ rate: 4400, market: market(4, 4000) }), null, 'four sales are not a market');
+    assert.ok(component.gapMissing({ rate: 4400, market: market(4, 4000) }).includes('أقل من'));
+
+    component.setGapReference('deeds');
+    assert.equal(component.gap({ rate: 4400, market: market(300, 4000) }), null);
+    assert.equal(component.gapMissing({ rate: 4400, market: market(300, 4000) }), 'لا مرجع');
+
+    component.setGapReference('offers');
+    assert.equal(component.gap({ rate: 4400, market: market(300, 4000) }), null, 'two offered properties are too few');
+
     assert.equal(component.gap({ rate: 4400 }), null);
 });
 

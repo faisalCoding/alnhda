@@ -1,5 +1,6 @@
 import { request, uploadWithProgress } from '../api.js';
 import { USUAL_KINDS } from '../marketPlaces.js';
+import { load, save } from '../storage.js';
 
 /** Today as a date field writes it, in the browser's own day. */
 function today() {
@@ -36,6 +37,27 @@ export function emptyOfferForm() {
         property_age_years: '',
         project_name: '',
     };
+}
+
+/**
+ * What a unit's price can be measured against, and how many sales or offers
+ * each needs before it is a market and not a coincidence. The hand-entered
+ * offers are counted property by property and are fewer by nature, so they
+ * need fewer.
+ *
+ * @type {Record<string, { label: string, figure: string, value: string, minimum: number }>}
+ */
+export const GAP_REFERENCES = {
+    kind: { label: 'متوسط الهيئة لنفس النوع', figure: 'kind', value: 'average', minimum: 5 },
+    deeds: { label: 'صفقات وزارة العدل المماثلة', figure: 'similar', value: 'median', minimum: 5 },
+    offers: { label: 'العروض المضافة يدويًا', figure: 'offers', value: 'median', minimum: 3 },
+};
+
+/** The reference chosen on this browser before, or the authority's average. */
+function storedGapReference() {
+    const value = load('market.gapReference', 'kind');
+
+    return Object.hasOwn(GAP_REFERENCES, value) ? value : 'kind';
 }
 
 /** The fields of the offer form, as the form names them. */
@@ -87,6 +109,9 @@ export default function marketDetail() {
         /** The unit the form is correcting; null while it is adding a new one. */
         editingOffer: null,
         savingOffer: false,
+
+        /** What the «الفرق» column measures a unit against. */
+        gapReference: storedGapReference(),
 
         /** A listings file being read, and what reading it did. */
         importingListings: false,
@@ -506,26 +531,64 @@ export default function marketDetail() {
         },
 
         /**
-         * How far a unit's price per metre sits from what its kind of
-         * property sold for, in percent. Nothing where the unit has no price,
-         * no kind, or the market for that kind is too few sales to be one.
+         * Chooses what the «الفرق» column measures against, and keeps the
+         * choice on this browser for the next visit. Nothing is read again:
+         * every reference is already on the page.
+         */
+        setGapReference(reference) {
+            if (!Object.hasOwn(GAP_REFERENCES, reference)) {
+                return;
+            }
+
+            this.gapReference = reference;
+            save('market.gapReference', reference);
+        },
+
+        /** The reference the «الفرق» column measures against, in words. */
+        gapLabel() {
+            return GAP_REFERENCES[this.gapReference]?.label ?? '';
+        },
+
+        /**
+         * How far a unit's price per metre sits from the chosen reference, in
+         * percent. Nothing where the unit has no price, or the reference has
+         * nothing to say about it, or says it from too few sales or offers to
+         * be a market.
          */
         gap(unit) {
-            const market = unit.market?.kind;
+            const reference = GAP_REFERENCES[this.gapReference] ?? GAP_REFERENCES.kind;
+            const market = unit.market?.[reference.figure];
+            const value = market?.[reference.value];
 
-            if (!unit.rate || !market?.average || market.deals < 5) {
+            if (!unit.rate || !value || (market.deals ?? 0) < reference.minimum) {
                 return null;
             }
 
-            const percent = Math.round(((unit.rate - market.average) / market.average) * 100);
+            const percent = Math.round(((unit.rate - value) / value) * 100);
 
             return {
                 direction: percent > 0 ? 'above' : percent < 0 ? 'below' : 'level',
-                label:
-                    percent === 0
-                        ? 'عند متوسط السوق'
-                        : `${NUMBER.format(Math.abs(percent))}٪ ${percent > 0 ? 'فوق' : 'تحت'} متوسط السوق`,
+                label: percent === 0 ? 'عند السوق' : `${NUMBER.format(Math.abs(percent))}٪ ${percent > 0 ? 'فوق' : 'تحت'} السوق`,
             };
+        },
+
+        /**
+         * Why a unit has no gap against the chosen reference, in a few words,
+         * so an empty cell is not mistaken for «level with the market».
+         */
+        gapMissing(unit) {
+            const reference = GAP_REFERENCES[this.gapReference] ?? GAP_REFERENCES.kind;
+            const market = unit.market?.[reference.figure];
+
+            if (!unit.rate) {
+                return 'لا سعر أو مساحة';
+            }
+
+            if (!market?.[reference.value]) {
+                return 'لا مرجع';
+            }
+
+            return `أقل من ${NUMBER.format(reference.minimum)} للمقارنة`;
         },
     };
 }

@@ -46,7 +46,12 @@ it('serves the market prices screen to an admin', function () {
         ->assertSee('أسعار السوق')
         ->assertSee('marketPricesPage()', false)
         ->assertSee('وحدات السوق المضافة يدويًا')
-        ->assertSee('عروض مماثلة');
+        ->assertSee('عروض مماثلة')
+        // The verdict can be measured against any of the three.
+        ->assertSee('احسب الفرق عن')
+        ->assertSee("setGapReference('kind')", false)
+        ->assertSee("setGapReference('deeds')", false)
+        ->assertSee("setGapReference('offers')", false);
 });
 
 it('lays the screen out as a board of groups, each opened in place', function () {
