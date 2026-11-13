@@ -427,6 +427,12 @@
                                     <label class="{{ $label }}">المساحة (م²)</label>
                                     <input type="number" x-model.number="form.area" class="{{ $input }}" min="0">
                                 </div>
+                                {{-- The market prices a villa by its plot; this is what it is set beside the market by --}}
+                                <div>
+                                    <label class="{{ $label }}">مساحة الأرض (م²)</label>
+                                    <input type="number" x-model.number="form.land_area" class="{{ $input }}" min="0" placeholder="للفلل والدوبلكس">
+                                    <p class="{{ $error }}" x-show="errors.land_area" x-text="errors.land_area"></p>
+                                </div>
                                 <div>
                                     <label class="{{ $label }}">المداخل</label>
                                     <input type="number" x-model.number="form.doors" class="{{ $input }}" min="0">

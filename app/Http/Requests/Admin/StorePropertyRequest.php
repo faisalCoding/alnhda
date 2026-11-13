@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StorePropertyRequest extends FormRequest
@@ -17,7 +18,7 @@ class StorePropertyRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -32,6 +33,7 @@ class StorePropertyRequest extends FormRequest
             'living_rooms' => 'required|integer',
             'mainds_room' => 'required|integer',
             'area' => 'required|numeric',
+            'land_area' => 'nullable|numeric|min:1|max:1000000',
             'doors' => 'required|integer',
             'type' => 'required|string',
             'parkings' => 'required|integer',
@@ -58,6 +60,8 @@ class StorePropertyRequest extends FormRequest
             'price.required' => 'سعر الوحدة مطلوب.',
             'price.numeric' => 'سعر الوحدة يجب أن يكون رقمًا.',
             'offer.numeric' => 'قيمة العرض يجب أن تكون رقمًا.',
+            'land_area.numeric' => 'مساحة الأرض يجب أن تكون رقمًا.',
+            'land_area.min' => 'مساحة الأرض يجب أن تكون أكبر من صفر.',
         ];
     }
 }

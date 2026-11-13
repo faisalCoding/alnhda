@@ -80,6 +80,9 @@ class PropertyController extends Controller
             'living_rooms' => $validated['living_rooms'],
             'mainds_room' => $validated['mainds_room'],
             'area' => $validated['area'],
+            // Left as it was by a request that does not mention it, such as
+            // one queued by an older copy of the panel.
+            ...(array_key_exists('land_area', $validated) ? ['land_area' => $validated['land_area'] ?: null] : []),
             'doors' => $validated['doors'],
             'type' => $validated['type'],
             'parkings' => $validated['parkings'],

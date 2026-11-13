@@ -21,6 +21,7 @@ class Properties extends Model
         'living_rooms',
         'mainds_room',
         'area',
+        'land_area',
         'doors',
         'type',
         'parkings',

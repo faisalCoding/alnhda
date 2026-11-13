@@ -215,3 +215,31 @@ it('lets the type typed in the unit form speak once it is changed there', functi
     expect($unit->fresh()->type)->toBe('فيلا')
         ->and($unit->fresh()->market_type)->toBeNull();
 });
+
+it('keeps a unit\'s plot apart from its own area', function () {
+    $project = Project::factory()->create();
+    $payload = fn (array $overrides = []): array => array_merge([
+        'name' => 'فيلا B', 'project_id' => $project->id, 'price' => 1950000, 'offer' => null, 'status' => 'جديد',
+        'rooms' => 5, 'bathrooms' => 3, 'living_rooms' => 1, 'mainds_room' => 1, 'area' => 465.27, 'doors' => 2, 'type' => 'فيلا',
+        'parkings' => 1, 'driver_room' => 1, 'facade' => 'شرقية', 'furniture' => true, 'unit_youtube' => null, 'stages_building_youtube' => null,
+    ], $overrides);
+
+    $unit = Properties::query()->findOrFail(
+        $this->actingAs($this->admin, 'admin')->postJson(panelUrl('/api/properties'), $payload(['land_area' => 375]))
+            ->assertCreated()
+            ->assertJsonPath('data.land_area', 375)
+            ->json('data.id')
+    );
+
+    // A copy of the panel from before the field leaves it as it was.
+    $this->actingAs($this->admin, 'admin')->putJson(panelUrl('/api/properties/'.$unit->id), $payload())->assertSuccessful();
+    expect((float) $unit->fresh()->land_area)->toBe(375.0);
+
+    $this->actingAs($this->admin, 'admin')->putJson(panelUrl('/api/properties/'.$unit->id), $payload(['land_area' => null]))->assertSuccessful();
+    expect($unit->fresh()->land_area)->toBeNull();
+
+    $this->actingAs($this->admin, 'admin')
+        ->putJson(panelUrl('/api/properties/'.$unit->id), $payload(['land_area' => 0]))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('land_area');
+});

@@ -1,6 +1,6 @@
 import { request } from '../api';
 import { isTemp } from '../ids';
-import { composeLocation, kindChoices, labelOf } from '../marketPlaces';
+import { composeLocation, kindChoices, labelOf, placeIn } from '../marketPlaces';
 import * as storage from '../storage';
 import { isAbsoluteUrl } from '../validation';
 
@@ -26,6 +26,7 @@ const PROPERTY_DEFAULTS = () => ({
     living_rooms: 1,
     mainds_room: 1,
     area: 180,
+    land_area: '',
     doors: 2,
     type: 'شقة',
     parkings: 1,
@@ -79,6 +80,27 @@ export default function projectsPage() {
             } catch {
                 // The forms still work without the lists.
             }
+        },
+
+        /**
+         * A project typed before the lists existed, «جدة حي المنار», opens
+         * with that city and district already chosen, so saving it places it
+         * in the market's own words instead of leaving it unplaced.
+         */
+        async placeFromLocation() {
+            if (this.form.market_city_key || !this.form.location || !this.market.cities.length) {
+                return;
+            }
+
+            const { city } = placeIn(this.form.location, this.market.cities);
+
+            if (!city) {
+                return;
+            }
+
+            this.form.market_city_key = city;
+            await this.loadMarket(city);
+            this.form.market_district_key = placeIn(this.form.location, this.market.cities, this.market.districts).district;
         },
 
         /** A new city has other districts; the one chosen before is not among them. */
@@ -247,7 +269,7 @@ export default function projectsPage() {
                 map_url: record.map_url ?? '',
             };
             this.guarantees = (record.guarantees ?? []).length ? [...record.guarantees] : [''];
-            this.loadMarket(this.form.market_city_key);
+            this.loadMarket(this.form.market_city_key).then(() => this.placeFromLocation());
         },
 
         addGuarantee() {
@@ -341,6 +363,7 @@ export default function projectsPage() {
                 living_rooms: record.living_rooms ?? 0,
                 mainds_room: record.mainds_room ?? 0,
                 area: record.area ?? 0,
+                land_area: record.land_area ?? '',
                 doors: record.doors ?? 0,
                 type: record.type ?? 'شقة',
                 parkings: record.parkings ?? 0,
@@ -375,6 +398,7 @@ export default function projectsPage() {
                 ...this.form,
                 price: Number(this.form.price),
                 offer: this.form.offer === '' || this.form.offer === null ? null : Number(this.form.offer),
+                land_area: this.form.land_area === '' || this.form.land_area === null ? null : Number(this.form.land_area),
                 furniture: Boolean(this.form.furniture),
                 unit_youtube: this.form.unit_youtube || null,
                 stages_building_youtube: this.form.stages_building_youtube || null,

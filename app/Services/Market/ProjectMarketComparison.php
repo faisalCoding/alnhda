@@ -35,6 +35,15 @@ class ProjectMarketComparison
     private const AREA_MARGIN = 0.2;
 
     /**
+     * The kinds the market measures by their land. A deed, the authority's
+     * figures and a listing all give a villa's area as its plot's, so a villa
+     * is set beside them by its own plot when that is known.
+     *
+     * @var list<string>
+     */
+    public const LAND_KINDS = ['فيلا', 'دوبلكس', 'أرض'];
+
+    /**
      * Figures already looked up in this reading: units of one project mostly
      * share a kind and a size, and ask the same questions.
      *
@@ -93,7 +102,10 @@ class ProjectMarketComparison
     private function project(Project $project, string $cityKey, Collection $districts, array $kinds): array
     {
         $placed = $project->market_city_key === $cityKey && filled($project->market_district_key);
-        $district = $placed ? $project->market_district_key : null;
+        // Not placed, but its location names a district of this city: read
+        // it there, and say it was read from the location.
+        $guessed = ! $placed && blank($project->market_city_key) ? $this->districtIn($project->location, $cityKey, $districts) : null;
+        $district = $placed ? $project->market_district_key : $guessed;
 
         return [
             'id' => $project->id,
@@ -102,10 +114,13 @@ class ProjectMarketComparison
             'status' => $project->status,
             // Placed in another city: shown, but not compared with this one.
             'elsewhere' => filled($project->market_city_key) && $project->market_city_key !== $cityKey,
-            'district' => $district,
-            'district_label' => $placed
-                ? ($districts->firstWhere('key', $district)['label'] ?? $district)
-                : null,
+            'district' => $placed ? $district : null,
+            // 'set' by hand, or read from the project's 'location'.
+            'district_source' => $placed ? 'set' : ($guessed !== null ? 'location' : null),
+            'district_label' => $district === null
+                ? null
+                : ($districts->firstWhere('key', $district)['label'] ?? $district),
+            'guessed_district' => $guessed,
             'units' => $project->properties
                 ->map(fn (Properties $unit): array => $this->unit($unit, $project, $cityKey, $district, $kinds))
                 ->values()
@@ -119,11 +134,23 @@ class ProjectMarketComparison
      */
     private function unit(Properties $unit, Project $project, string $cityKey, ?string $district, array $kinds): array
     {
-        $area = (float) $unit->area;
         // The offer is what is actually being asked when there is one.
         $price = (int) ($unit->offer ?: $unit->price);
-        $priced = $area > 0 && $price > 0;
         [$kind, $kindSource] = $this->kind($unit, $project, $kinds);
+
+        // What the unit is measured by: its plot for a kind the market
+        // measures by land, when the plot is known; its own area otherwise.
+        $byLand = in_array($kind, self::LAND_KINDS, true);
+        $land = (float) $unit->land_area;
+        $area = $byLand && $land > 0 ? $land : (float) $unit->area;
+        $basis = match (true) {
+            ! $byLand => 'unit',
+            $land > 0 => 'land',
+            // A villa measured by what was built: its price per metre reads
+            // lower than the market's, which is per metre of plot.
+            default => 'unit_not_land',
+        };
+        $priced = $area > 0 && $price > 0;
 
         return [
             'id' => $unit->id,
@@ -132,7 +159,11 @@ class ProjectMarketComparison
             'kind' => $kind,
             // 'set' by hand, or guessed from the 'unit' or its 'project'.
             'kind_source' => $kindSource,
-            'area' => $area > 0 ? $area : null,
+            'area' => (float) $unit->area > 0 ? (float) $unit->area : null,
+            'land_area' => $land > 0 ? $land : null,
+            // The area the rate and every comparison are worked out on.
+            'basis' => $basis,
+            'basis_area' => $area > 0 ? $area : null,
             'price' => $price > 0 ? $price : null,
             'rate' => $priced ? round($price / $area, 2) : null,
             'market' => [
@@ -206,8 +237,14 @@ class ProjectMarketComparison
     /**
      * What the same kind of property is offered at: units entered by hand,
      * of the unit's own kind and within a fifth of its size, seen recently
-     * enough to still mean something — in the district when the project is
-     * placed and any such unit was entered there, in the city otherwise.
+     * enough to still mean something.
+     *
+     * When the project's district is known, only that district is read, even
+     * when nothing like the unit was entered there: asking prices differ far
+     * more between districts than sales averaged across a city do, and a
+     * villa in one district set beside the villas of three others is set
+     * beside the wrong market. Only a project whose district is not known at
+     * all is read against the whole city.
      *
      * Without a kind there is nothing to read: a flat's asking price says
      * nothing about a villa's.
@@ -218,16 +255,12 @@ class ProjectMarketComparison
     {
         $from = $area * (1 - self::AREA_MARGIN);
         $to = $area * (1 + self::AREA_MARGIN);
-        $nearby = $district === null ? null : $this->offered($cityKey, $district, $kind, $from, $to);
 
-        return $this->found['offers|'.$kind.'|'.$area.'|'.$district] ??= $this->scoped(
-            $nearby !== null && $nearby['deals'] > 0 ? $nearby : null,
-            function () use ($cityKey, $kind, $from, $to): ?array {
-                $city = $this->offered($cityKey, null, $kind, $from, $to);
+        return $this->found['offers|'.$kind.'|'.$area.'|'.$district] ??= (function () use ($cityKey, $district, $kind, $from, $to): ?array {
+            $figure = $this->offered($cityKey, $district, $kind, $from, $to);
 
-                return $city['deals'] > 0 ? $city : null;
-            },
-        );
+            return $figure['deals'] > 0 ? ['scope' => $district === null ? 'city' : 'district'] + $figure : null;
+        })();
     }
 
     /**
@@ -252,6 +285,34 @@ class ProjectMarketComparison
             ->all();
 
         return ['deals' => count($rates)] + Quantiles::spread($rates);
+    }
+
+    /**
+     * The district of a city a project's location names, when it names one:
+     * «جدة حي المنار» names المنار. The location has to name the city too, so
+     * a district of the same name in another city is not taken for it.
+     *
+     * @param  Collection<int, array{key: string, label: string}>  $districts
+     */
+    private function districtIn(?string $location, string $cityKey, Collection $districts): ?string
+    {
+        if (blank($location)) {
+            return null;
+        }
+
+        $words = PlaceName::loose($location);
+
+        if (! str_contains($words, PlaceName::loose($this->places->cityLabel($cityKey) ?? PlaceName::preferred($cityKey)))) {
+            return null;
+        }
+
+        if (! preg_match('/حي\s*(.+)$/u', PlaceName::label($location), $named)) {
+            return null;
+        }
+
+        $named = PlaceName::loose($named[1]);
+
+        return $districts->first(fn (array $district): bool => PlaceName::loose($district['label']) === $named)['key'] ?? null;
     }
 
     /**

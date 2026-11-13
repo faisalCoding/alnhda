@@ -29,6 +29,7 @@ class PropertyResource extends JsonResource
             'living_rooms' => $this->living_rooms,
             'mainds_room' => $this->mainds_room,
             'area' => $this->area,
+            'land_area' => $this->land_area === null ? null : (float) $this->land_area,
             'doors' => $this->doors,
             'type' => $this->type,
             'parkings' => $this->parkings,

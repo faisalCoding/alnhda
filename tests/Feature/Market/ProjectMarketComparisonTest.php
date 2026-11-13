@@ -463,7 +463,7 @@ it('sets what the same kind of property is offered at beside the deeds, not in t
         ->assertJsonPath('data.projects.0.units.0.market.offers.upper', 4500);
 });
 
-it('reads offers in the project district, then the city', function () {
+it('reads offers in the project district only, never mixed with other districts', function () {
     $project = Project::factory()->create(['market_city_key' => 'جده', 'market_district_key' => 'الصفا']);
     unit($project, 600000, 150, type: 'شقة');
     unit($project, 2000000, 400, type: 'شقة');
@@ -477,9 +477,95 @@ it('reads offers in the project district, then the city', function () {
         ->assertJsonPath('data.projects.0.units.0.market.offers.scope', 'district')
         ->assertJsonPath('data.projects.0.units.0.market.offers.deals', 2)
         ->assertJsonPath('data.projects.0.units.0.market.offers.median', 5100)
-        // Nothing of the larger flat's size was seen in its district.
-        ->assertJsonPath('data.projects.0.units.1.market.offers.scope', 'city')
-        ->assertJsonPath('data.projects.0.units.1.market.offers.median', 3000);
+        // Nothing of the larger flat's size was seen in its district: nothing,
+        // not الواحة's asking prices passed off as الصفا's.
+        ->assertJsonPath('data.projects.0.units.1.market.offers', null);
+});
+
+it('reads a project with no district at all against the offers of the whole city', function () {
+    $project = Project::factory()->create(['location' => null]);
+    unit($project, 600000, 150, type: 'شقة');
+    ManualMarketUnit::factory()->offered('الصفا', 150, 5000)->create();
+    ManualMarketUnit::factory()->offered('الواحة', 150, 3000)->create();
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(projectsUrl())
+        ->assertJsonPath('data.projects.0.district_source', null)
+        ->assertJsonPath('data.projects.0.units.0.market.offers.scope', 'city')
+        ->assertJsonPath('data.projects.0.units.0.market.offers.deals', 2);
+});
+
+it('reads a project not placed in a district in the one its location names', function (string $location, ?string $district) {
+    $project = Project::factory()->create(['location' => $location]);
+    unit($project, 2400000, 600, type: 'فيلا');
+    marketDeed($this->quarter, 'المنار', 600, 4000);
+    marketDeed($this->quarter, 'الأجواد', 600, 3000);
+    ManualMarketUnit::factory()->offered('المنار', 600, 5000, kind: 'فيلا')->create();
+    ManualMarketUnit::factory()->offered('الأجواد', 600, 3500, kind: 'فيلا')->create();
+
+    $response = $this->actingAs($this->admin, 'admin')->getJson(projectsUrl())->assertSuccessful();
+
+    expect($response->json('data.projects.0.district'))->toBeNull()
+        ->and($response->json('data.projects.0.guessed_district'))->toBe($district)
+        ->and($response->json('data.projects.0.district_source'))->toBe($district === null ? null : 'location');
+
+    if ($district !== null) {
+        expect($response->json('data.projects.0.district_label'))->toBe('المنار')
+            ->and($response->json('data.projects.0.units.0.market.offers.scope'))->toBe('district')
+            ->and($response->json('data.projects.0.units.0.market.offers.median'))->toEqual(5000);
+    }
+})->with([
+    'written the way the form writes it' => ['جدة حي المنار', 'المنار'],
+    'with a stray mark and spacing' => ["\u{200F}جدة  حي  المنار", 'المنار'],
+    'a plan, not a district' => ['جدة مخطط التيسير', null],
+    'another city' => ['الرياض حي المنار', null],
+]);
+
+it('keeps a district set by hand over the one the location names', function () {
+    $project = Project::factory()->create(['location' => 'جدة حي الأجواد', 'market_city_key' => 'جده', 'market_district_key' => 'المنار']);
+    unit($project, 2400000, 600, type: 'فيلا');
+    marketDeed($this->quarter, 'المنار', 600, 4000);
+    marketDeed($this->quarter, 'الأجواد', 600, 3000);
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(projectsUrl())
+        ->assertJsonPath('data.projects.0.district', 'المنار')
+        ->assertJsonPath('data.projects.0.district_source', 'set')
+        ->assertJsonPath('data.projects.0.guessed_district', null);
+});
+
+it('measures a villa by its plot, as the market does', function () {
+    $project = Project::factory()->create(['market_city_key' => 'جده', 'market_district_key' => 'المنار']);
+    marketDeed($this->quarter, 'المنار', 600, 4000);
+    // 2,400,000 for 450 m² built on a 600 m² plot.
+    Properties::factory()->create(['project_id' => $project->id, 'type' => 'فيلا', 'area' => 450, 'land_area' => 600, 'price' => 2400000, 'offer' => null]);
+    ManualMarketUnit::factory()->offered('المنار', 600, 5000, kind: 'فيلا')->create();
+    // About the built area, not the plot: not a comparable.
+    ManualMarketUnit::factory()->offered('المنار', 450, 9000, kind: 'فيلا')->create();
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(projectsUrl())
+        ->assertJsonPath('data.projects.0.units.0.basis', 'land')
+        ->assertJsonPath('data.projects.0.units.0.area', 450)
+        ->assertJsonPath('data.projects.0.units.0.land_area', 600)
+        ->assertJsonPath('data.projects.0.units.0.basis_area', 600)
+        ->assertJsonPath('data.projects.0.units.0.rate', 4000)
+        ->assertJsonPath('data.projects.0.units.0.market.offers.deals', 1)
+        ->assertJsonPath('data.projects.0.units.0.market.offers.median', 5000);
+});
+
+it('says a villa with no plot given is measured by its own area', function () {
+    $project = Project::factory()->create();
+    Properties::factory()->create(['project_id' => $project->id, 'type' => 'فيلا', 'area' => 450, 'land_area' => null, 'price' => 2400000, 'offer' => null]);
+    Properties::factory()->create(['project_id' => $project->id, 'type' => 'شقة', 'area' => 150, 'land_area' => 600, 'price' => 600000, 'offer' => null]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(projectsUrl())
+        ->assertJsonPath('data.projects.0.units.0.basis', 'unit_not_land')
+        ->assertJsonPath('data.projects.0.units.0.rate', fn ($rate): bool => abs($rate - 5333.33) < 0.01)
+        // A flat is measured by itself, whatever its building stands on.
+        ->assertJsonPath('data.projects.0.units.1.basis', 'unit')
+        ->assertJsonPath('data.projects.0.units.1.rate', 4000);
 });
 
 it('leaves an asking price seen too long ago out of the comparison', function () {

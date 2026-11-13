@@ -287,7 +287,8 @@
                                     «متوسط السوق لنفس النوع» من مؤشرات الهيئة العامة للعقار: للحي حين نشرته الهيئة، وللمدينة كلها غير ذلك.
                                     «صفقات مماثلة بالمساحة» من صكوك وزارة العدل القريبة من مساحة الوحدة (أقل أو أكثر بالخُمس) خلال آخر
                                     4 أرباع، وهي لا تميّز النوع. «عروض مماثلة» من وحدات السوق المضافة يدويًا: نفس النوع ومساحة قريبة، مما
-                                    رُصد خلال آخر سنة، وهي أسعار معروضة لا صفقات تمّت. اختر أدناه المرجع الذي يُحسب منه «الفرق».
+                                    رُصد خلال آخر سنة وفي حي المشروع وحده متى عُرف حيّه، وهي أسعار معروضة لا صفقات تمّت. الفلل والدوبلكس
+                                    تُحسب بمتر الأرض كما يحسبها السوق، متى أُدخلت مساحة أرضها. اختر أدناه المرجع الذي يُحسب منه «الفرق».
                                 </p>
 
                                 {{-- Which of the three the verdict is measured against; all three stay shown --}}
@@ -352,13 +353,16 @@
                                                                     الحي في الصفقات
                                                                     <select class="{{ $select }} py-1" :disabled="placing === project.id"
                                                                         @change="placeProject(project, $event.target.value)">
-                                                                        <option value="" :selected="!project.district">— لم يُحدَّد —</option>
+                                                                        <option value="" :selected="!project.district"
+                                                                            x-text="project.guessed_district ? `${project.district_label} (من نص الموقع)` : '— لم يُحدَّد —'"></option>
                                                                         <template x-for="item in projects.districts" :key="item.key">
                                                                             <option :value="item.key" :selected="item.key === project.district" x-text="item.label"></option>
                                                                         </template>
                                                                     </select>
                                                                 </label>
                                                             </div>
+                                                            <p class="mt-1 text-[11px] font-bold text-amber-600" x-show="project.district_source === 'location'"
+                                                                x-text="`الحي مقروء من نص الموقع «${project.location}». اختره من القائمة لتثبيته.`"></p>
                                                         </td>
                                                     </tr>
 
@@ -375,9 +379,18 @@
                                                                     </template>
                                                                 </select>
                                                             </td>
-                                                            <td x-text="unit.area ? number(unit.area) : '—'"></td>
+                                                            <td>
+                                                                <span x-text="unit.area ? number(unit.area) : '—'"></span>
+                                                                <span class="block text-[11px] text-zinc-400" x-show="unit.land_area"
+                                                                    x-text="`الأرض ${number(unit.land_area)}`"></span>
+                                                            </td>
                                                             <td x-text="unit.price ? number(unit.price) : '—'"></td>
-                                                            <td class="font-bold" x-text="rate(unit.rate)"></td>
+                                                            <td class="font-bold">
+                                                                <span x-text="rate(unit.rate)"></span>
+                                                                <span class="block text-[11px] font-normal text-zinc-400" x-show="unit.basis === 'land'">لمتر الأرض</span>
+                                                                <span class="block text-[11px] font-bold text-amber-600" x-show="unit.basis === 'unit_not_land' && unit.rate"
+                                                                    title="السوق يحسب الفلل بمتر الأرض. أدخل مساحة الأرض للوحدة لتصح المقارنة.">لمتر البناء: أدخل مساحة الأرض</span>
+                                                            </td>
                                                             <td :class="gapReference === 'kind' && 'bg-primary-500/5'">
                                                                 <span x-text="rate(unit.market.kind?.average)"></span>
                                                                 <span class="block text-[11px] text-zinc-400" x-text="scopeNote(unit.market.kind, project)"></span>

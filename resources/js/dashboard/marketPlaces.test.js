@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert';
 
-import { USUAL_KINDS, composeLocation, kindChoices, labelOf } from './marketPlaces.js';
+import { USUAL_KINDS, composeLocation, kindChoices, labelOf, placeIn } from './marketPlaces.js';
 
 test('writes a location from a city and a district', () => {
     assert.equal(composeLocation('جدة', 'الصفا'), 'جدة حي الصفا');
@@ -31,4 +31,16 @@ test('keeps the kind a unit already is on the list', () => {
     const kinds = ['شقة'];
     kindChoices(kinds, 'ملحق');
     assert.deepEqual(kinds, ['شقة'], 'the list that was passed in is not changed');
+});
+
+test('reads the city and the district a typed location names', () => {
+    const cities = [{ key: 'جده', label: 'جدة' }, { key: 'الرياض', label: 'الرياض' }];
+    const districts = [{ key: 'المنار', label: 'المنار' }, { key: 'الاجواد', label: 'الاجواد' }];
+
+    assert.deepEqual(placeIn('جدة حي المنار', cities, districts), { city: 'جده', district: 'المنار' });
+    assert.deepEqual(placeIn('\u200Fجده  حي  الأجواد', cities, districts), { city: 'جده', district: 'الاجواد' }, 'spelt another way, with a stray mark');
+    assert.deepEqual(placeIn('جدة حي المنار', cities), { city: 'جده', district: '' }, 'the districts are not known yet');
+    assert.deepEqual(placeIn('جدة مخطط التيسير', cities, districts), { city: 'جده', district: '' });
+    assert.deepEqual(placeIn('مكة حي العزيزية', cities, districts), { city: '', district: '' });
+    assert.deepEqual(placeIn(null, cities, districts), { city: '', district: '' });
 });
