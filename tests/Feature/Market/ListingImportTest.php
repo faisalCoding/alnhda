@@ -93,8 +93,27 @@ it('reads the kind of property out of the title', function (string $title, ?stri
     ['دوبلكس للبيع', 'دوبلكس'],
     ['شقة للبيع', 'شقة'],
     ['دور للبيع في المنار', 'دور'],
+    ['ملحق للبيع في حي المنار', 'ملحق'],
+    ['روووف لقطة للبيع حي السامر', 'ملحق'],
+    ['شقة بموقع معروف للبيع', 'شقة'],
     ['عقار مميز للبيع', null],
 ]);
+
+it('takes the kind from the type column before the title', function () {
+    $header = str_replace(',title,', ',title,property_type,', LISTINGS_HEADER);
+    $row = fn (string $id, string $title, string $type): string => "aqar,{$id},https://example.com/{$id},حي السامر,جدة,\"{$title}\",{$type},710000,195,5,5,4,,شمال,2026-10-29,2026-11-13,2026-11-13,,جديد,0";
+
+    $report = app(ListingFileImporter::class)->import(listingsFile([
+        // The site files the annex and the floor under flats.
+        $row('1', 'شقة للبيع في شارع سعيد بن محمد السمان, حي السامر', 'ملحق'),
+        $row('2', 'شقة للبيع في شارع عبدالرحيم العراقي, حي السامر', 'دور'),
+        $row('3', 'شقة للبيع في حي السامر', ''),
+    ], $header));
+
+    expect($report['added'])->toBe(3)
+        ->and(ManualMarketUnit::query()->orderBy('listing_id')->pluck('kind')->all())->toBe(['ملحق', 'دور', 'شقة'])
+        ->and(ManualMarketUnit::query()->where('listing_id', '1')->sole()->price)->toBe(710000);
+});
 
 it('takes the kind it is given for a listing whose title does not say', function () {
     app(ListingFileImporter::class)->import(listingsFile([listingRow('aqar', '1', title: 'عقار مميز للبيع')]), 'دوبلكس');

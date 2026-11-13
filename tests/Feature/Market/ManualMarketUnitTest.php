@@ -90,7 +90,7 @@ it('offers the districts and the kinds the market figures are kept by', function
     $this->actingAs($this->admin, 'admin')
         ->getJson(manualUnitsUrl())
         ->assertJsonPath('data.districts', [['key' => 'الصفا', 'label' => 'الصفا'], ['key' => 'الواحه', 'label' => 'الواحة']])
-        ->assertJsonPath('data.kinds', ['شقة', 'دور']);
+        ->assertJsonPath('data.kinds', ['شقة', 'دور', 'ملحق']);
 });
 
 it('sums up what the market asks for each kind, from the units still fresh', function () {

@@ -26,6 +26,26 @@ class MarketPlaces
     public const USUAL_KINDS = ['شقة', 'فيلا', 'دور', 'دوبلكس', 'أرض', 'عمارة'];
 
     /**
+     * Kinds the listing sites sell that the authority does not price apart:
+     * a rooftop annex is offered as one, and is no flat and no floor. They are
+     * offered beside the authority's kinds, and compared with offers only.
+     *
+     * @var list<string>
+     */
+    public const LISTING_KINDS = ['ملحق'];
+
+    /**
+     * The kinds given, with the ones only the listing sites sell after them.
+     *
+     * @param  list<string>  $kinds
+     * @return list<string>
+     */
+    public static function withListingKinds(array $kinds): array
+    {
+        return array_values(array_unique([...$kinds, ...self::LISTING_KINDS]));
+    }
+
+    /**
      * Every city the deeds have sold in, busiest first.
      *
      * @return list<array{key: string, label: string, region: string}>
@@ -71,7 +91,7 @@ class MarketPlaces
             ->keys()
             ->all();
 
-        return $kinds === [] ? self::USUAL_KINDS : $kinds;
+        return self::withListingKinds($kinds === [] ? self::USUAL_KINDS : $kinds);
     }
 
     public function cityLabel(string $cityKey): ?string

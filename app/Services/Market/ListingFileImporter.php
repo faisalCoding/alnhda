@@ -15,7 +15,9 @@ use Throwable;
  * The file has one listing a row, under the headings the form uses:
  * source_site, listing_id, url, neighborhood, city, title, price_sar, area_m2,
  * rooms, bedrooms, bathrooms, street_width_m, facade, posted_at, updated_at,
- * scraped_at, possible_cross_site_duplicate, property_age, property_age_years.
+ * scraped_at, possible_cross_site_duplicate, property_age, property_age_years,
+ * and optionally property_type, which says the kind when the title does not:
+ * a site files a floor or a rooftop annex under «شقة».
  * A listing already entered — the same number on the same site — is updated,
  * so a file collected again next month refreshes the prices instead of
  * doubling them.
@@ -32,8 +34,9 @@ class ListingFileImporter
     private const REQUIRED = ['neighborhood', 'city', 'price_sar', 'area_m2'];
 
     /**
-     * Words in a listing's title that say what kind of property it is, in the
-     * order they are looked for: «فيلا مع شقة» is a villa.
+     * Words in a listing's type or title that say what kind of property it
+     * is, in the order they are looked for: «فيلا مع شقة» is a villa, and
+     * «روف» is an annex but «معروف» is not.
      *
      * @var array<string, string>
      */
@@ -41,6 +44,7 @@ class ListingFileImporter
         '/فيلا|فيلة|فله|فلة|فلل/u' => 'فيلا',
         '/دوبلكس|دبلكس/u' => 'دوبلكس',
         '/عمارة|عماره|عمائر/u' => 'عمارة',
+        '/ملحق|ملاحق|(?<!\p{L})رو+ف(?!\p{L})/u' => 'ملحق',
         '/شقة|شقه|شقق/u' => 'شقة',
         '/(?<!\p{L})دور(?!\p{L})|أدوار|ادوار/u' => 'دور',
         '/أرض|ارض|قطعة/u' => 'أرض',
@@ -178,7 +182,7 @@ class ListingFileImporter
         $area = $this->number($value('area_m2'));
         $city = PlaceName::label($value('city'));
         $district = PlaceName::district($value('neighborhood'), $city);
-        $kind = $this->kind($value('title')) ?? $fallbackKind;
+        $kind = $this->kind($value('property_type')) ?? $this->kind($value('title')) ?? $fallbackKind;
 
         $problem = match (true) {
             $city === '' => 'لا مدينة.',

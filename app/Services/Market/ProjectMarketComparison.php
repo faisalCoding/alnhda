@@ -67,7 +67,7 @@ class ProjectMarketComparison
         $districts = collect($this->places->districts($cityKey));
 
         $published = $this->types->kinds($cityKey);
-        $kinds = $published === [] ? MarketPlaces::USUAL_KINDS : $published;
+        $kinds = MarketPlaces::withListingKinds($published === [] ? MarketPlaces::USUAL_KINDS : $published);
 
         return [
             'city' => ['key' => $cityKey, 'label' => PlaceName::preferred($cityKey)],
@@ -91,7 +91,7 @@ class ProjectMarketComparison
      */
     public function kinds(string $cityKey): array
     {
-        return $this->types->kinds($cityKey) ?: MarketPlaces::USUAL_KINDS;
+        return MarketPlaces::withListingKinds($this->types->kinds($cityKey) ?: MarketPlaces::USUAL_KINDS);
     }
 
     /**

@@ -5,7 +5,7 @@
  */
 
 /** The kinds offered when the panel has not been able to ask for the market's. */
-export const USUAL_KINDS = ['شقة', 'فيلا', 'دور', 'دوبلكس', 'أرض', 'عمارة'];
+export const USUAL_KINDS = ['شقة', 'فيلا', 'دور', 'دوبلكس', 'أرض', 'عمارة', 'ملحق'];
 
 /** The label a list of `{ key, label }` choices gives a key, or nothing. */
 export function labelOf(choices, key) {

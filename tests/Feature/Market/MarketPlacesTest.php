@@ -65,7 +65,7 @@ it('offers the cities the deeds sold in, busiest first, and the kinds the market
             ['key' => 'الرياض', 'label' => 'الرياض', 'region' => 'الرياض'],
             ['key' => 'جده', 'label' => 'جدة', 'region' => 'مكة المكرمة'],
         ])
-        ->assertJsonPath('data.kinds', ['شقة', 'فيلا'])
+        ->assertJsonPath('data.kinds', ['شقة', 'فيلا', 'ملحق'])
         // No city asked for, no districts.
         ->assertJsonPath('data.districts', []);
 });
@@ -103,7 +103,7 @@ it('has only the usual kinds to offer before any market file has been uploaded',
         ->getJson(placesUrl('جدة'))
         ->assertJsonPath('data.cities', [])
         ->assertJsonPath('data.districts', [])
-        ->assertJsonPath('data.kinds', ['شقة', 'فيلا', 'دور', 'دوبلكس', 'أرض', 'عمارة']);
+        ->assertJsonPath('data.kinds', ['شقة', 'فيلا', 'دور', 'دوبلكس', 'أرض', 'عمارة', 'ملحق']);
 });
 
 it('places a new project in a city and district of the market and writes its location from them', function () {

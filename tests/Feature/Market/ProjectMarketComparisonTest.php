@@ -122,7 +122,7 @@ it('reads a unit against what its own kind of property sold for', function () {
     $this->actingAs($this->admin, 'admin')
         ->getJson(projectsUrl())
         ->assertJsonPath('data.has_type_figures', true)
-        ->assertJsonPath('data.kinds', ['شقة', 'فيلا'])
+        ->assertJsonPath('data.kinds', ['شقة', 'فيلا', 'ملحق'])
         ->assertJsonPath('data.projects.0.units.0.kind', 'شقة')
         ->assertJsonPath('data.projects.0.units.0.market.kind.scope', 'city')
         ->assertJsonPath('data.projects.0.units.0.market.kind.average', 3900)
@@ -211,7 +211,7 @@ it('offers the usual kinds before the authority\'s figures have been uploaded', 
     $this->actingAs($this->admin, 'admin')
         ->getJson(projectsUrl())
         ->assertJsonPath('data.has_type_figures', false)
-        ->assertJsonPath('data.kinds', ['شقة', 'فيلا', 'دور', 'دوبلكس', 'أرض', 'عمارة'])
+        ->assertJsonPath('data.kinds', ['شقة', 'فيلا', 'دور', 'دوبلكس', 'أرض', 'عمارة', 'ملحق'])
         ->assertJsonPath('data.projects.0.units.0.kind', 'شقة')
         ->assertJsonPath('data.projects.0.units.0.market.kind', null);
 
