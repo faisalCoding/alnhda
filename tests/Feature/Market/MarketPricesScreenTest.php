@@ -61,14 +61,14 @@ it('lays the screen out as a board of groups, each opened in place', function ()
         ->assertOk()
         ->getContent();
 
-    foreach (['kingdom' => 'المملكة', 'city' => 'المدينة وأحياؤها', 'deeds' => 'الصفقات الفردية', 'types' => 'حسب نوع العقار', 'units' => 'وحداتنا مقابل السوق', 'offers' => 'وحدات السوق المضافة يدويًا', 'files' => 'الملفات والتحديث'] as $group => $title) {
+    foreach (['kingdom' => 'المملكة', 'city' => 'المدينة وأحياؤها', 'deeds' => 'الصفقات الفردية', 'types' => 'حسب نوع العقار', 'units' => 'وحداتنا مقابل السوق', 'offers' => 'وحدات السوق المضافة يدويًا', 'competitors' => 'المنافسون', 'files' => 'الملفات والتحديث'] as $group => $title) {
         expect($html)->toContain("go('{$group}')")
             ->and($html)->toContain($title)
             ->and($html)->toContain("tileFigure('{$group}')");
     }
 
-    // Seven squares, each with its own icon, and one way back from any group.
-    expect(substr_count($html, 'aspect-square'))->toBe(7)
+    // Eight squares, each with its own icon, and one way back from any group.
+    expect(substr_count($html, 'aspect-square'))->toBe(8)
         ->and(substr_count($html, "@click=\"go('')\""))->toBe(1)
         // Every group's content is on this one page, shown by the group that is open.
         ->and($html)->toContain("x-show=\"view === 'kingdom'\"")
@@ -79,6 +79,9 @@ it('lays the screen out as a board of groups, each opened in place', function ()
         // The hand-entered units have a group of their own, not a corner of another.
         ->and($html)->toContain("x-show=\"view === 'offers'\"")
         ->and(substr_count($html, "view === 'offers'"))->toBe(1)
+        // So have the competitors chosen for each of our units.
+        ->and($html)->toContain("x-show=\"view === 'competitors'\"")
+        ->and($html)->toContain('togglePicker(unit)')
         ->and($html)->toContain("x-show=\"view === 'files'\"");
 });
 

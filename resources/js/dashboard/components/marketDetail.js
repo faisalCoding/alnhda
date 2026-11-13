@@ -161,6 +161,7 @@ export default function marketDetail() {
                 this.data?.deeds_available ? this.loadDeeds() : null,
                 this.loadProjects(),
                 this.loadOffers(),
+                this.loadCompetitors?.(),
             ]);
         },
 
@@ -361,7 +362,7 @@ export default function marketDetail() {
             try {
                 const payload = await uploadWithProgress('/api/market-prices/manual-units/import', form);
                 this.listingReport = payload?.data ?? null;
-                await Promise.all([this.loadOffers(), this.loadProjects()]);
+                await Promise.all([this.loadOffers(), this.loadProjects(), this.loadCompetitors?.()]);
             } catch (error) {
                 this.listingError = error.errors?.file?.[0] ?? error.errors?.kind?.[0] ?? error.message;
             }
@@ -451,7 +452,7 @@ export default function marketDetail() {
                 this.cancelOfferEdit();
                 this.offerForm = { ...this.offerForm, district, kind, observed_on };
 
-                await Promise.all([this.loadOffers(), this.loadProjects()]);
+                await Promise.all([this.loadOffers(), this.loadProjects(), this.loadCompetitors?.()]);
             } catch (error) {
                 this.offerErrors = error.errors ?? {};
                 this.offersError = error.errors ? '' : error.message;
@@ -474,7 +475,7 @@ export default function marketDetail() {
                     this.cancelOfferEdit();
                 }
 
-                await Promise.all([this.loadOffers(), this.loadProjects()]);
+                await Promise.all([this.loadOffers(), this.loadProjects(), this.loadCompetitors?.()]);
             } catch (error) {
                 this.offersError = error.message;
             }
@@ -500,6 +501,8 @@ export default function marketDetail() {
                     district: district || null,
                 });
                 this.projects = payload?.data ?? this.projects;
+                // A unit's kind is what its competitors are measured by too.
+                await this.loadCompetitors?.();
             } catch (error) {
                 this.projectsError = error.errors?.district?.[0] ?? error.message;
             }
@@ -518,6 +521,8 @@ export default function marketDetail() {
                     kind: kind || null,
                 });
                 this.projects = payload?.data ?? this.projects;
+                // A unit's kind is what its competitors are measured by too.
+                await this.loadCompetitors?.();
             } catch (error) {
                 this.projectsError = error.errors?.kind?.[0] ?? error.message;
             }

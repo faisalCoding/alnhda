@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\Api\ArticleController;
 use App\Http\Controllers\Admin\Api\ArticleFileController;
 use App\Http\Controllers\Admin\Api\BacklinkController;
 use App\Http\Controllers\Admin\Api\CollectionPageController;
+use App\Http\Controllers\Admin\Api\CompetitorController;
 use App\Http\Controllers\Admin\Api\DashboardController;
 use App\Http\Controllers\Admin\Api\HomeContentController;
 use App\Http\Controllers\Admin\Api\LawhatiCodeController;
@@ -97,6 +98,9 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::put('market-prices/projects/{project}', [MarketProjectController::class, 'update'])->name('market-prices.projects.update');
         Route::put('market-prices/units/{unit}', [MarketProjectController::class, 'updateUnit'])->name('market-prices.units.update');
         Route::get('market-prices/manual-units', [ManualMarketUnitController::class, 'index'])->name('market-prices.manual-units.index');
+        Route::get('market-prices/competitors', [CompetitorController::class, 'index'])->name('market-prices.competitors.index');
+        Route::post('market-prices/units/{unit}/competitors', [CompetitorController::class, 'store'])->name('market-prices.competitors.store');
+        Route::delete('market-prices/units/{unit}/competitors/{manualMarketUnit}', [CompetitorController::class, 'destroy'])->name('market-prices.competitors.destroy');
         Route::get('visitors', [VisitorController::class, 'index'])->name('visitors.index');
         Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
 

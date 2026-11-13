@@ -342,6 +342,10 @@ test('puts the figure each group is opened for on its square', () => {
     page.offers = { units: Array(44).fill({}), properties: 30 };
     assert.ok(page.tileFigure('offers').includes('إعلانًا'), 'a property listed twice is counted once');
 
+    assert.equal(page.tileFigure('competitors'), 'لم يُختر منافسون بعد');
+    page.competitors = { projects: [{ units: [{ competitors: [{}, {}] }, { competitors: [] }] }, { units: [{ competitors: [{}] }] }] };
+    assert.equal(page.tileFigure('competitors'), '٣ منافسًا لـ ٢ وحدة');
+
     // Two never uploaded, one replaced, one out of date, one of the authority's waiting.
     assert.equal(page.filesNeedingAttention, 5);
     assert.ok(page.tileFigure('files').includes('ينتظر'));

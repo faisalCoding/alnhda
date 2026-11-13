@@ -1,4 +1,5 @@
 import { request, uploadWithProgress } from '../api.js';
+import marketCompetitors from './marketCompetitors.js';
 import marketDetail from './marketDetail.js';
 
 const NUMBER = new Intl.NumberFormat('ar-SA');
@@ -24,6 +25,7 @@ export const GROUPS = {
     types: ['quarter', 'classification', 'city'],
     units: ['city'],
     offers: ['city'],
+    competitors: ['city'],
     files: [],
 };
 
@@ -35,6 +37,7 @@ export const GROUPS = {
 export default function marketPricesPage() {
     return {
         ...marketDetail(),
+        ...marketCompetitors(),
 
         loading: true,
         error: '',
@@ -137,6 +140,11 @@ export default function marketPricesPage() {
                     return properties === listings
                         ? `${this.number(listings)} وحدة مرصودة`
                         : `${this.number(properties)} عقارًا في ${this.number(listings)} إعلانًا`;
+                },
+                competitors: () => {
+                    const { units, links } = this.competitorCounts();
+
+                    return links ? `${this.number(links)} منافسًا لـ ${this.number(units)} وحدة` : 'لم يُختر منافسون بعد';
                 },
                 files: () =>
                     this.filesNeedingAttention

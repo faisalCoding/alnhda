@@ -6,6 +6,7 @@ use Database\Factories\ManualMarketUnitFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -121,6 +122,18 @@ class ManualMarketUnit extends Model
     public function isFresh(): bool
     {
         return $this->seenOn()?->greaterThanOrEqualTo(Carbon::today()->subMonths(self::FRESH_MONTHS)) ?? true;
+    }
+
+    /**
+     * The company's units this one was chosen to compete with.
+     *
+     * @return BelongsToMany<Properties, $this>
+     */
+    public function competingWith(): BelongsToMany
+    {
+        return $this->belongsToMany(Properties::class, 'property_competitors', 'manual_market_unit_id', 'properties_id')
+            ->withPivot('note')
+            ->withTimestamps();
     }
 
     /**

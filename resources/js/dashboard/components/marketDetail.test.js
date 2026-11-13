@@ -11,6 +11,7 @@ function page() {
     component.loadDeeds = async () => component.calls.deeds++;
     component.loadProjects = async () => component.calls.projects++;
     component.loadOffers = async () => {};
+    component.loadCompetitors = async () => {};
     component.city = 'جده';
 
     return component;

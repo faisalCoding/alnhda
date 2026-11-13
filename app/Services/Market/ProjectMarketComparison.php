@@ -134,23 +134,10 @@ class ProjectMarketComparison
      */
     private function unit(Properties $unit, Project $project, string $cityKey, ?string $district, array $kinds): array
     {
-        // The offer is what is actually being asked when there is one.
-        $price = (int) ($unit->offer ?: $unit->price);
-        [$kind, $kindSource] = $this->kind($unit, $project, $kinds);
-
-        // What the unit is measured by: its plot for a kind the market
-        // measures by land, when the plot is known; its own area otherwise.
-        $byLand = in_array($kind, self::LAND_KINDS, true);
-        $land = (float) $unit->land_area;
-        $area = $byLand && $land > 0 ? $land : (float) $unit->area;
-        $basis = match (true) {
-            ! $byLand => 'unit',
-            $land > 0 => 'land',
-            // A villa measured by what was built: its price per metre reads
-            // lower than the market's, which is per metre of plot.
-            default => 'unit_not_land',
-        };
-        $priced = $area > 0 && $price > 0;
+        [
+            'kind' => $kind, 'kind_source' => $kindSource, 'price' => $price, 'land' => $land,
+            'area' => $area, 'basis' => $basis, 'rate' => $rate,
+        ] = $this->measure($unit, $project, $kinds);
         $offers = $area > 0 && $kind !== null
             ? $this->similarOffers($cityKey, $district, $area, $kind)
             : ['near' => null, 'all' => null];
@@ -168,7 +155,7 @@ class ProjectMarketComparison
             'basis' => $basis,
             'basis_area' => $area > 0 ? $area : null,
             'price' => $price > 0 ? $price : null,
-            'rate' => $priced ? round($price / $area, 2) : null,
+            'rate' => $rate,
             'market' => [
                 'kind' => $kind === null ? null : $this->kindFigure($cityKey, $kind, $district),
                 'similar' => $area > 0 ? $this->similarDeeds($cityKey, $district, $area) : null,
@@ -176,6 +163,42 @@ class ProjectMarketComparison
                 'offers' => $offers['near'],
                 'offers_all' => $offers['all'],
             ],
+        ];
+    }
+
+    /**
+     * What a unit is and what it asks by the metre, measured the way the
+     * market measures that kind: its plot for a villa, a duplex or a plot
+     * when the plot is known, its own area otherwise. The same measure the
+     * report and the competitors page set a unit beside the market by.
+     *
+     * @param  list<string>  $kinds
+     * @return array{kind: string|null, kind_source: string|null, price: int, land: float, area: float, basis: string, rate: float|null}
+     */
+    public function measure(Properties $unit, Project $project, array $kinds): array
+    {
+        // The offer is what is actually being asked when there is one.
+        $price = (int) ($unit->offer ?: $unit->price);
+        [$kind, $kindSource] = $this->kind($unit, $project, $kinds);
+
+        $byLand = in_array($kind, self::LAND_KINDS, true);
+        $land = (float) $unit->land_area;
+        $area = $byLand && $land > 0 ? $land : (float) $unit->area;
+
+        return [
+            'kind' => $kind,
+            'kind_source' => $kindSource,
+            'price' => $price,
+            'land' => $land,
+            'area' => $area,
+            'basis' => match (true) {
+                ! $byLand => 'unit',
+                $land > 0 => 'land',
+                // A villa measured by what was built: its price per metre
+                // reads lower than the market's, which is per metre of plot.
+                default => 'unit_not_land',
+            },
+            'rate' => $area > 0 && $price > 0 ? round($price / $area, 2) : null,
         ];
     }
 
