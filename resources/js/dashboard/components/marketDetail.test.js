@@ -191,6 +191,37 @@ test('measures a unit against the reference chosen, and nothing where it cannot'
     assert.equal(component.gapReference, 'offers', 'a reference that does not exist changes nothing');
 });
 
+test('reads offers of about the unit size until told to read every size', () => {
+    const component = page();
+    const project = { district_label: 'المنار' };
+    const unit = {
+        rate: 4191,
+        market: {
+            kind: null,
+            similar: null,
+            offers: { scope: 'district', deals: 2, total: 17, median: 4506, area_from: 372, area_to: 558 },
+            offers_all: { scope: 'district', deals: 17, total: 17, median: 4938, area_from: null, area_to: null },
+        },
+    };
+
+    assert.equal(component.offersBySize, true, 'about the same size until turned off');
+    assert.equal(component.unitOffers(unit).median, 4506);
+    assert.ok(component.offersCaption(unit, project).includes('من'), 'two of seventeen, not just two');
+    assert.ok(component.offersCaption(unit, project).includes('م²'));
+
+    component.setGapReference('offers');
+    assert.equal(component.gap(unit), null, 'two properties are too few');
+
+    component.setOffersBySize(false);
+    assert.equal(component.unitOffers(unit).median, 4938);
+    assert.ok(component.offersCaption(unit, project).includes('كل المساحات'));
+    assert.ok(!component.offersCaption(unit, project).includes(' من '), 'all of them is not «17 of 17»');
+    assert.equal(component.gap(unit).direction, 'below');
+
+    assert.equal(component.offersCaption({ market: {} }, project), '');
+    assert.equal(component.unitOffers({}), null);
+});
+
 test('says why a unit has no gap', () => {
     const component = page();
     const market = (deals, average) => ({ kind: { deals, average }, similar: null, offers: { deals: 2, median: 4000 } });

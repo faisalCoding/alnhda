@@ -53,6 +53,11 @@ export const GAP_REFERENCES = {
     offers: { label: 'العروض المضافة يدويًا', figure: 'offers', value: 'median', minimum: 3 },
 };
 
+/** Whether offers are read of about the unit's own size; on unless turned off on this browser. */
+function storedOffersBySize() {
+    return load('market.offersBySize', true) !== false;
+}
+
 /** The reference chosen on this browser before, or the authority's average. */
 function storedGapReference() {
     const value = load('market.gapReference', 'kind');
@@ -112,6 +117,12 @@ export default function marketDetail() {
 
         /** What the «الفرق» column measures a unit against. */
         gapReference: storedGapReference(),
+
+        /**
+         * Whether a unit is set beside the offers of about its own size, or
+         * beside every offer of its kind in the place whatever its size.
+         */
+        offersBySize: storedOffersBySize(),
 
         /** A listings file being read, and what reading it did. */
         importingListings: false,
@@ -549,6 +560,38 @@ export default function marketDetail() {
             save('market.gapReference', reference);
         },
 
+        /** Reads offers of about the unit's own size, or of every size; kept on this browser. */
+        setOffersBySize(bySize) {
+            this.offersBySize = Boolean(bySize);
+            save('market.offersBySize', this.offersBySize);
+        },
+
+        /** The offers a unit is set beside, as the size option reads them. */
+        unitOffers(unit) {
+            return (this.offersBySize ? unit.market?.offers : unit.market?.offers_all) ?? null;
+        },
+
+        /**
+         * Under the offers figure: how many properties it is out of how many
+         * of the kind were entered there, and the sizes it was read between.
+         */
+        offersCaption(unit, project) {
+            const figure = this.unitOffers(unit);
+
+            if (!figure) {
+                return '';
+            }
+
+            const count = figure.total && figure.total !== figure.deals
+                ? `${NUMBER.format(figure.deals)} من ${NUMBER.format(figure.total)} وحدة`
+                : `${NUMBER.format(figure.deals)} وحدة`;
+            const sizes = figure.area_from
+                ? `${NUMBER.format(figure.area_from)}–${NUMBER.format(figure.area_to)} م²`
+                : 'كل المساحات';
+
+            return `${count} · ${sizes} · ${this.scopeNote(figure, project)}`;
+        },
+
         /** The reference the «الفرق» column measures against, in words. */
         gapLabel() {
             return GAP_REFERENCES[this.gapReference]?.label ?? '';
@@ -562,7 +605,7 @@ export default function marketDetail() {
          */
         gap(unit) {
             const reference = GAP_REFERENCES[this.gapReference] ?? GAP_REFERENCES.kind;
-            const market = unit.market?.[reference.figure];
+            const market = this.referenceFigure(unit, reference);
             const value = market?.[reference.value];
 
             if (!unit.rate || !value || (market.deals ?? 0) < reference.minimum) {
@@ -577,13 +620,18 @@ export default function marketDetail() {
             };
         },
 
+        /** The figure a reference reads off a unit; for offers, as the size option says. */
+        referenceFigure(unit, reference) {
+            return reference.figure === 'offers' ? this.unitOffers(unit) : unit.market?.[reference.figure];
+        },
+
         /**
          * Why a unit has no gap against the chosen reference, in a few words,
          * so an empty cell is not mistaken for «level with the market».
          */
         gapMissing(unit) {
             const reference = GAP_REFERENCES[this.gapReference] ?? GAP_REFERENCES.kind;
-            const market = unit.market?.[reference.figure];
+            const market = this.referenceFigure(unit, reference);
 
             if (!unit.rate) {
                 return 'لا سعر أو مساحة';

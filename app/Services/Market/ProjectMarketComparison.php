@@ -151,6 +151,9 @@ class ProjectMarketComparison
             default => 'unit_not_land',
         };
         $priced = $area > 0 && $price > 0;
+        $offers = $area > 0 && $kind !== null
+            ? $this->similarOffers($cityKey, $district, $area, $kind)
+            : ['near' => null, 'all' => null];
 
         return [
             'id' => $unit->id,
@@ -169,7 +172,9 @@ class ProjectMarketComparison
             'market' => [
                 'kind' => $kind === null ? null : $this->kindFigure($cityKey, $kind, $district),
                 'similar' => $area > 0 ? $this->similarDeeds($cityKey, $district, $area) : null,
-                'offers' => $area > 0 && $kind !== null ? $this->similarOffers($cityKey, $district, $area, $kind) : null,
+                // Of about the unit's own size, and of every size; the screen shows one.
+                'offers' => $offers['near'],
+                'offers_all' => $offers['all'],
             ],
         ];
     }
@@ -236,8 +241,12 @@ class ProjectMarketComparison
 
     /**
      * What the same kind of property is offered at: units entered by hand,
-     * of the unit's own kind and within a fifth of its size, seen recently
-     * enough to still mean something.
+     * of the unit's own kind, seen recently enough to still mean something.
+     *
+     * Read twice, and the screen chooses which to show: of about the unit's
+     * own size, within a fifth of it either way, and of every size. Both
+     * carry how many properties of the kind were entered there in all, so
+     * a figure from two of them says it is two of seventeen.
      *
      * When the project's district is known, only that district is read, even
      * when nothing like the unit was entered there: asking prices differ far
@@ -249,35 +258,42 @@ class ProjectMarketComparison
      * Without a kind there is nothing to read: a flat's asking price says
      * nothing about a villa's.
      *
-     * @return array<string, mixed>|null
+     * @return array{near: array<string, mixed>|null, all: array<string, mixed>|null}
      */
-    private function similarOffers(string $cityKey, ?string $district, float $area, string $kind): ?array
+    private function similarOffers(string $cityKey, ?string $district, float $area, string $kind): array
     {
-        $from = $area * (1 - self::AREA_MARGIN);
-        $to = $area * (1 + self::AREA_MARGIN);
+        $from = round($area * (1 - self::AREA_MARGIN));
+        $to = round($area * (1 + self::AREA_MARGIN));
 
-        return $this->found['offers|'.$kind.'|'.$area.'|'.$district] ??= (function () use ($cityKey, $district, $kind, $from, $to): ?array {
-            $figure = $this->offered($cityKey, $district, $kind, $from, $to);
+        $all = $this->found['offers|'.$kind.'|'.$district] ??= $this->offered($cityKey, $district, $kind);
+        $near = $this->found['offers|'.$kind.'|'.$area.'|'.$district] ??= $this->offered($cityKey, $district, $kind, $from, $to);
 
-            return $figure['deals'] > 0 ? ['scope' => $district === null ? 'city' : 'district'] + $figure : null;
-        })();
+        $describe = fn (array $figure, array $extra): ?array => $figure['deals'] > 0
+            ? ['scope' => $district === null ? 'city' : 'district'] + $figure + ['total' => $all['deals']] + $extra
+            : null;
+
+        return [
+            'near' => $describe($near, ['area_from' => $from, 'area_to' => $to]),
+            'all' => $describe($all, ['area_from' => null, 'area_to' => null]),
+        ];
     }
 
     /**
      * The middle asking price per metre of the hand-entered units in one
-     * place, each property once however many sites listed it. The count is
-     * called «deals» to read like the other figures.
+     * place, each property once however many sites listed it, of any size or
+     * between two. The count is called «deals» to read like the other
+     * figures.
      *
      * @return array{deals: int, lower: float|null, median: float|null, upper: float|null}
      */
-    private function offered(string $cityKey, ?string $district, string $kind, float $from, float $to): array
+    private function offered(string $cityKey, ?string $district, string $kind, ?float $from = null, ?float $to = null): array
     {
         $units = ManualMarketUnit::query()
             ->fresh()
             ->where('city_key', $cityKey)
             ->when($district !== null, fn ($query) => $query->where('district_key', $district))
             ->where('kind', $kind)
-            ->whereBetween('area', [$from, $to])
+            ->when($from !== null, fn ($query) => $query->whereBetween('area', [$from, $to]))
             ->get();
 
         $rates = ManualMarketUnit::oneEach($units)

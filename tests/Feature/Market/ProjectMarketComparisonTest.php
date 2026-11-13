@@ -463,6 +463,49 @@ it('sets what the same kind of property is offered at beside the deeds, not in t
         ->assertJsonPath('data.projects.0.units.0.market.offers.upper', 4500);
 });
 
+it('reads offers of about the unit\'s size and of every size, and says out of how many', function () {
+    $project = Project::factory()->create(['market_city_key' => 'جده', 'market_district_key' => 'المنار']);
+    // 465 m²: offers between 372 and 558 m² are about its size.
+    unit($project, 1950000, 465, type: 'فيلا');
+
+    ManualMarketUnit::factory()->offered('المنار', 405, 4000, kind: 'فيلا')->create();
+    ManualMarketUnit::factory()->offered('المنار', 405, 5000, kind: 'فيلا')->create();
+    ManualMarketUnit::factory()->offered('المنار', 360, 4500, kind: 'فيلا')->create();
+    ManualMarketUnit::factory()->offered('المنار', 650, 6000, kind: 'فيلا')->create();
+    ManualMarketUnit::factory()->offered('المنار', 875, 7000, kind: 'فيلا')->listed('aqar', '1')->create();
+    // The same villa on another site: one property, not two.
+    ManualMarketUnit::factory()->offered('المنار', 875, 7000, kind: 'فيلا')->listed('bayut', '2', group: 'aqar:1')->create();
+    ManualMarketUnit::query()->where('source_site', 'aqar')->update(['duplicate_group' => 'aqar:1']);
+    // Another district, and another kind: neither is counted.
+    ManualMarketUnit::factory()->offered('الأجواد', 450, 3000, kind: 'فيلا')->create();
+    ManualMarketUnit::factory()->offered('المنار', 450, 9000, kind: 'شقة')->create();
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(projectsUrl())
+        ->assertJsonPath('data.projects.0.units.0.market.offers.deals', 2)
+        ->assertJsonPath('data.projects.0.units.0.market.offers.median', 4500)
+        ->assertJsonPath('data.projects.0.units.0.market.offers.total', 5)
+        ->assertJsonPath('data.projects.0.units.0.market.offers.area_from', 372)
+        ->assertJsonPath('data.projects.0.units.0.market.offers.area_to', 558)
+        ->assertJsonPath('data.projects.0.units.0.market.offers_all.scope', 'district')
+        ->assertJsonPath('data.projects.0.units.0.market.offers_all.deals', 5)
+        ->assertJsonPath('data.projects.0.units.0.market.offers_all.total', 5)
+        ->assertJsonPath('data.projects.0.units.0.market.offers_all.median', 5000)
+        ->assertJsonPath('data.projects.0.units.0.market.offers_all.area_from', null);
+});
+
+it('has every-size offers for a unit with none of about its size', function () {
+    $project = Project::factory()->create(['market_city_key' => 'جده', 'market_district_key' => 'المنار']);
+    unit($project, 1950000, 465, type: 'فيلا');
+    ManualMarketUnit::factory()->offered('المنار', 875, 7000, kind: 'فيلا')->create();
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(projectsUrl())
+        ->assertJsonPath('data.projects.0.units.0.market.offers', null)
+        ->assertJsonPath('data.projects.0.units.0.market.offers_all.deals', 1)
+        ->assertJsonPath('data.projects.0.units.0.market.offers_all.median', 7000);
+});
+
 it('reads offers in the project district only, never mixed with other districts', function () {
     $project = Project::factory()->create(['market_city_key' => 'جده', 'market_district_key' => 'الصفا']);
     unit($project, 600000, 150, type: 'شقة');

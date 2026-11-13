@@ -302,6 +302,16 @@
                                         @endforeach
                                     </div>
                                 </div>
+                                {{-- Offers of about the unit's size, or every offer of its kind in the place --}}
+                                <label class="flex w-fit items-center gap-2 text-xs font-bold text-zinc-500">
+                                    <input type="checkbox" class="rounded border-zinc-300 text-primary-500"
+                                        :checked="offersBySize" @change="setOffersBySize($event.target.checked)">
+                                    عروض مماثلة: الوحدات القريبة من مساحة وحدتنا فقط (أقل أو أكثر بالخُمس)
+                                </label>
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400" x-show="!offersBySize" x-cloak>
+                                    تُقارَن كل وحدة بجميع العروض من نوعها في حيّها، أيًّا كانت مساحتها.
+                                </p>
+
                                 <p class="text-xs text-zinc-500 dark:text-zinc-400" x-show="gapReference === 'deeds'" x-cloak>
                                     صفقات الوزارة لا تميّز نوع العقار، فالمقارنة بها تجمع الأراضي والوحدات المبنية القريبة من المساحة نفسها.
                                 </p>
@@ -335,7 +345,8 @@
                                                     <th :class="gapReference === 'kind' && 'bg-primary-500/10'">متوسط السوق لنفس النوع</th>
                                                     <th>أدنى – أعلى (ر.س/م²)</th>
                                                     <th :class="gapReference === 'deeds' && 'bg-primary-500/10'">صفقات مماثلة بالمساحة</th>
-                                                    <th :class="gapReference === 'offers' && 'bg-primary-500/10'">عروض مماثلة</th>
+                                                    <th :class="gapReference === 'offers' && 'bg-primary-500/10'"
+                                                        x-text="offersBySize ? 'عروض مماثلة بالمساحة' : 'كل عروض النوع في الحي'">عروض مماثلة</th>
                                                     <th x-text="`الفرق عن ${gapLabel()}`">الفرق</th>
                                                 </tr>
                                             </thead>
@@ -402,9 +413,9 @@
                                                                     x-text="countCaption(unit.market.similar, project, 'صفقة')"></span>
                                                             </td>
                                                             <td :class="gapReference === 'offers' && 'bg-primary-500/5'">
-                                                                <span x-text="rate(unit.market.offers?.median)"></span>
-                                                                <span class="block text-[11px] text-zinc-400" x-show="unit.market.offers"
-                                                                    x-text="countCaption(unit.market.offers, project, 'وحدة')"></span>
+                                                                <span x-text="rate(unitOffers(unit)?.median)"></span>
+                                                                <span class="block text-[11px] text-zinc-400" x-show="unitOffers(unit)"
+                                                                    x-text="offersCaption(unit, project)"></span>
                                                             </td>
                                                             <td class="font-bold"
                                                                 :class="{ 'text-red-500': gap(unit)?.direction === 'above', 'text-primary-600 dark:text-primary-300': gap(unit)?.direction === 'below', 'text-zinc-400': !gap(unit) || gap(unit).direction === 'level' }">
