@@ -112,6 +112,13 @@ class ListingFileImporter
                         ? ManualMarketUnit::query()->firstOrNew(['source_site' => $attributes['source_site'], 'listing_id' => $attributes['listing_id']])
                         : new ManualMarketUnit;
 
+                    // A site does not always show every detail when a
+                    // listing is read again: an empty cell keeps what was
+                    // known of it rather than erasing it.
+                    if ($unit->exists) {
+                        $attributes = array_filter($attributes, fn (mixed $attribute): bool => $attribute !== null);
+                    }
+
                     $report[$unit->exists ? 'updated' : 'added']++;
                     $unit->fill($attributes)->save();
                     $cities[$attributes['city_key']] = true;

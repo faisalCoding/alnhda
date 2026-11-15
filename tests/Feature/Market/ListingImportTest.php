@@ -121,6 +121,29 @@ it('takes the kind it is given for a listing whose title does not say', function
     expect(ManualMarketUnit::query()->sole()->kind)->toBe('دوبلكس');
 });
 
+it('keeps what it knew of a listing when a cell is empty the next time, and takes what changed', function () {
+    $row = fn (string $price, string $bathrooms, string $age, string $years): string => "aqar,1,https://example.com/1,حي المنار,جدة,\"فيلا للبيع في حي المنار\",{$price},600,7,7,{$bathrooms},15,شرق,2026-10-28,2026-11-06,2026-11-12,,{$age},{$years}";
+    $importer = app(ListingFileImporter::class);
+
+    $importer->import(listingsFile([$row('3000000', '5', '8 سنوات', '8')]));
+    $report = $importer->import(listingsFile([$row('2600000', '', '', '')]));
+
+    $unit = ManualMarketUnit::query()->sole();
+
+    expect($report)->toMatchArray(['added' => 0, 'updated' => 1])
+        ->and($unit->price)->toBe(2600000)
+        ->and($unit->bathrooms)->toBe(5)
+        ->and($unit->property_age)->toBe('8 سنوات')
+        ->and($unit->property_age_years)->toBe(8);
+
+    // A new age is still taken, a new listing still starts from the file alone.
+    $importer->import(listingsFile([$row('2600000', '6', 'جديد', '0'), str_replace('aqar,1,', 'aqar,2,', $row('2000000', '', '', ''))]));
+
+    expect($unit->fresh()->property_age_years)->toBe(0)
+        ->and($unit->fresh()->bathrooms)->toBe(6)
+        ->and(ManualMarketUnit::query()->where('listing_id', '2')->sole()->property_age)->toBeNull();
+});
+
 it('updates a listing it has read before instead of adding it twice', function () {
     $importer = app(ListingFileImporter::class);
 
