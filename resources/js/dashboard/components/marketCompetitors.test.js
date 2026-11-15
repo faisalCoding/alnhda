@@ -52,6 +52,18 @@ test('leaves out what is already chosen and narrows by a search', () => {
     assert.deepEqual(component.candidates(unit, project).map((item) => item.id), [2]);
 });
 
+test('does not offer the company\'s own listings as competitors', () => {
+    const component = page(
+        [offer(1), offer(2, { own_property: true, advertiser: 'شركة كيان النهضة العقارية' }), offer(3, { advertiser: 'مؤسسة منارات' })],
+        [{ id: 2, district: 'منار' }],
+    );
+
+    assert.deepEqual(component.candidates(villa, project).map((item) => item.id), [1, 3]);
+
+    component.pickSearch = 'منارات';
+    assert.deepEqual(component.candidates(villa, project).map((item) => item.id), [3]);
+});
+
 test('does not narrow by a district or kind nobody knows', () => {
     const component = page([offer(1, { district_key: 'صفا', kind: 'شقة' })], [{ id: 2, district: null, guessed_district: null }]);
 

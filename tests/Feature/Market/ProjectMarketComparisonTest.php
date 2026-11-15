@@ -494,6 +494,39 @@ it('reads offers of about the unit\'s size and of every size, and says out of ho
         ->assertJsonPath('data.projects.0.units.0.market.offers_all.area_from', null);
 });
 
+it('leaves the company\'s own listings out of the offers, and every other listing of the same property', function () {
+    $project = Project::factory()->create(['market_city_key' => 'جده', 'market_district_key' => 'المنار']);
+    unit($project, 800000, 200, type: 'دور');
+
+    ManualMarketUnit::factory()->offered('المنار', 200, 3000, kind: 'دور')->create(['advertiser' => 'مؤسسة منارات للعقارات']);
+    ManualMarketUnit::factory()->offered('المنار', 200, 5000, kind: 'دور')->create(['advertiser' => null]);
+    // Ours, and the same floor listed again by a broker: neither is the market.
+    ManualMarketUnit::factory()->offered('المنار', 200, 4000, kind: 'دور')->listed('bayut', '1', group: 'bayut:1')
+        ->create(['advertiser' => 'شركة كيان النهضة العقارية']);
+    ManualMarketUnit::factory()->offered('المنار', 200, 4100, kind: 'دور')->listed('aqar', '2', group: 'bayut:1')
+        ->create(['advertiser' => 'فرد: سعيد']);
+    ManualMarketUnit::factory()->offered('المنار', 200, 4200, kind: 'دور')->create(['advertiser' => 'كيان النهضه']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(projectsUrl())
+        ->assertSuccessful()
+        ->assertJsonPath('data.has_offers', true)
+        ->assertJsonPath('data.projects.0.units.0.market.offers.deals', 2)
+        ->assertJsonPath('data.projects.0.units.0.market.offers.median', 4000)
+        ->assertJsonPath('data.projects.0.units.0.market.offers_all.total', 2);
+});
+
+it('has no offers to speak of when the only ones are the company\'s own', function () {
+    $project = Project::factory()->create(['market_city_key' => 'جده', 'market_district_key' => 'المنار']);
+    unit($project, 800000, 200, type: 'دور');
+    ManualMarketUnit::factory()->offered('المنار', 200, 4000, kind: 'دور')->create(['advertiser' => 'شركة كيان النهضة العقارية']);
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(projectsUrl())
+        ->assertJsonPath('data.has_offers', false)
+        ->assertJsonPath('data.projects.0.units.0.market.offers_all', null);
+});
+
 it('has every-size offers for a unit with none of about its size', function () {
     $project = Project::factory()->create(['market_city_key' => 'جده', 'market_district_key' => 'المنار']);
     unit($project, 1950000, 465, type: 'فيلا');

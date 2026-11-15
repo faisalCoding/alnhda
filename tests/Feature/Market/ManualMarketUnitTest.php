@@ -205,6 +205,26 @@ it('rejects a unit that cannot be compared', function (array $overrides, string 
     'a link that is not one' => [['source_url' => 'javascript:alert(1)'], 'source_url'],
 ]);
 
+it('lists the company\'s own listings, marked, and leaves them out of what the market asks', function () {
+    ManualMarketUnit::factory()->offered('الصفا', 100, 3000)->create(['advertiser' => 'فرد: عبدالعزيز']);
+    ManualMarketUnit::factory()->offered('الصفا', 100, 9000)->listed('bayut', '1', group: 'bayut:1')->create(['advertiser' => 'شركة كيان النهضة العقارية']);
+    ManualMarketUnit::factory()->offered('الصفا', 100, 9100)->listed('aqar', '2', group: 'bayut:1')->create(['advertiser' => 'مؤسسة منارات']);
+
+    $response = $this->actingAs($this->admin, 'admin')
+        ->getJson(manualUnitsUrl())
+        ->assertSuccessful()
+        ->assertJsonCount(3, 'data.units')
+        ->assertJsonPath('data.own', 2)
+        ->assertJsonPath('data.summary.0.units', 1)
+        ->assertJsonPath('data.summary.0.median', 3000);
+
+    $units = collect($response->json('data.units'))->keyBy('advertiser');
+
+    expect($units['شركة كيان النهضة العقارية'])->toMatchArray(['ours' => true, 'own_property' => true])
+        ->and($units['مؤسسة منارات'])->toMatchArray(['ours' => false, 'own_property' => true])
+        ->and($units['فرد: عبدالعزيز'])->toMatchArray(['ours' => false, 'own_property' => false]);
+});
+
 it('stores every field a listing has, the same as a listings file', function () {
     ManualMarketUnit::factory()->listed('haraj', '11184861505')->create();
 
@@ -222,6 +242,7 @@ it('stores every field a listing has, the same as a listings file', function () 
             'posted_on' => '2026-10-28',
             'listing_updated_on' => '2026-11-06',
             'duplicates' => 'haraj:11184861505',
+            'advertiser' => 'مؤسسة منارات للعقارات',
         ]))
         ->assertCreated()
         ->assertJsonPath('data.source_site', 'aqar')
@@ -236,6 +257,8 @@ it('stores every field a listing has, the same as a listings file', function () 
         ->assertJsonPath('data.posted_on', '2026-10-28')
         ->assertJsonPath('data.listing_updated_on', '2026-11-06')
         ->assertJsonPath('data.duplicates', 'haraj:11184861505')
+        ->assertJsonPath('data.advertiser', 'مؤسسة منارات للعقارات')
+        ->assertJsonPath('data.ours', false)
         // Said to repeat another listing: the two are one group.
         ->assertJsonPath('data.duplicate_group', 'aqar:6662806');
 });

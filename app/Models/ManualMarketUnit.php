@@ -47,13 +47,23 @@ class ManualMarketUnit extends Model
         'bayut' => 'بيوت',
         'haraj' => 'حراج',
         'propertyfinder' => 'بروبرتي فايندر',
+        'wasalt' => 'وصلت',
+        'deal' => 'ديل',
     ];
+
+    /**
+     * What the company's own name begins with in a listing's advertiser,
+     * however the brokerage wrote the rest: «شركة كيان النهضة العقارية»,
+     * «كيان النهضه». Its listings are the company's own units on the market.
+     */
+    public const OWN_ADVERTISER = 'كيان النهض';
 
     protected $fillable = [
         'name',
         'project_name',
         'source_site',
         'listing_id',
+        'advertiser',
         'city',
         'city_key',
         'district',
@@ -109,6 +119,50 @@ class ManualMarketUnit extends Model
         $query->where(fn (Builder $query) => $query
             ->whereDate('observed_on', '>=', $since)
             ->orWhere(fn (Builder $query) => $query->whereNull('observed_on')->whereDate('created_at', '>=', $since)));
+    }
+
+    /**
+     * The market without the company's own listings: no listing it placed,
+     * and no other listing of a property it placed, since a unit set beside
+     * its own listing is set beside itself.
+     *
+     * @param  Builder<ManualMarketUnit>  $query
+     */
+    public function scopeMarketOnly(Builder $query): void
+    {
+        $own = '%'.self::OWN_ADVERTISER.'%';
+
+        $query
+            ->where(fn (Builder $query) => $query->whereNull('advertiser')->orWhere('advertiser', 'not like', $own))
+            ->where(fn (Builder $query) => $query->whereNull('duplicate_group')->orWhereNotIn(
+                'duplicate_group',
+                self::query()->select('duplicate_group')->whereNotNull('duplicate_group')->where('advertiser', 'like', $own),
+            ));
+    }
+
+    /**
+     * Whether the company itself placed this listing.
+     */
+    public function isOurs(): bool
+    {
+        return filled($this->advertiser) && str_contains($this->advertiser, self::OWN_ADVERTISER);
+    }
+
+    /**
+     * The groups of listings, of those given, that are a property the
+     * company placed: one of its listings is the company's own.
+     *
+     * @param  Collection<int, ManualMarketUnit>  $units
+     * @return list<string>
+     */
+    public static function ownGroups(Collection $units): array
+    {
+        return $units
+            ->filter(fn (ManualMarketUnit $unit): bool => $unit->isOurs())
+            ->map(fn (ManualMarketUnit $unit): string => $unit->groupKey())
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**

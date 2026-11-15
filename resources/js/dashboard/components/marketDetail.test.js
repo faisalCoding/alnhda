@@ -287,7 +287,7 @@ test('names what a count is a count of', () => {
 test('opens the offer form with every column a listings file has', () => {
     const form = emptyOfferForm();
 
-    for (const field of ['source_site', 'listing_id', 'source_url', 'district', 'name', 'price', 'area', 'rooms', 'bedrooms',
+    for (const field of ['source_site', 'listing_id', 'advertiser', 'source_url', 'district', 'name', 'price', 'area', 'rooms', 'bedrooms',
         'bathrooms', 'street_width', 'facade', 'posted_on', 'listing_updated_on', 'observed_on', 'duplicates',
         'property_age', 'property_age_years']) {
         assert.ok(field in form, `the form has no ${field}`);

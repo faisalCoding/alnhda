@@ -60,7 +60,7 @@ export default function marketCompetitors() {
 
         /**
          * The market units a unit may be given as competitors: not already
-         * chosen, narrowed to its district and kind unless told otherwise,
+         * chosen, not the company's own, narrowed to its district and kind unless told otherwise,
          * and the nearest in size first.
          */
         candidates(unit, project) {
@@ -71,10 +71,12 @@ export default function marketCompetitors() {
 
             return (this.offers?.units ?? [])
                 .filter((offer) => !chosen.has(offer.id))
+                // The company's own listings are its own units, not competitors.
+                .filter((offer) => !offer.own_property)
                 .filter((offer) => !this.pickSameKind || !unit.kind || offer.kind === unit.kind)
                 .filter((offer) => !this.pickSameDistrict || !district || offer.district_key === district)
                 .filter((offer) => !term
-                    || [offer.label, offer.project_name, offer.district, offer.listing_id].some((field) => String(field ?? '').includes(term)))
+                    || [offer.label, offer.project_name, offer.district, offer.listing_id, offer.advertiser].some((field) => String(field ?? '').includes(term)))
                 .sort((a, b) => (size ? Math.abs(a.area - size) - Math.abs(b.area - size) : b.area - a.area))
                 .slice(0, CANDIDATE_LIMIT);
         },

@@ -65,7 +65,7 @@
                     {{-- The picker: market units of the same district and kind first, the nearest in size first --}}
                     <div x-show="pickingFor === unit.id" x-cloak class="space-y-3 rounded-xl bg-primary-500/5 p-3">
                         <div class="flex flex-wrap items-center gap-3">
-                            <input type="search" x-model="pickSearch" class="{{ $input }} max-w-xs" placeholder="ابحث بالعنوان أو الحي أو رقم الإعلان">
+                            <input type="search" x-model="pickSearch" class="{{ $input }} max-w-xs" placeholder="ابحث بالعنوان أو الحي أو رقم الإعلان أو المعلن">
                             <input type="text" x-model="pickNote" maxlength="500" class="{{ $input }} max-w-xs" placeholder="ملاحظة على المنافس (اختياري)">
                             <label class="flex items-center gap-2 text-xs font-bold text-zinc-500">
                                 <input type="checkbox" class="rounded border-zinc-300 text-primary-500" x-model="pickSameDistrict">
@@ -98,6 +98,7 @@
                                                 <span class="block truncate font-bold" x-text="offer.label"></span>
                                                 <span class="block text-[11px] text-zinc-400" dir="ltr" x-show="offer.site_label"
                                                     x-text="`${offer.site_label} · ${offer.listing_id ?? ''}`"></span>
+                                                <span class="block truncate text-[11px] text-zinc-400" x-show="offer.advertiser" x-text="offer.advertiser"></span>
                                             </td>
                                             <td x-text="offer.district"></td>
                                             <td x-text="offer.kind"></td>
@@ -147,6 +148,7 @@
                                             <span x-show="!competitor.source_url" class="block truncate font-bold" x-text="competitor.label"></span>
                                             <span class="block text-[11px] text-zinc-400" dir="ltr" x-show="competitor.site_label"
                                                 x-text="`${competitor.site_label} · ${competitor.listing_id ?? ''}`"></span>
+                                            <span class="block truncate text-[11px] text-zinc-400" x-show="competitor.advertiser" x-text="competitor.advertiser"></span>
                                             <span class="block text-[11px] font-bold text-amber-600" x-show="competitor.group_size > 1"
                                                 x-text="`نفس العقار في ${number(competitor.group_size)} إعلانات`"></span>
                                             <span class="block text-[11px] font-bold text-amber-600" x-show="!competitor.fresh">رُصد قبل أكثر من سنة</span>

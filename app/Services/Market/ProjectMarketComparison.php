@@ -74,7 +74,7 @@ class ProjectMarketComparison
             'districts' => $districts->all(),
             'kinds' => $kinds,
             'has_type_figures' => $published !== [],
-            'has_offers' => ManualMarketUnit::query()->where('city_key', $cityKey)->fresh()->exists(),
+            'has_offers' => ManualMarketUnit::query()->where('city_key', $cityKey)->fresh()->marketOnly()->exists(),
             'projects' => Project::query()
                 ->ordered()
                 ->with('properties')
@@ -303,7 +303,8 @@ class ProjectMarketComparison
 
     /**
      * The middle asking price per metre of the hand-entered units in one
-     * place, each property once however many sites listed it, of any size or
+     * place, the company's own listings left out, each property once however
+     * many sites listed it, of any size or
      * between two. The count is called «deals» to read like the other
      * figures.
      *
@@ -313,6 +314,7 @@ class ProjectMarketComparison
     {
         $units = ManualMarketUnit::query()
             ->fresh()
+            ->marketOnly()
             ->where('city_key', $cityKey)
             ->when($district !== null, fn ($query) => $query->where('district_key', $district))
             ->where('kind', $kind)

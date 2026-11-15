@@ -72,6 +72,7 @@ class StoreManualMarketUnitRequest extends FormRequest
                     ->where('source_site', $this->input('source_site'))
                     ->ignore($editing?->id),
             ],
+            'advertiser' => 'nullable|string|max:255',
             'rooms' => 'nullable|integer|min:0|max:200',
             'bedrooms' => 'nullable|integer|min:0|max:200',
             'bathrooms' => 'nullable|integer|min:0|max:200',

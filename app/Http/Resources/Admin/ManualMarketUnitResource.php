@@ -24,6 +24,11 @@ class ManualMarketUnitResource extends JsonResource
             'source_site' => $this->source_site,
             'site_label' => $this->siteLabel(),
             'listing_id' => $this->listing_id,
+            'advertiser' => $this->advertiser,
+            // Placed by the company itself, or a property it placed: listed,
+            // not compared with.
+            'ours' => $this->isOurs(),
+            'own_property' => (bool) ($this->own_property ?? $this->isOurs()),
             'city' => $this->city,
             'city_key' => $this->city_key,
             'district' => $this->district,

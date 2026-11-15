@@ -187,6 +187,12 @@
             <input id="offer-project" type="text" x-model="offerForm.project_name" class="{{ $input }}" placeholder="اختياري">
             <p class="mt-1 text-xs font-bold text-red-600" x-show="offerError('project_name')" x-text="offerError('project_name')"></p>
         </div>
+        <div>
+            <label class="mb-1 block text-xs font-bold text-zinc-500" for="offer-advertiser">المعلن</label>
+            <input id="offer-advertiser" type="text" x-model="offerForm.advertiser" class="{{ $input }}" placeholder="اختياري">
+            <p class="mt-1 text-xs text-zinc-400">إعلانات كيان النهضة تظهر في القائمة ولا تدخل في المقارنة.</p>
+            <p class="mt-1 text-xs font-bold text-red-600" x-show="offerError('advertiser')" x-text="offerError('advertiser')"></p>
+        </div>
 
         <div class="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-4">
             <button type="submit" class="{{ $primaryButton }}" :disabled="savingOffer"
@@ -198,7 +204,10 @@
     {{-- What the units still fresh enough to compare with ask, by kind --}}
     <div class="{{ $card }}" x-show="offers?.summary?.length" x-cloak>
         <h3 class="mb-1 font-extrabold">ما تطلبه السوق حسب النوع</h3>
-        <p class="mb-4 text-xs text-zinc-500 dark:text-zinc-400">كل عقار مرة واحدة مهما تكرر إعلانه، ومما رُصد خلال آخر سنة.</p>
+        <p class="mb-4 text-xs text-zinc-500 dark:text-zinc-400">
+            كل عقار مرة واحدة مهما تكرر إعلانه، ومما رُصد خلال آخر سنة.
+            <span x-show="offers?.own" x-text="`لا تدخل فيه إعلانات كيان النهضة (${number(offers?.own ?? 0)} إعلانًا).`"></span>
+        </p>
         <div class="sheet-wrap is-inset">
             <table class="sheet">
                 <thead>
@@ -236,6 +245,7 @@
                 <thead>
                     <tr>
                         <th>الإعلان</th>
+                        <th>المعلن</th>
                         <th>الحي</th>
                         <th>النوع</th>
                         <th>المساحة (م²)</th>
@@ -259,7 +269,10 @@
                                     x-show="unit.site_label" x-text="`${unit.site_label} · ${unit.listing_id ?? ''}`"></span>
                                 <span class="block text-[11px] font-bold text-amber-600" x-show="unit.group_size > 1"
                                     x-text="`نفس العقار في ${number(unit.group_size)} إعلانات · يُحسب مرة`"></span>
+                                <span class="block text-[11px] font-bold text-primary-600 dark:text-primary-300" x-show="unit.own_property"
+                                    x-text="unit.ours ? 'إعلاننا · لا يُقارَن به' : 'عقارنا بإعلان آخر · لا يُقارَن به'"></span>
                             </td>
+                            <td class="max-w-[10rem] truncate text-xs" :title="unit.advertiser ?? ''" x-text="unit.advertiser || '—'"></td>
                             <td x-text="unit.district"></td>
                             <td x-text="unit.kind"></td>
                             <td x-text="number(unit.area)"></td>

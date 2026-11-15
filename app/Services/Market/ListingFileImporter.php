@@ -16,8 +16,8 @@ use Throwable;
  * source_site, listing_id, url, neighborhood, city, title, price_sar, area_m2,
  * rooms, bedrooms, bathrooms, street_width_m, facade, posted_at, updated_at,
  * scraped_at, possible_cross_site_duplicate, property_age, property_age_years,
- * and optionally property_type, which says the kind when the title does not:
- * a site files a floor or a rooftop annex under «شقة».
+ * and optionally property_type, which says the kind when the title does not
+ * (a site files a floor or a rooftop annex under «شقة»), and advertiser.
  * A listing already entered — the same number on the same site — is updated,
  * so a file collected again next month refreshes the prices instead of
  * doubling them.
@@ -214,6 +214,7 @@ class ListingFileImporter
             'name' => $value('title') ?: null,
             'source_site' => $site !== '' ? $site : null,
             'listing_id' => $value('listing_id') ?: null,
+            'advertiser' => $value('advertiser') ?: null,
             'city' => $this->places->cityLabel($cityKey) ?? PlaceName::preferred($city),
             'city_key' => $cityKey,
             'district' => $this->places->districtLabel($cityKey, $districtKey) ?? $district,

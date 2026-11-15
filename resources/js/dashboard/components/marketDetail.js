@@ -18,6 +18,7 @@ export function emptyOfferForm() {
     return {
         source_site: '',
         listing_id: '',
+        advertiser: '',
         source_url: '',
         district: '',
         name: '',

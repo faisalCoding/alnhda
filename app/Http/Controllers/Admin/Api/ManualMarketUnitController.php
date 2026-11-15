@@ -48,13 +48,19 @@ class ManualMarketUnitController extends Controller
 
         // How many listings each one's property has, so a list can say so.
         $sizes = $units->countBy(fn (ManualMarketUnit $unit): string => $unit->groupKey());
-        $units->each(fn (ManualMarketUnit $unit) => $unit->setAttribute('group_size', $sizes[$unit->groupKey()]));
+        // And whether it is a property the company itself placed, which is
+        // listed but not compared with.
+        $own = ManualMarketUnit::ownGroups($units);
+        $units->each(fn (ManualMarketUnit $unit) => $unit
+            ->setAttribute('group_size', $sizes[$unit->groupKey()])
+            ->setAttribute('own_property', in_array($unit->groupKey(), $own, true)));
 
         return response()->json([
             'data' => [
                 'city' => ['key' => $cityKey, 'label' => $this->places->cityLabel($cityKey) ?? PlaceName::preferred($cityKey)],
                 'units' => ManualMarketUnitResource::collection($units)->resolve($request),
-                'summary' => $this->summary(ManualMarketUnit::oneEach($units->filter(fn (ManualMarketUnit $unit): bool => $unit->isFresh()))),
+                'summary' => $this->summary(ManualMarketUnit::oneEach($units->filter(fn (ManualMarketUnit $unit): bool => $unit->isFresh() && ! $unit->own_property))),
+                'own' => $units->where('own_property', true)->count(),
                 // Each property once, however many sites listed it.
                 'properties' => ManualMarketUnit::oneEach($units)->count(),
                 'stale' => $units->reject(fn (ManualMarketUnit $unit): bool => $unit->isFresh())->count(),
@@ -130,6 +136,7 @@ class ManualMarketUnitController extends Controller
             'project_name' => $validated['project_name'] ?? null,
             'source_site' => $validated['source_site'] ?? null,
             'listing_id' => $validated['listing_id'] ?? null,
+            'advertiser' => $validated['advertiser'] ?? null,
             'rooms' => $validated['rooms'] ?? null,
             'bedrooms' => $validated['bedrooms'] ?? null,
             'bathrooms' => $validated['bathrooms'] ?? null,
@@ -155,7 +162,8 @@ class ManualMarketUnitController extends Controller
 
     /**
      * What the units still fresh enough to compare with ask for each kind of
-     * property, busiest kind first.
+     * property, busiest kind first. The company's own listings are not among
+     * them.
      *
      * @param  Collection<int, ManualMarketUnit>  $units
      * @return list<array<string, mixed>>

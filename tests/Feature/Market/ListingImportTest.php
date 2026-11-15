@@ -115,6 +115,21 @@ it('takes the kind from the type column before the title', function () {
         ->and(ManualMarketUnit::query()->where('listing_id', '1')->sole()->price)->toBe(710000);
 });
 
+it('reads who placed each listing', function () {
+    $header = str_replace(',title,', ',title,property_type,advertiser,', LISTINGS_HEADER);
+    $row = fn (string $id, string $advertiser): string => "bayut,{$id},https://example.com/{$id},حي المنار,جدة,\"دور للبيع في المنار\",دور,{$advertiser},950000,202.5,5,,,,,2026-10-27,,2026-11-15,,جديد,0";
+
+    app(ListingFileImporter::class)->import(listingsFile([
+        $row('88169264', 'شركة كيان النهضة العقارية'),
+        $row('88169265', ''),
+    ], $header));
+
+    expect(ManualMarketUnit::query()->where('listing_id', '88169264')->sole())
+        ->advertiser->toBe('شركة كيان النهضة العقارية')
+        ->isOurs()->toBeTrue()
+        ->and(ManualMarketUnit::query()->where('listing_id', '88169265')->sole()->advertiser)->toBeNull();
+});
+
 it('takes the kind it is given for a listing whose title does not say', function () {
     app(ListingFileImporter::class)->import(listingsFile([listingRow('aqar', '1', title: 'عقار مميز للبيع')]), 'دوبلكس');
 
