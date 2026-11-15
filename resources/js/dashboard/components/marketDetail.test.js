@@ -389,3 +389,56 @@ test('lets go of a half-typed correction when the city changes', async () => {
 
     assert.equal(component.editingOffer, null, 'the unit being corrected belonged to the other city');
 });
+
+test('narrows the table of units by district and kind, and orders it by price or area', () => {
+    const component = page();
+    component.offers = {
+        units: [
+            { id: 1, district_key: 'المنار', district: 'المنار', kind: 'فيلا', price: 3000000, area: 600 },
+            { id: 2, district_key: 'السامر', district: 'السامر', kind: 'فيلا', price: 1800000, area: 600 },
+            { id: 3, district_key: 'المنار', district: 'المنار', kind: 'دور', price: 800000, area: 150 },
+            { id: 4, district_key: 'المنار', district: 'المنار', kind: 'فيلا', price: 1500000, area: 360 },
+        ],
+    };
+    const ids = () => component.shownOffers().map((unit) => unit.id);
+
+    assert.deepEqual(ids(), [1, 2, 3, 4], 'unfiltered, as the server ordered it');
+    assert.deepEqual(component.offerDistricts().map((item) => item.key), ['السامر', 'المنار']);
+    assert.deepEqual(component.offerKindsListed(), ['فيلا', 'دور']);
+
+    component.offerFilters = { district: 'المنار', kind: 'فيلا', sort: 'price_asc' };
+    assert.deepEqual(ids(), [4, 1]);
+
+    component.offerFilters.sort = 'price_desc';
+    assert.deepEqual(ids(), [1, 4]);
+
+    component.offerFilters = { district: '', kind: '', sort: 'area_asc' };
+    assert.deepEqual(ids(), [3, 4, 1, 2], 'a tie keeps the order it had');
+
+    component.offerFilters.sort = 'area_desc';
+    assert.deepEqual(ids(), [1, 2, 4, 3]);
+    assert.deepEqual(component.offers.units.map((unit) => unit.id), [1, 2, 3, 4], 'the units themselves are not reordered');
+});
+
+test('downloads what the table shows', () => {
+    const component = page();
+
+    assert.equal(component.offersExportUrl(), `/api/market-prices/manual-units/export?city=${encodeURIComponent('جده')}&sort=seen`);
+
+    component.offerFilters = { district: 'المنار', kind: 'فيلا', sort: 'price_asc' };
+    const query = new URLSearchParams(component.offersExportUrl().split('?')[1]);
+
+    assert.deepEqual(Object.fromEntries(query), { city: 'جده', district: 'المنار', kind: 'فيلا', sort: 'price_asc' });
+    assert.deepEqual(component.offerSortOptions().map(([key]) => key), ['seen', 'price_asc', 'price_desc', 'area_asc', 'area_desc']);
+});
+
+test('starts the table unfiltered for a new city but keeps its order', async () => {
+    const component = page();
+    component.data = { deeds_available: false };
+    component.offerFilters = { district: 'المنار', kind: 'فيلا', sort: 'area_desc' };
+
+    component.city = 'الرياض';
+    await component.refreshDetail();
+
+    assert.deepEqual(component.offerFilters, { district: '', kind: '', sort: 'area_desc' });
+});

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Api;
 
 use App\Exceptions\UnreadableSalesFile;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ExportManualMarketUnitsRequest;
 use App\Http\Requests\Admin\ImportMarketListingsRequest;
 use App\Http\Requests\Admin\StoreManualMarketUnitRequest;
 use App\Http\Requests\Admin\UpdateManualMarketUnitRequest;
@@ -11,6 +12,7 @@ use App\Http\Resources\Admin\ManualMarketUnitResource;
 use App\Models\ManualMarketUnit;
 use App\Services\Market\ListingDuplicates;
 use App\Services\Market\ListingFileImporter;
+use App\Services\Market\ListingsWorkbook;
 use App\Services\Market\MarketPlaces;
 use App\Services\Market\PlaceName;
 use App\Services\Market\Quantiles;
@@ -19,6 +21,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Units an admin saw offered on the market and entered by hand, for the
@@ -26,6 +29,47 @@ use Illuminate\Validation\ValidationException;
  */
 class ManualMarketUnitController extends Controller
 {
+    /**
+     * What each order is called in a download's title.
+     *
+     * @var array<string, string>
+     */
+    private const SORT_LABELS = [
+        'seen' => 'الأحدث رصدًا أولًا',
+        'price_asc' => 'السعر من الأقل',
+        'price_desc' => 'السعر من الأعلى',
+        'area_asc' => 'المساحة من الأصغر',
+        'area_desc' => 'المساحة من الأكبر',
+    ];
+
+    /**
+     * The columns of a download, in the order the table reads.
+     *
+     * @var list<array{label: string, type: string, width: int}>
+     */
+    private const EXPORT_COLUMNS = [
+        ['label' => '#', 'type' => 'number', 'width' => 6],
+        ['label' => 'الإعلان', 'type' => 'text', 'width' => 42],
+        ['label' => 'النوع', 'type' => 'text', 'width' => 10],
+        ['label' => 'الحي', 'type' => 'text', 'width' => 12],
+        ['label' => 'السعر (ر.س)', 'type' => 'money', 'width' => 14],
+        ['label' => 'المساحة (م²)', 'type' => 'number', 'width' => 12],
+        ['label' => 'سعر المتر (ر.س)', 'type' => 'money', 'width' => 14],
+        ['label' => 'الغرف', 'type' => 'number', 'width' => 8],
+        ['label' => 'دورات المياه', 'type' => 'number', 'width' => 11],
+        ['label' => 'العمر', 'type' => 'text', 'width' => 22],
+        ['label' => 'عرض الشارع (م)', 'type' => 'text', 'width' => 12],
+        ['label' => 'الواجهة', 'type' => 'text', 'width' => 13],
+        ['label' => 'المعلن', 'type' => 'text', 'width' => 28],
+        ['label' => 'المنصة', 'type' => 'text', 'width' => 12],
+        ['label' => 'رقم الإعلان', 'type' => 'text', 'width' => 14],
+        ['label' => 'تاريخ النشر', 'type' => 'date', 'width' => 12],
+        ['label' => 'آخر تحديث', 'type' => 'date', 'width' => 12],
+        ['label' => 'تاريخ الرصد', 'type' => 'date', 'width' => 12],
+        ['label' => 'ملاحظات', 'type' => 'text', 'width' => 30],
+        ['label' => 'رابط الإعلان', 'type' => 'link', 'width' => 60],
+    ];
+
     public function __construct(
         private readonly MarketPlaces $places,
         private readonly ListingDuplicates $duplicates,
@@ -37,23 +81,8 @@ class ManualMarketUnitController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $city = $request->query('city');
-        $cityKey = PlaceName::key(is_string($city) && $city !== '' ? $city : SalesImporter::DETAILED_CITIES[0]);
-
-        $units = ManualMarketUnit::query()
-            ->where('city_key', $cityKey)
-            ->get()
-            ->sortByDesc(fn (ManualMarketUnit $unit): string => $unit->seenOn()?->toDateString().sprintf('%010d', $unit->id))
-            ->values();
-
-        // How many listings each one's property has, so a list can say so.
-        $sizes = $units->countBy(fn (ManualMarketUnit $unit): string => $unit->groupKey());
-        // And whether it is a property the company itself placed, which is
-        // listed but not compared with.
-        $own = ManualMarketUnit::ownGroups($units);
-        $units->each(fn (ManualMarketUnit $unit) => $unit
-            ->setAttribute('group_size', $sizes[$unit->groupKey()])
-            ->setAttribute('own_property', in_array($unit->groupKey(), $own, true)));
+        $cityKey = $this->cityKey($request->query('city'));
+        $units = $this->cityUnits($cityKey);
 
         return response()->json([
             'data' => [
@@ -69,6 +98,73 @@ class ManualMarketUnitController extends Controller
                 'kinds' => $this->places->kinds(),
             ],
         ]);
+    }
+
+    /**
+     * The units of a city as an Excel workbook, narrowed and ordered the way
+     * the table on the screen is.
+     */
+    public function export(ExportManualMarketUnitsRequest $request, ListingsWorkbook $workbook): BinaryFileResponse
+    {
+        $cityKey = $this->cityKey($request->validated('city'));
+        $city = $this->places->cityLabel($cityKey) ?? PlaceName::preferred($cityKey);
+        $district = $request->validated('district');
+        $kind = $request->validated('kind');
+        $sort = $request->validated('sort') ?? 'seen';
+
+        $units = $this->cityUnits($cityKey)
+            ->when(filled($district), fn (Collection $units) => $units->where('district_key', PlaceName::key((string) $district)))
+            ->when(filled($kind), fn (Collection $units) => $units->where('kind', $kind))
+            ->values();
+
+        $units = match ($sort) {
+            'price_asc' => $units->sortBy('price'),
+            'price_desc' => $units->sortByDesc('price'),
+            'area_asc' => $units->sortBy('area'),
+            'area_desc' => $units->sortByDesc('area'),
+            default => $units,
+        };
+
+        $title = collect([
+            'وحدات السوق المضافة يدويًا — '.$city,
+            filled($district) ? ($units->first()?->district ?? $district) : null,
+            $kind,
+            self::SORT_LABELS[$sort],
+            $units->count().' إعلانًا',
+            'حتى '.now()->toDateString(),
+        ])->filter()->implode(' · ');
+
+        $path = tempnam(sys_get_temp_dir(), 'listings').'.xlsx';
+
+        $workbook->write($path, 'وحدات السوق', $title, self::EXPORT_COLUMNS, $units->values()->map(fn (ManualMarketUnit $unit, int $index): array => [
+            'marked' => (bool) $unit->own_property,
+            'cells' => [
+                $index + 1,
+                $unit->label(),
+                $unit->kind,
+                $unit->district,
+                $unit->price,
+                $unit->area,
+                $unit->price_per_meter,
+                $unit->bedrooms ?? $unit->rooms,
+                $unit->bathrooms,
+                $unit->property_age ?? ($unit->property_age_years === null ? null : ($unit->property_age_years === 0 ? 'جديد' : $unit->property_age_years.' سنة')),
+                $unit->street_width,
+                $unit->facade,
+                $unit->advertiser,
+                $unit->siteLabel(),
+                $unit->listing_id,
+                $unit->posted_on?->toDateString(),
+                $unit->listing_updated_on?->toDateString(),
+                $unit->seenOn()?->toDateString(),
+                $this->exportNote($unit),
+                ['url' => $unit->source_url, 'text' => $unit->source_url],
+            ],
+        ]));
+
+        $name = 'وحدات-السوق-'.$city.'-'.now()->toDateString().'.xlsx';
+
+        return response()->download($path, $name, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])->deleteFileAfterSend();
     }
 
     public function store(StoreManualMarketUnitRequest $request): JsonResponse
@@ -113,6 +209,48 @@ class ManualMarketUnitController extends Controller
         $this->duplicates->regroup([$manualMarketUnit->city_key]);
 
         return response()->json(['data' => ['id' => $id, 'deleted' => true]]);
+    }
+
+    private function cityKey(mixed $city): string
+    {
+        return PlaceName::key(is_string($city) && $city !== '' ? $city : SalesImporter::DETAILED_CITIES[0]);
+    }
+
+    /**
+     * The units entered for a city, newest seen first, each knowing how many
+     * listings its property has and whether the company itself placed it.
+     *
+     * @return Collection<int, ManualMarketUnit>
+     */
+    private function cityUnits(string $cityKey): Collection
+    {
+        $units = ManualMarketUnit::query()
+            ->where('city_key', $cityKey)
+            ->get()
+            ->sortByDesc(fn (ManualMarketUnit $unit): string => $unit->seenOn()?->toDateString().sprintf('%010d', $unit->id))
+            ->values();
+
+        // How many listings each one's property has, so a list can say so,
+        // and whether it is a property the company itself placed, which is
+        // listed but not compared with.
+        $sizes = $units->countBy(fn (ManualMarketUnit $unit): string => $unit->groupKey());
+        $own = ManualMarketUnit::ownGroups($units);
+
+        return $units->each(fn (ManualMarketUnit $unit) => $unit
+            ->setAttribute('group_size', $sizes[$unit->groupKey()])
+            ->setAttribute('own_property', in_array($unit->groupKey(), $own, true)));
+    }
+
+    /**
+     * What the last column of a download says about a unit, in a few words.
+     */
+    private function exportNote(ManualMarketUnit $unit): ?string
+    {
+        return collect([
+            $unit->isOurs() ? 'إعلاننا، لا يُقارَن به' : ($unit->own_property ? 'عقارنا بإعلان آخر، لا يُقارَن به' : null),
+            $unit->group_size > 1 ? 'نفس العقار في '.$unit->group_size.' إعلانات' : null,
+            $unit->isFresh() ? null : 'رُصد قبل أكثر من سنة، لا يُقارَن به',
+        ])->filter()->implode(' · ') ?: null;
     }
 
     /**

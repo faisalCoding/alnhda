@@ -7,6 +7,7 @@ use App\Models\MarketPriceStat;
 use App\Models\MarketQuarter;
 use App\Models\MarketTypeStat;
 use App\Services\Market\ListingDuplicates;
+use Illuminate\Testing\TestResponse;
 
 beforeEach(function () {
     $this->admin = Admin::factory()->create();
@@ -345,4 +346,100 @@ it('deletes a unit an admin entered', function () {
         ->assertJsonPath('data.id', $unit->id);
 
     expect(ManualMarketUnit::query()->count())->toBe(0);
+});
+
+/**
+ * The parts of a downloaded workbook: its sheet, its link targets and its
+ * workbook part, as text.
+ *
+ * @return array{sheet: string, links: string, workbook: string}
+ */
+function workbookParts(TestResponse $response): array
+{
+    $path = tempnam(sys_get_temp_dir(), 'xlsx');
+    file_put_contents($path, file_get_contents($response->baseResponse->getFile()->getPathname()));
+
+    $zip = new ZipArchive;
+    $zip->open($path);
+    $parts = [
+        'sheet' => (string) $zip->getFromName('xl/worksheets/sheet1.xml'),
+        'links' => (string) $zip->getFromName('xl/worksheets/_rels/sheet1.xml.rels'),
+        'workbook' => (string) $zip->getFromName('xl/workbook.xml'),
+        'styles' => (string) $zip->getFromName('xl/styles.xml'),
+    ];
+    $zip->close();
+    unlink($path);
+
+    return $parts;
+}
+
+it('downloads the units as an Excel workbook, narrowed and ordered like the table', function () {
+    ManualMarketUnit::factory()->offered('المنار', 400, 5000, kind: 'فيلا')->listed('aqar', '1')
+        ->create(['name' => 'فيلا الوسط', 'source_url' => 'https://sa.aqar.fm/فلل-للبيع/1', 'posted_on' => '2026-10-27', 'advertiser' => 'مؤسسة منارات']);
+    ManualMarketUnit::factory()->offered('المنار', 600, 3000, kind: 'فيلا')->create(['name' => 'فيلا الأرخص']);
+    ManualMarketUnit::factory()->offered('المنار', 300, 9000, kind: 'فيلا')->create(['name' => 'فيلا الأغلى', 'advertiser' => 'شركة كيان النهضة العقارية']);
+    // Another district, and another kind: left out.
+    ManualMarketUnit::factory()->offered('السامر', 400, 1000, kind: 'فيلا')->create(['name' => 'فيلا السامر']);
+    ManualMarketUnit::factory()->offered('المنار', 200, 1000, kind: 'دور')->create(['name' => 'دور المنار']);
+
+    $response = $this->actingAs($this->admin, 'admin')
+        ->get(manualUnitsUrl('/export?'.http_build_query(['city' => 'جدة', 'district' => 'المنار', 'kind' => 'فيلا', 'sort' => 'price_asc'])))
+        ->assertOk()
+        ->assertDownload()
+        ->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    $parts = workbookParts($response);
+
+    // Cheapest first, the other district and kind left out.
+    expect(strpos($parts['sheet'], 'فيلا الأرخص'))->toBeLessThan(strpos($parts['sheet'], 'فيلا الوسط'))
+        ->and(strpos($parts['sheet'], 'فيلا الوسط'))->toBeLessThan(strpos($parts['sheet'], 'فيلا الأغلى'))
+        ->and($parts['sheet'])->not->toContain('فيلا السامر')
+        ->and($parts['sheet'])->not->toContain('دور المنار')
+        // Read right to left, a header, a title saying what it holds, filters on the header.
+        ->and($parts['sheet'])->toContain('rightToLeft="1"')
+        ->and($parts['sheet'])->toContain('السعر (ر.س)')
+        ->and($parts['sheet'])->toContain('المعلن')
+        ->and($parts['sheet'])->toContain('مؤسسة منارات')
+        ->and($parts['sheet'])->toContain('السعر من الأقل')
+        ->and($parts['sheet'])->toContain('3 إعلانًا')
+        ->and($parts['sheet'])->toContain('<autoFilter ref="A2:T5"/>')
+        // Money as a number, a day as a day: 2026-10-27 is day 46322.
+        ->and($parts['sheet'])->toContain('<v>2000000</v>')
+        ->and($parts['sheet'])->toContain('<v>46322</v>')
+        // The company's own listing is shaded and says why.
+        ->and($parts['sheet'])->toContain('إعلاننا، لا يُقارَن به')
+        // A link that opens, its Arabic written out.
+        ->and($parts['links'])->toContain('https://sa.aqar.fm/%D9%81%D9%84%D9%84-%D9%84%D9%84%D8%A8%D9%8A%D8%B9/1')
+        ->and($parts['sheet'])->toContain('<hyperlink ref="T4" r:id="rId1"/>')
+        ->and($parts['workbook'])->toContain('وحدات السوق')
+        // Gregorian days even where the reader's Arabic settings would show Hijri.
+        ->and($parts['styles'])->toContain('formatCode="[$-409]yyyy-mm-dd"');
+});
+
+it('downloads every unit of the city, newest seen first, when nothing narrows it', function () {
+    ManualMarketUnit::factory()->offered('المنار', 400, 5000, kind: 'فيلا')->create(['name' => 'رُصد أولًا', 'observed_on' => now()->subDays(5)]);
+    ManualMarketUnit::factory()->offered('السامر', 200, 4000, kind: 'ملحق')->create(['name' => 'رُصد أخيرًا', 'observed_on' => now()->subDay()]);
+
+    $parts = workbookParts($this->actingAs($this->admin, 'admin')->get(manualUnitsUrl('/export'))->assertOk());
+
+    expect(strpos($parts['sheet'], 'رُصد أخيرًا'))->toBeLessThan(strpos($parts['sheet'], 'رُصد أولًا'))
+        ->and($parts['sheet'])->toContain('<autoFilter ref="A2:T4"/>')
+        ->and($parts['links'])->not->toContain('hyperlink"');
+});
+
+it('downloads an empty table as a workbook with its header', function () {
+    $parts = workbookParts($this->actingAs($this->admin, 'admin')->get(manualUnitsUrl('/export?'.http_build_query(['kind' => 'أرض'])))->assertOk());
+
+    expect($parts['sheet'])->toContain('رابط الإعلان')
+        ->and($parts['sheet'])->toContain('<autoFilter ref="A2:T2"/>');
+});
+
+it('keeps the download away from guests and refuses an order it does not know', function () {
+    $this->get(manualUnitsUrl('/export'))->assertRedirect();
+    $this->getJson(manualUnitsUrl('/export'))->assertUnauthorized();
+
+    $this->actingAs($this->admin, 'admin')
+        ->getJson(manualUnitsUrl('/export?sort=cheapest'))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('sort');
 });

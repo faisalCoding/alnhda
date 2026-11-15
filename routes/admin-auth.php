@@ -98,6 +98,7 @@ Route::prefix('api')->name('panel.api.')->group(function () {
         Route::put('market-prices/projects/{project}', [MarketProjectController::class, 'update'])->name('market-prices.projects.update');
         Route::put('market-prices/units/{unit}', [MarketProjectController::class, 'updateUnit'])->name('market-prices.units.update');
         Route::get('market-prices/manual-units', [ManualMarketUnitController::class, 'index'])->name('market-prices.manual-units.index');
+        Route::get('market-prices/manual-units/export', [ManualMarketUnitController::class, 'export'])->name('market-prices.manual-units.export');
         Route::get('market-prices/competitors', [CompetitorController::class, 'index'])->name('market-prices.competitors.index');
         Route::post('market-prices/units/{unit}/competitors', [CompetitorController::class, 'store'])->name('market-prices.competitors.store');
         Route::delete('market-prices/units/{unit}/competitors/{manualMarketUnit}', [CompetitorController::class, 'destroy'])->name('market-prices.competitors.destroy');

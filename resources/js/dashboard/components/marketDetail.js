@@ -69,6 +69,23 @@ function storedGapReference() {
 /** The fields of the offer form, as the form names them. */
 const OFFER_FIELDS = Object.keys(emptyOfferForm());
 
+/** The table of units unfiltered, newest seen first. */
+export function emptyOfferFilters() {
+    return { district: '', kind: '', sort: 'seen' };
+}
+
+/**
+ * The orders the table of units can be put in. The server puts a download in
+ * the same ones, under the same names.
+ */
+export const OFFER_SORTS = {
+    seen: { label: 'الأحدث رصدًا', compare: null },
+    price_asc: { label: 'السعر: من الأقل للأعلى', compare: (a, b) => a.price - b.price },
+    price_desc: { label: 'السعر: من الأعلى للأقل', compare: (a, b) => b.price - a.price },
+    area_asc: { label: 'المساحة: من الأصغر للأكبر', compare: (a, b) => a.area - b.area },
+    area_desc: { label: 'المساحة: من الأكبر للأصغر', compare: (a, b) => b.area - a.area },
+};
+
 const NUMBER = new Intl.NumberFormat('ar-SA');
 const DECIMAL = new Intl.NumberFormat('ar-SA', { maximumFractionDigits: 1 });
 
@@ -112,6 +129,9 @@ export default function marketDetail() {
         offersError: '',
         offerErrors: {},
         offerForm: emptyOfferForm(),
+        /** What the table of units is narrowed to and ordered by; the download follows it. */
+        offerFilters: emptyOfferFilters(),
+
         /** The unit the form is correcting; null while it is adding a new one. */
         editingOffer: null,
         savingOffer: false,
@@ -153,6 +173,8 @@ export default function marketDetail() {
             this.detailKey = key;
             this.deedFilters = { ...emptyDeedFilters(), quarters: this.deedFilters.quarters };
             this.cancelOfferEdit();
+            // Another city has other districts: the table starts unfiltered.
+            this.offerFilters = { ...emptyOfferFilters(), sort: this.offerFilters.sort };
 
             if (!this.data?.deeds_available) {
                 this.deeds = null;
@@ -392,6 +414,54 @@ export default function marketDetail() {
             );
 
             return [`${parts.join('، ')}.`, ...totals.map((total) => `${total}.`)].join(' ');
+        },
+
+        /** The districts the units entered for the city are in, for the table's filter. */
+        offerDistricts() {
+            const seen = new Map();
+
+            for (const unit of this.offers?.units ?? []) {
+                seen.set(unit.district_key, unit.district);
+            }
+
+            return [...seen].map(([key, label]) => ({ key, label })).sort((a, b) => a.label.localeCompare(b.label, 'ar'));
+        },
+
+        /** The kinds the units entered for the city are, for the table's filter. */
+        offerKindsListed() {
+            return [...new Set((this.offers?.units ?? []).map((unit) => unit.kind))];
+        },
+
+        /**
+         * The units the table shows: in the district and of the kind chosen,
+         * in the order chosen. An order that ties keeps the newest seen first.
+         */
+        shownOffers() {
+            const { district, kind, sort } = this.offerFilters;
+            const order = OFFER_SORTS[sort]?.compare;
+            const units = (this.offers?.units ?? [])
+                .filter((unit) => !district || unit.district_key === district)
+                .filter((unit) => !kind || unit.kind === kind);
+
+            return order ? [...units].sort(order) : units;
+        },
+
+        /** The orders the table can be put in, as `[key, label]` pairs. */
+        offerSortOptions() {
+            return Object.entries(OFFER_SORTS).map(([key, sort]) => [key, sort.label]);
+        },
+
+        /** The download of what the table is showing, as an Excel workbook. */
+        offersExportUrl() {
+            const query = new URLSearchParams({ city: this.detailCity() });
+
+            for (const [name, value] of Object.entries(this.offerFilters)) {
+                if (value) {
+                    query.set(name, value);
+                }
+            }
+
+            return `/api/market-prices/manual-units/export?${query}`;
         },
 
         /** A unit's rooms, bathrooms and age, in a few words. */

@@ -240,6 +240,42 @@
             <p class="text-xs text-zinc-500 dark:text-zinc-400"
                 x-text="`${number(offers?.units?.length ?? 0)} إعلانًا لـ ${number(offers?.properties ?? 0)} عقارًا`"></p>
         </div>
+
+        {{-- Narrow and order the table; the download takes what the table shows --}}
+        <div class="mb-4 flex flex-wrap items-center gap-3">
+            <select x-model="offerFilters.district" class="{{ $select }}" aria-label="الحي">
+                <option value="">كل الأحياء</option>
+                <template x-for="item in offerDistricts()" :key="item.key">
+                    <option :value="item.key" :selected="item.key === offerFilters.district" x-text="item.label"></option>
+                </template>
+            </select>
+            <select x-model="offerFilters.kind" class="{{ $select }}" aria-label="نوع الوحدة">
+                <option value="">كل الأنواع</option>
+                <template x-for="kind in offerKindsListed()" :key="kind">
+                    <option :value="kind" :selected="kind === offerFilters.kind" x-text="kind"></option>
+                </template>
+            </select>
+            <label class="flex items-center gap-2 text-xs font-bold text-zinc-500">
+                ترتيب حسب
+                <select x-model="offerFilters.sort" class="{{ $select }}">
+                    <template x-for="[key, label] in offerSortOptions()" :key="key">
+                        <option :value="key" :selected="key === offerFilters.sort" x-text="label"></option>
+                    </template>
+                </select>
+            </label>
+            <button type="button" class="text-xs font-bold text-primary-600 hover:underline dark:text-primary-300"
+                x-show="offerFilters.district || offerFilters.kind" x-cloak
+                @click="offerFilters = { ...offerFilters, district: '', kind: '' }">إلغاء التصفية</button>
+
+            <a :href="offersExportUrl()" class="{{ $ghostButton }} mr-auto" download>
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                تحميل Excel
+            </a>
+        </div>
+        <p class="mb-3 text-xs text-zinc-500 dark:text-zinc-400" x-show="offerFilters.district || offerFilters.kind" x-cloak
+            x-text="`يظهر ${number(shownOffers().length)} من ${number(offers?.units?.length ?? 0)} إعلانًا.`"></p>
         <div class="sheet-wrap is-inset">
             <table class="sheet">
                 <thead>
@@ -259,7 +295,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <template x-for="unit in (offers?.units ?? [])" :key="unit.id">
+                    <template x-for="unit in shownOffers()" :key="unit.id">
                         <tr :class="{ 'bg-primary-500/10': unit.id === editingOffer, 'text-zinc-400': !unit.fresh }">
                             <td class="max-w-xs">
                                 <a x-show="unit.source_url" :href="unit.source_url" target="_blank" rel="noopener noreferrer"
@@ -293,6 +329,9 @@
                             </td>
                         </tr>
                     </template>
+                    <tr x-show="!shownOffers().length">
+                        <td colspan="12" class="text-zinc-400">لا وحدات بهذا الحي وهذا النوع.</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
