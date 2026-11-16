@@ -442,3 +442,23 @@ test('starts the table unfiltered for a new city but keeps its order', async () 
 
     assert.deepEqual(component.offerFilters, { district: '', kind: '', sort: 'area_desc' });
 });
+
+test('counts the listings the table shows, and the properties they are, as the filters change', () => {
+    const component = page();
+    component.offers = {
+        units: [
+            { id: 1, district_key: 'المنار', kind: 'فيلا', price: 1, area: 1, duplicate_group: 'aqar:1' },
+            { id: 2, district_key: 'المنار', kind: 'فيلا', price: 1, area: 1, duplicate_group: 'aqar:1' },
+            { id: 3, district_key: 'المنار', kind: 'دور', price: 1, area: 1, duplicate_group: null },
+            { id: 4, district_key: 'السامر', kind: 'فيلا', price: 1, area: 1, duplicate_group: null },
+        ],
+    };
+
+    assert.equal(component.shownOffersCount(), 'يظهر ٤ إعلانًا لـ ٣ عقارًا');
+
+    component.offerFilters = { district: 'المنار', kind: 'فيلا', sort: 'seen' };
+    assert.equal(component.shownOffersCount(), 'يظهر ٢ إعلانًا لـ ١ عقارًا من أصل ٤ إعلانًا');
+
+    component.offerFilters = { district: 'الأجواد', kind: '', sort: 'seen' };
+    assert.equal(component.shownOffersCount(), 'يظهر ٠ إعلانًا لـ ٠ عقارًا من أصل ٤ إعلانًا');
+});

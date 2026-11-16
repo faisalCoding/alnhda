@@ -446,6 +446,19 @@ export default function marketDetail() {
             return order ? [...units].sort(order) : units;
         },
 
+        /**
+         * How many listings the table shows and how many properties they
+         * are, out of all of the city's when a filter narrows it.
+         */
+        shownOffersCount() {
+            const shown = this.shownOffers();
+            const properties = new Set(shown.map((unit) => unit.duplicate_group ?? `unit:${unit.id}`)).size;
+            const total = this.offers?.units?.length ?? 0;
+            const count = `${NUMBER.format(shown.length)} إعلانًا لـ ${NUMBER.format(properties)} عقارًا`;
+
+            return shown.length === total ? `يظهر ${count}` : `يظهر ${count} من أصل ${NUMBER.format(total)} إعلانًا`;
+        },
+
         /** The orders the table can be put in, as `[key, label]` pairs. */
         offerSortOptions() {
             return Object.entries(OFFER_SORTS).map(([key, sort]) => [key, sort.label]);

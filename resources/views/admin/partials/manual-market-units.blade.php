@@ -274,8 +274,8 @@
                 تحميل Excel
             </a>
         </div>
-        <p class="mb-3 text-xs text-zinc-500 dark:text-zinc-400" x-show="offerFilters.district || offerFilters.kind" x-cloak
-            x-text="`يظهر ${number(shownOffers().length)} من ${number(offers?.units?.length ?? 0)} إعلانًا.`"></p>
+        {{-- How many the table shows, following the filters --}}
+        <p class="mb-3 text-sm font-bold text-zinc-600 dark:text-zinc-300" x-text="shownOffersCount()"></p>
         <div class="sheet-wrap is-inset">
             <table class="sheet">
                 <thead>
